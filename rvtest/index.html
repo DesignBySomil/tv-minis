@@ -61,3 +61,66 @@ new GLTFLoader().load('./1-rv-classa.glb', (gltf)=>{
 }, undefined, (e)=>{ document.getElementById('tag').textContent='LOAD ERROR '+e; });
 renderer.setAnimationLoop(()=>renderer.render(scene,camera));
 </script></body></html>
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RV asset eval</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#f4e8d8}canvas{display:block}
+#tag{position:fixed;left:10px;bottom:8px;font:12px system-ui;color:#7a6a55}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head><body>
+<div id="tag">eval rig - golden hour key + cool fill</div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+// warm gradient sky backdrop
+{
+  const c=document.createElement('canvas');c.width=16;c.height=256;const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'#bcd3e8');gr.addColorStop(0.55,'#f6d9a8');gr.addColorStop(1,'#e8b57e');
+  g.fillStyle=gr;g.fillRect(0,0,16,256);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;scene.background=t;
+}
+scene.fog = new THREE.Fog(0xeac494, 40, 120);
+const camera = new THREE.PerspectiveCamera(38, innerWidth/innerHeight, 0.1, 500);
+// golden-hour rig
+const sun = new THREE.DirectionalLight(0xffd2a0, 3.2); sun.position.set(-14,9,7); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048); sun.shadow.bias=-0.0004; sun.shadow.radius=4;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xcfe0f4, 0xb99a72, 0.85));
+const fill = new THREE.DirectionalLight(0xdfe9f5, 0.55); fill.position.set(10,6,-8); scene.add(fill);
+const amb = new THREE.AmbientLight(0xfff0dd, 0.25); scene.add(amb);
+// ground
+const ground = new THREE.Mesh(new THREE.CircleGeometry(60,48), new THREE.MeshStandardMaterial({color:0xd9b98c, roughness:1}));
+ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+// decode + load
+new GLTFLoader().load('./1-rv-classa.glb', (gltf)=>{
+  const model = gltf.scene;
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const s = 8/size.x; // normalize length to 8
+  model.scale.setScalar(s);
+  model.position.set(-center.x*s, -box.min.y*s, -center.z*s);
+  model.traverse(o=>{ if(o.isMesh){o.castShadow=true;o.receiveShadow=true;} });
+  scene.add(model);
+  // camera: 3/4 front view, fitted
+  const h = size.y*s, len = 8;
+  const dist = (len*1.9);
+  camera.position.set(dist*0.72, h*1.9, dist*0.72);
+  camera.lookAt(0, h*0.45, 0);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(0,h*0.45,0); controls.update();
+  window.__ready = true;
+}, undefined, (e)=>{ document.getElementById('tag').textContent='LOAD ERROR '+e; });
+renderer.setAnimationLoop(()=>renderer.render(scene,camera));
+</script></body></html>
