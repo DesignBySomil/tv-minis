@@ -193,6 +193,1282 @@
       camera.aspect = aspect;
       camera.updateProjectionMatrix();
       // Pull camera slightly further back on narrow portrait screens (e.g. 320px width)
+      const dist = aspect < 0.75 ? 16.0 : aspect < 1.1 ? 13.0 : 10.5;
+      const dir = camera.position.clone().sub(controls.target).normalize();
+      if (dir.lengthSq() < 0.001) dir.set(0.7, 0.42, 0.78).normalize();
+      camera.position.copy(controls.target).addScaledVector(dir, dist);
+    }
+    camera.position.set(6.5, 4.2, 7.6);
+    updateCameraForAspect();
+
+    // =========================================================================
+    // 2. LIGHTING & SKY PRESETS (DAY / GOLDEN SUNSET / NIGHT)
+    // =========================================================================
+    const hemiLight = new THREE.HemisphereLight(0xffe6c2, 0x7c5338, 0.75);
+    hemiLight.position.set(0, 15, 0);
+    scene.add(hemiLight);
+
+    const sunLight = new THREE.DirectionalLight(0xffb870, 2.2);
+    sunLight.position.set(-11, 6.5, -10);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 1024;
+    sunLight.shadow.mapSize.height = 1024;
+    sunLight.shadow.camera.near = 2;
+    sunLight.shadow.camera.far = 32;
+    const d = 5.4;
+    sunLight.shadow.camera.left = -d;
+    sunLight.shadow.camera.right = d;
+    sunLight.shadow.camera.top = d;
+    sunLight.shadow.camera.bottom = -d;
+    sunLight.shadow.bias = -0.0006;
+    sunLight.shadow.normalBias = 0.02;
+    scene.add(sunLight);
+
+    // Warm interior RV glow (visible when door opens or at night)
+    const rvInteriorLight = new THREE.PointLight(0x9eff7a, 0.6, 3.6, 1.8);
+    rvInteriorLight.position.set(0.25, 0.85, 0.2);
+    scene.add(rvInteriorLight);
+
+    // Sky Dome with custom gradient shader
+    const skyUniforms = {
+      uTopColor: { value: new THREE.Color(0x2d325a) },
+      uMidColor: { value: new THREE.Color(0xc96551) },
+      uBottomColor: { value: new THREE.Color(0xf6b26b) },
+      uSunPos: { value: new THREE.Vector3(-0.68, 0.22, -0.68).normalize() },
+      uSunColor: { value: new THREE.Color(0xffe299) },
+      uSunSize: { value: 0.055 }
+    };
+
+    const skyMat = new THREE.ShaderMaterial({
+      uniforms: skyUniforms,
+      side: THREE.BackSide,
+      depthWrite: false,
+      vertexShader: `
+        varying vec3 vWorldPos;
+        void main() {
+          vec4 wp = modelMatrix * vec4(position, 1.0);
+          vWorldPos = wp.xyz;
+          gl_Position = projectionMatrix * viewMatrix * wp;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vWorldPos;
+        uniform vec3 uTopColor;
+        uniform vec3 uMidColor;
+        uniform vec3 uBottomColor;
+        uniform vec3 uSunPos;
+        uniform vec3 uSunColor;
+        uniform float uSunSize;
+
+        void main() {
+          vec3 dir = normalize(vWorldPos);
+          float h = clamp(dir.y, -0.2, 1.0);
+          vec3 col;
+          if (h < 0.22) {
+            col = mix(uBottomColor, uMidColor, smoothstep(-0.15, 0.22, h));
+          } else {
+            col = mix(uMidColor, uTopColor, smoothstep(0.22, 0.88, h));
+          }
+          // Low sun / moon disc + soft halo
+          float sunDot = max(dot(dir, normalize(uSunPos)), 0.0);
+          float disc = smoothstep(1.0 - uSunSize, 1.0 - uSunSize * 0.72, sunDot);
+          float halo = pow(sunDot, 10.0) * 0.38;
+          col += uSunColor * (disc * 1.15 + halo);
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `
+    });
+
+    const skyGeo = new THREE.SphereGeometry(65, 32, 24);
+    const skyDome = new THREE.Mesh(skyGeo, skyMat);
+    skyDome.name = 'skyDome';
+    scene.add(skyDome);
+
+    // Night Stars (Points inside sky dome)
+    const starCount = 220;
+    const starPositions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(Math.random() * 0.82 + 0.12); // upper hemisphere
+      const r = 58;
+      starPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      starPositions[i * 3 + 1] = r * Math.cos(phi);
+      starPositions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+    }
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    const starMat = new THREE.PointsMaterial({
+      color: 0xfff6e5,
+      size: 0.42,
+      transparent: true,
+      opacity: 0.0,
+      depthWrite: false
+    });
+    const stars = new THREE.Points(starGeo, starMat);
+    scene.add(stars);
+
+    // Sky presets: 0 = Late Afternoon (Initial), 1 = Golden Sunset, 2 = Night with Stars, 3 = Bright Desert Day
+    const SKY_PRESETS = [
+      {
+        name: 'Late Afternoon',
+        top: new THREE.Color(0x2d3561),
+        mid: new THREE.Color(0xd16852),
+        bottom: new THREE.Color(0xf7b673),
+        fog: new THREE.Color(0xe08d63),
+        sunColor: new THREE.Color(0xffe29a),
+        sunLightColor: new THREE.Color(0xffb56b),
+        sunIntensity: 2.2,
+        sunPos: new THREE.Vector3(-11, 6.2, -10),
+        hemiSky: new THREE.Color(0xffe3bd),
+        hemiGround: new THREE.Color(0x7c5338),
+        hemiIntensity: 0.75,
+        starOpacity: 0.0,
+        sunSize: 0.018,
+        windowEmissive: 0.25
+      },
+      {
+        name: 'Golden Sunset',
+        top: new THREE.Color(0x1b1438),
+        mid: new THREE.Color(0x9e3248),
+        bottom: new THREE.Color(0xff7747),
+        fog: new THREE.Color(0xb84846),
+        sunColor: new THREE.Color(0xff9b54),
+        sunLightColor: new THREE.Color(0xff7b42),
+        sunIntensity: 1.75,
+        sunPos: new THREE.Vector3(-13, 3.2, -9),
+        hemiSky: new THREE.Color(0xff9e75),
+        hemiGround: new THREE.Color(0x4a2925),
+        hemiIntensity: 0.62,
+        starOpacity: 0.25,
+        sunSize: 0.024,
+        windowEmissive: 0.6
+      },
+      {
+        name: 'Desert Night',
+        top: new THREE.Color(0x060814),
+        mid: new THREE.Color(0x101a33),
+        bottom: new THREE.Color(0x1c2b47),
+        fog: new THREE.Color(0x10192b),
+        sunColor: new THREE.Color(0xd6e6ff),
+        sunLightColor: new THREE.Color(0x7ea8e6),
+        sunIntensity: 0.72,
+        sunPos: new THREE.Vector3(9, 10, -10),
+        hemiSky: new THREE.Color(0x3a527a),
+        hemiGround: new THREE.Color(0x181512),
+        hemiIntensity: 0.42,
+        starOpacity: 0.92,
+        sunSize: 0.011,
+        windowEmissive: 1.15
+      },
+      {
+        name: 'High Desert Day',
+        top: new THREE.Color(0x3a7bd5),
+        mid: new THREE.Color(0x88bde6),
+        bottom: new THREE.Color(0xf3dec0),
+        fog: new THREE.Color(0xead2b3),
+        sunColor: new THREE.Color(0xfff5d6),
+        sunLightColor: new THREE.Color(0xfff0d1),
+        sunIntensity: 2.55,
+        sunPos: new THREE.Vector3(-8, 12.5, -7),
+        hemiSky: new THREE.Color(0xffffff),
+        hemiGround: new THREE.Color(0x9e7652),
+        hemiIntensity: 0.9,
+        starOpacity: 0.0,
+        sunSize: 0.014,
+        windowEmissive: 0.1
+      }
+    ];
+    let currentSkyIndex = 0;
+    const skyState = {
+      top: SKY_PRESETS[0].top.clone(),
+      mid: SKY_PRESETS[0].mid.clone(),
+      bottom: SKY_PRESETS[0].bottom.clone(),
+      fog: SKY_PRESETS[0].fog.clone(),
+      sunColor: SKY_PRESETS[0].sunColor.clone(),
+      sunLightColor: SKY_PRESETS[0].sunLightColor.clone(),
+      sunIntensity: SKY_PRESETS[0].sunIntensity,
+      sunPos: SKY_PRESETS[0].sunPos.clone(),
+      hemiSky: SKY_PRESETS[0].hemiSky.clone(),
+      hemiGround: SKY_PRESETS[0].hemiGround.clone(),
+      hemiIntensity: SKY_PRESETS[0].hemiIntensity,
+      starOpacity: SKY_PRESETS[0].starOpacity,
+      sunSize: SKY_PRESETS[0].sunSize,
+      windowEmissive: SKY_PRESETS[0].windowEmissive
+    };
+    skyUniforms.uSunSize.value = skyState.sunSize;
+
+    // =========================================================================
+    // 3. SHARED MATERIALS
+    // =========================================================================
+    const mats = {
+      woodDark: new THREE.MeshStandardMaterial({
+        color: 0x2a1810,
+        roughness: 0.45,
+        metalness: 0.08
+      }),
+      woodTrim: new THREE.MeshStandardMaterial({
+        color: 0x1c0f0a,
+        roughness: 0.35,
+        metalness: 0.12
+      }),
+      brassPlaque: new THREE.MeshStandardMaterial({
+        color: 0xd4a24c,
+        roughness: 0.3,
+        metalness: 0.8
+      }),
+      sand: new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        roughness: 0.92,
+        metalness: 0.0,
+        flatShading: true
+      }),
+      rvBody: new THREE.MeshStandardMaterial({
+        color: 0xe6d6b8,
+        roughness: 0.62,
+        metalness: 0.05,
+        flatShading: true
+      }),
+      rvStripeRed: new THREE.MeshStandardMaterial({
+        color: 0x9e3b24,
+        roughness: 0.6,
+        metalness: 0.05
+      }),
+      rvStripeGold: new THREE.MeshStandardMaterial({
+        color: 0xd99136,
+        roughness: 0.6,
+        metalness: 0.08
+      }),
+      rvStripeBrown: new THREE.MeshStandardMaterial({
+        color: 0x593122,
+        roughness: 0.65
+      }),
+      rvInterior: new THREE.MeshStandardMaterial({
+        color: 0x26291e,
+        roughness: 0.9
+      }),
+      rvWindow: new THREE.MeshStandardMaterial({
+        color: 0x2a3b47,
+        emissive: 0x8fd968,
+        emissiveIntensity: 0.25,
+        roughness: 0.2,
+        metalness: 0.35
+      }),
+      windshield: new THREE.MeshStandardMaterial({
+        color: 0x24313d,
+        emissive: 0x5c4928,
+        emissiveIntensity: 0.15,
+        roughness: 0.18,
+        metalness: 0.45
+      }),
+      chrome: new THREE.MeshStandardMaterial({
+        color: 0xc8ccd0,
+        roughness: 0.32,
+        metalness: 0.78
+      }),
+      tire: new THREE.MeshStandardMaterial({
+        color: 0x1e1e20,
+        roughness: 0.85,
+        flatShading: true
+      }),
+      acUnit: new THREE.MeshStandardMaterial({
+        color: 0xd9d2c5,
+        roughness: 0.7,
+        flatShading: true
+      }),
+      cactus: new THREE.MeshStandardMaterial({
+        color: 0x4b7844,
+        roughness: 0.78,
+        flatShading: true
+      }),
+      rock: new THREE.MeshStandardMaterial({
+        color: 0xa66e4e,
+        roughness: 0.88,
+        flatShading: true
+      }),
+      rockDark: new THREE.MeshStandardMaterial({
+        color: 0x7d5138,
+        roughness: 0.9,
+        flatShading: true
+      }),
+      dryBush: new THREE.MeshStandardMaterial({
+        color: 0x8c673e,
+        roughness: 0.92,
+        flatShading: true
+      }),
+      headlight: new THREE.MeshStandardMaterial({
+        color: 0xfff3cc,
+        emissive: 0xffd27d,
+        emissiveIntensity: 0.5,
+        roughness: 0.2
+      }),
+      taillight: new THREE.MeshStandardMaterial({
+        color: 0xc92a2a,
+        emissive: 0x991b1b,
+        emissiveIntensity: 0.35
+      })
+    };
+
+    // =========================================================================
+    // 4. DIORAMA PEDESTAL & VERTEX-DISPLACED SAND BASE
+    // =========================================================================
+    const dioramaGroup = new THREE.Group();
+    scene.add(dioramaGroup);
+
+    // Dark Wooden Collectible Pedestal
+    const pedestalGroup = new THREE.Group();
+    const baseMain = new THREE.Mesh(
+      new THREE.CylinderGeometry(4.45, 4.65, 0.72, 48),
+      mats.woodDark
+    );
+    baseMain.position.y = -0.44;
+    baseMain.receiveShadow = true;
+    pedestalGroup.add(baseMain);
+
+    const baseLip = new THREE.Mesh(
+      new THREE.CylinderGeometry(4.62, 4.55, 0.14, 48),
+      mats.woodTrim
+    );
+    baseLip.position.y = -0.09;
+    pedestalGroup.add(baseLip);
+
+    const baseFoot = new THREE.Mesh(
+      new THREE.CylinderGeometry(4.78, 4.88, 0.18, 48),
+      mats.woodTrim
+    );
+    baseFoot.position.y = -0.82;
+    pedestalGroup.add(baseFoot);
+
+    // Small brass collector plate on front of pedestal
+    const plaque = new THREE.Mesh(
+      new THREE.BoxGeometry(0.95, 0.24, 0.08),
+      mats.brassPlaque
+    );
+    plaque.position.set(0, -0.44, 4.58);
+    plaque.rotation.x = -0.08;
+    pedestalGroup.add(plaque);
+
+    dioramaGroup.add(pedestalGroup);
+
+    // Procedural dune height & tire track evaluation helper
+    function getSandHeight(x, z) {
+      const r = Math.hypot(x, z);
+      // Gentle rolling desert dunes
+      let h =
+        Math.sin(x * 0.65 + 0.4) * Math.cos(z * 0.55 - 0.2) * 0.14 +
+        Math.sin((x + z) * 1.15) * 0.045;
+
+      // Flatten slightly under RV footprint so wheels sit naturally
+      const rvMask = Math.exp(-((x * x) / 3.8 + ((z - 0.1) * (z - 0.1)) / 1.4));
+      h = h * (1.0 - rvMask * 0.65) + 0.04 * rvMask;
+
+      // Faint tire track ruts behind & under the RV (along X axis, rotated slightly)
+      const angle = -0.14;
+      const rx = x * Math.cos(angle) - z * Math.sin(angle);
+      const rz = x * Math.sin(angle) + z * Math.cos(angle);
+      if (rx > -3.9 && rx < 1.55) {
+        const trackDist1 = Math.abs(rz - 0.52);
+        const trackDist2 = Math.abs(rz + 0.52);
+        const rut1 = Math.max(0, 1.0 - trackDist1 / 0.17);
+        const rut2 = Math.max(0, 1.0 - trackDist2 / 0.17);
+        const fade = THREE.MathUtils.smoothstep(rx, -3.9, -2.8);
+        h -= (rut1 * rut1 + rut2 * rut2) * 0.042 * fade;
+      }
+
+      // Smooth bevel at circular rim
+      const edgeTaper = THREE.MathUtils.smoothstep(r, 3.85, 4.38);
+      return h * (1.0 - edgeTaper);
+    }
+
+    // Build Sand Disc Geometry with Vertex Displacement & Color Variation
+    const sandGeo = new THREE.CylinderGeometry(4.36, 4.4, 0.36, 56, 22);
+    const posAttr = sandGeo.attributes.position;
+    const colors = new Float32Array(posAttr.count * 3);
+
+    const colSandLight = new THREE.Color(0xe6be8a);
+    const colSandMid = new THREE.Color(0xd6a169);
+    const colSandRut = new THREE.Color(0xb37e4c);
+    const tempCol = new THREE.Color();
+
+    for (let i = 0; i < posAttr.count; i++) {
+      const vx = posAttr.getX(i);
+      const vy = posAttr.getY(i);
+      const vz = posAttr.getZ(i);
+
+      if (vy > 0) {
+        const h = getSandHeight(vx, vz);
+        posAttr.setY(i, vy + h);
+
+        // Compute subtle color variation + darker tire track shading
+        const angle = -0.14;
+        const rx = vx * Math.cos(angle) - vz * Math.sin(angle);
+        const rz = vx * Math.sin(angle) + vz * Math.cos(angle);
+        let rutFactor = 0;
+        if (rx > -3.9 && rx < 1.55) {
+          const d1 = Math.max(0, 1.0 - Math.abs(rz - 0.52) / 0.19);
+          const d2 = Math.max(0, 1.0 - Math.abs(rz + 0.52) / 0.19);
+          const fade = THREE.MathUtils.smoothstep(rx, -3.9, -2.7);
+          rutFactor = Math.min(1, (d1 + d2) * fade);
+        }
+
+        const noise =
+          0.5 +
+          0.35 * Math.sin(vx * 1.3 + vz * 0.9) +
+          0.15 * Math.cos(vx * 2.7 - vz * 2.1);
+        tempCol.copy(colSandMid).lerp(colSandLight, THREE.MathUtils.clamp(noise, 0, 1));
+        tempCol.lerp(colSandRut, rutFactor * 0.68);
+
+        colors[i * 3] = tempCol.r;
+        colors[i * 3 + 1] = tempCol.g;
+        colors[i * 3 + 2] = tempCol.b;
+      } else {
+        colors[i * 3] = colSandRut.r;
+        colors[i * 3 + 1] = colSandRut.g;
+        colors[i * 3 + 2] = colSandRut.b;
+      }
+    }
+    sandGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    sandGeo.computeVertexNormals();
+
+    const sandMesh = new THREE.Mesh(sandGeo, mats.sand);
+    sandMesh.position.y = -0.15;
+    sandMesh.receiveShadow = true;
+    dioramaGroup.add(sandMesh);
+
+    // =========================================================================
+    // 5. LOW-POLY 1980s BEIGE RECREATIONAL VEHICLE (RV)
+    // =========================================================================
+    const rvGroup = new THREE.Group();
+    rvGroup.position.set(0.2, getSandHeight(0.2, 0.0) + 0.02, 0.0);
+    rvGroup.rotation.y = 0.14; // Matches tire track angle
+    dioramaGroup.add(rvGroup);
+
+    const chassisGroup = new THREE.Group();
+    rvGroup.add(chassisGroup);
+
+    // Main boxy rear cabin
+    const mainCabin = new THREE.Mesh(
+      new THREE.BoxGeometry(3.05, 1.34, 1.38),
+      mats.rvBody
+    );
+    mainCabin.position.set(-0.22, 0.98, 0);
+    mainCabin.castShadow = true;
+    mainCabin.receiveShadow = true;
+    chassisGroup.add(mainCabin);
+
+    // Recessed dark doorway alcove so opening the door reveals depth
+    const doorInsideRecess = new THREE.Mesh(
+      new THREE.BoxGeometry(0.46, 0.98, 0.08),
+      mats.rvInterior
+    );
+    doorInsideRecess.position.set(0.28, 0.85, 0.665);
+    chassisGroup.add(doorInsideRecess);
+
+    // Slanted front cab nose + lower engine hood
+    const cabUpperGeo = new THREE.BoxGeometry(0.75, 0.72, 1.32);
+    const cabPos = cabUpperGeo.attributes.position;
+    for (let i = 0; i < cabPos.count; i++) {
+      // Slant the top-front vertices back for iconic 1980s sloped windshield
+      if (cabPos.getX(i) > 0 && cabPos.getY(i) > 0) {
+        cabPos.setX(i, cabPos.getX(i) - 0.26);
+      }
+    }
+    cabUpperGeo.computeVertexNormals();
+    const cabUpper = new THREE.Mesh(cabUpperGeo, mats.rvBody);
+    cabUpper.position.set(1.52, 1.0, 0);
+    cabUpper.castShadow = true;
+    cabUpper.receiveShadow = true;
+    chassisGroup.add(cabUpper);
+
+    const cabLower = new THREE.Mesh(
+      new THREE.BoxGeometry(0.84, 0.44, 1.34),
+      mats.rvBody
+    );
+    cabLower.position.set(1.58, 0.53, 0);
+    cabLower.castShadow = true;
+    cabLower.receiveShadow = true;
+    chassisGroup.add(cabLower);
+
+    // Brow overhang above windshield
+    const cabBrow = new THREE.Mesh(
+      new THREE.BoxGeometry(0.55, 0.24, 1.36),
+      mats.rvBody
+    );
+    cabBrow.position.set(1.42, 1.51, 0);
+    cabBrow.castShadow = true;
+    chassisGroup.add(cabBrow);
+
+    // Classic 1980s triple stripes (Red, Gold, Dark Brown) along both sides & back
+    const stripeRed = new THREE.Mesh(
+      new THREE.BoxGeometry(3.08, 0.13, 1.41),
+      mats.rvStripeRed
+    );
+    stripeRed.position.set(-0.21, 0.82, 0);
+    chassisGroup.add(stripeRed);
+
+    const stripeGold = new THREE.Mesh(
+      new THREE.BoxGeometry(3.08, 0.08, 1.415),
+      mats.rvStripeGold
+    );
+    stripeGold.position.set(-0.21, 0.72, 0);
+    chassisGroup.add(stripeGold);
+
+    const stripeBrown = new THREE.Mesh(
+      new THREE.BoxGeometry(3.08, 0.07, 1.41),
+      mats.rvStripeBrown
+    );
+    stripeBrown.position.set(-0.21, 0.64, 0);
+    chassisGroup.add(stripeBrown);
+
+    // Slanted Windshield
+    const windshield = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.52, 1.16),
+      mats.windshield
+    );
+    windshield.position.set(1.74, 1.05, 0);
+    windshield.rotation.z = 0.35;
+    chassisGroup.add(windshield);
+
+    // Cab Side Windows (Left & Right)
+    const cabSideWinGeo = new THREE.BoxGeometry(0.42, 0.38, 1.37);
+    const cabSideWin = new THREE.Mesh(cabSideWinGeo, mats.windshield);
+    cabSideWin.position.set(1.42, 1.04, 0);
+    chassisGroup.add(cabSideWin);
+
+    // Side Louvered/Tinted Windows
+    const winLarge = new THREE.Mesh(
+      new THREE.BoxGeometry(0.78, 0.42, 1.42),
+      mats.rvWindow
+    );
+    winLarge.position.set(-0.55, 1.12, 0);
+    chassisGroup.add(winLarge);
+
+    const winRear = new THREE.Mesh(
+      new THREE.BoxGeometry(0.48, 0.36, 1.42),
+      mats.rvWindow
+    );
+    winRear.position.set(-1.32, 1.12, 0);
+    chassisGroup.add(winRear);
+
+    // Front Grille, Bumpers & Headlights
+    const frontBumper = new THREE.Mesh(
+      new THREE.BoxGeometry(0.14, 0.14, 1.44),
+      mats.chrome
+    );
+    frontBumper.position.set(2.02, 0.34, 0);
+    chassisGroup.add(frontBumper);
+
+    const rearBumper = new THREE.Mesh(
+      new THREE.BoxGeometry(0.14, 0.14, 1.44),
+      mats.chrome
+    );
+    rearBumper.position.set(-1.78, 0.34, 0);
+    chassisGroup.add(rearBumper);
+
+    const grille = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.24, 0.86),
+      mats.chrome
+    );
+    grille.position.set(1.98, 0.54, 0);
+    chassisGroup.add(grille);
+
+    const headlightGeo = new THREE.BoxGeometry(0.07, 0.12, 0.16);
+    const hlLeft = new THREE.Mesh(headlightGeo, mats.headlight);
+    hlLeft.position.set(1.99, 0.56, 0.52);
+    const hlRight = new THREE.Mesh(headlightGeo, mats.headlight);
+    hlRight.position.set(1.99, 0.56, -0.52);
+    chassisGroup.add(hlLeft, hlRight);
+
+    const tlLeft = new THREE.Mesh(headlightGeo, mats.taillight);
+    tlLeft.position.set(-1.75, 0.52, 0.54);
+    const tlRight = new THREE.Mesh(headlightGeo, mats.taillight);
+    tlRight.position.set(-1.75, 0.52, -0.54);
+    chassisGroup.add(tlLeft, tlRight);
+
+    // Side Mirrors
+    const mirrorGeo = new THREE.BoxGeometry(0.06, 0.18, 0.12);
+    const mirrorL = new THREE.Mesh(mirrorGeo, mats.chrome);
+    mirrorL.position.set(1.56, 1.05, 0.76);
+    const mirrorR = new THREE.Mesh(mirrorGeo, mats.chrome);
+    mirrorR.position.set(1.56, 1.05, -0.76);
+    chassisGroup.add(mirrorL, mirrorR);
+
+    // Roof AC Unit & Vent
+    const acMain = new THREE.Mesh(
+      new THREE.BoxGeometry(0.68, 0.22, 0.58),
+      mats.acUnit
+    );
+    acMain.position.set(-0.15, 1.74, 0);
+    acMain.castShadow = true;
+    chassisGroup.add(acMain);
+
+    const roofVent = new THREE.Mesh(
+      new THREE.BoxGeometry(0.34, 0.1, 0.34),
+      mats.acUnit
+    );
+    roofVent.position.set(-1.05, 1.68, 0);
+    roofVent.castShadow = true;
+    chassisGroup.add(roofVent);
+
+    // Rear Ladder
+    const ladderGroup = new THREE.Group();
+    ladderGroup.position.set(-1.79, 1.04, -0.34);
+    const railGeo = new THREE.CylinderGeometry(0.018, 0.018, 1.16, 6);
+    const railL = new THREE.Mesh(railGeo, mats.chrome);
+    railL.position.z = -0.13;
+    const railR = new THREE.Mesh(railGeo, mats.chrome);
+    railR.position.z = 0.13;
+    ladderGroup.add(railL, railR);
+
+    const rungGeo = new THREE.CylinderGeometry(0.014, 0.014, 0.26, 6);
+    rungGeo.rotateX(Math.PI / 2);
+    for (let r = 0; r < 5; r++) {
+      const rung = new THREE.Mesh(rungGeo, mats.chrome);
+      rung.position.y = -0.44 + r * 0.22;
+      ladderGroup.add(rung);
+    }
+    chassisGroup.add(ladderGroup);
+
+    // Interactive Side Door with Pivot Hinge on right edge
+    const doorPivot = new THREE.Group();
+    doorPivot.position.set(0.51, 0.85, 0.705); // Hinge edge
+    chassisGroup.add(doorPivot);
+
+    const doorPanel = new THREE.Mesh(
+      new THREE.BoxGeometry(0.46, 0.98, 0.045),
+      mats.rvBody
+    );
+    doorPanel.position.set(-0.23, 0, 0);
+    doorPanel.castShadow = true;
+    doorPanel.name = 'rvDoor';
+    doorPivot.add(doorPanel);
+
+    const doorWin = new THREE.Mesh(
+      new THREE.BoxGeometry(0.28, 0.3, 0.055),
+      mats.rvWindow
+    );
+    doorWin.position.set(-0.23, 0.22, 0);
+    doorWin.name = 'rvDoor';
+    doorPivot.add(doorWin);
+
+    const doorStripe = new THREE.Mesh(
+      new THREE.BoxGeometry(0.465, 0.13, 0.052),
+      mats.rvStripeRed
+    );
+    doorStripe.position.set(-0.23, -0.03, 0);
+    doorStripe.name = 'rvDoor';
+    doorPivot.add(doorStripe);
+
+    const doorHandle = new THREE.Mesh(
+      new THREE.BoxGeometry(0.07, 0.035, 0.07),
+      mats.chrome
+    );
+    doorHandle.position.set(-0.39, -0.05, 0.02);
+    doorHandle.name = 'rvDoor';
+    doorPivot.add(doorHandle);
+
+    // Invisible slightly padded hit-box around the door for effortless mobile tapping
+    const doorHitbox = new THREE.Mesh(
+      new THREE.BoxGeometry(0.78, 1.22, 0.28),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    doorHitbox.position.set(-0.23, 0.02, 0.05);
+    doorHitbox.name = 'rvDoor';
+    doorPivot.add(doorHitbox);
+
+    // Wheels (4 wheels with hubs)
+    const wheelGeo = new THREE.CylinderGeometry(0.31, 0.31, 0.22, 16);
+    wheelGeo.rotateX(Math.PI / 2);
+    const hubGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.24, 12);
+    hubGeo.rotateX(Math.PI / 2);
+
+    const wheelPositions = [
+      [1.36, 0.31, 0.64],
+      [1.36, 0.31, -0.64],
+      [-0.95, 0.31, 0.64],
+      [-0.95, 0.31, -0.64]
+    ];
+    wheelPositions.forEach(([wx, wy, wz]) => {
+      const wGroup = new THREE.Group();
+      wGroup.position.set(wx, wy, wz);
+      const tire = new THREE.Mesh(wheelGeo, mats.tire);
+      tire.castShadow = true;
+      tire.receiveShadow = true;
+      const hub = new THREE.Mesh(hubGeo, mats.chrome);
+      wGroup.add(tire, hub);
+      rvGroup.add(wGroup);
+    });
+
+    // =========================================================================
+    // 6. DESERT PROPS: 2 SAGUARO CACTI, ROCKS & DRIED BUSH
+    // =========================================================================
+    function createSaguaro(height, scale = 1) {
+      const cGroup = new THREE.Group();
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.14 * scale, 0.17 * scale, height, 8),
+        mats.cactus
+      );
+      trunk.position.y = height * 0.5;
+      trunk.castShadow = true;
+      trunk.receiveShadow = true;
+      cGroup.add(trunk);
+
+      const topCap = new THREE.Mesh(
+        new THREE.SphereGeometry(0.14 * scale, 8, 6),
+        mats.cactus
+      );
+      topCap.position.y = height;
+      topCap.castShadow = true;
+      cGroup.add(topCap);
+
+      // Left arm
+      const arm1H = height * 0.42;
+      const arm1Joint = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1 * scale, 0.1 * scale, 0.28 * scale, 7),
+        mats.cactus
+      );
+      arm1Joint.rotation.z = Math.PI / 2;
+      arm1Joint.position.set(0.18 * scale, height * 0.52, 0);
+      arm1Joint.castShadow = true;
+
+      const arm1Up = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1 * scale, 0.11 * scale, arm1H, 7),
+        mats.cactus
+      );
+      arm1Up.position.set(0.32 * scale, height * 0.52 + arm1H * 0.5, 0);
+      arm1Up.castShadow = true;
+
+      const arm1Cap = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1 * scale, 7, 5),
+        mats.cactus
+      );
+      arm1Cap.position.set(0.32 * scale, height * 0.52 + arm1H, 0);
+      cGroup.add(arm1Joint, arm1Up, arm1Cap);
+
+      // Right arm
+      const arm2H = height * 0.34;
+      const arm2Joint = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.095 * scale, 0.095 * scale, 0.25 * scale, 7),
+        mats.cactus
+      );
+      arm2Joint.rotation.z = Math.PI / 2;
+      arm2Joint.position.set(-0.17 * scale, height * 0.38, 0);
+      arm2Joint.castShadow = true;
+
+      const arm2Up = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.095 * scale, 0.105 * scale, arm2H, 7),
+        mats.cactus
+      );
+      arm2Up.position.set(-0.29 * scale, height * 0.38 + arm2H * 0.5, 0);
+      arm2Up.castShadow = true;
+
+      const arm2Cap = new THREE.Mesh(
+        new THREE.SphereGeometry(0.095 * scale, 7, 5),
+        mats.cactus
+      );
+      arm2Cap.position.set(-0.29 * scale, height * 0.38 + arm2H, 0);
+      cGroup.add(arm2Joint, arm2Up, arm2Cap);
+
+      return cGroup;
+    }
+
+    const cactus1 = createSaguaro(1.85, 1.0);
+    cactus1.position.set(-2.35, getSandHeight(-2.35, -1.75) - 0.03, -1.75);
+    cactus1.rotation.y = 0.65;
+    dioramaGroup.add(cactus1);
+
+    const cactus2 = createSaguaro(1.42, 0.85);
+    cactus2.position.set(2.55, getSandHeight(2.55, -1.55) - 0.03, -1.55);
+    cactus2.rotation.y = -0.85;
+    dioramaGroup.add(cactus2);
+
+    // Low-poly desert rocks cluster
+    const rockGeo = new THREE.DodecahedronGeometry(1, 0);
+    const rockSpecs = [
+      { x: -1.85, z: -2.25, sx: 0.48, sy: 0.32, sz: 0.42, ry: 0.4, dark: false },
+      { x: -1.35, z: -2.35, sx: 0.28, sy: 0.22, sz: 0.25, ry: 1.1, dark: true },
+      { x: 2.15, z: 1.85, sx: 0.55, sy: 0.36, sz: 0.44, ry: 2.2, dark: false },
+      { x: 2.65, z: 1.55, sx: 0.32, sy: 0.24, sz: 0.3, ry: 0.9, dark: true },
+      { x: -2.65, z: 1.45, sx: 0.36, sy: 0.25, sz: 0.32, ry: 1.7, dark: false }
+    ];
+    rockSpecs.forEach((r) => {
+      const rock = new THREE.Mesh(rockGeo, r.dark ? mats.rockDark : mats.rock);
+      rock.scale.set(r.sx, r.sy, r.sz);
+      rock.position.set(r.x, getSandHeight(r.x, r.z) + r.sy * 0.35, r.z);
+      rock.rotation.set(r.ry * 0.3, r.ry, r.ry * 0.2);
+      rock.castShadow = true;
+      rock.receiveShadow = true;
+      dioramaGroup.add(rock);
+    });
+
+    // Dried Desert Bush (clustered gnarled twigs/spheres)
+    const bushGroup = new THREE.Group();
+    const bx = -1.25;
+    const bz = 2.15;
+    bushGroup.position.set(bx, getSandHeight(bx, bz) + 0.06, bz);
+    const branchGeo = new THREE.IcosahedronGeometry(0.18, 0);
+    const twigOffsets = [
+      [0, 0.08, 0, 1.2, 0.85, 1.1],
+      [0.16, 0.12, 0.08, 0.9, 0.75, 0.9],
+      [-0.15, 0.1, 0.1, 0.85, 0.7, 0.95],
+      [0.05, 0.14, -0.14, 0.8, 0.8, 0.8],
+      [-0.1, 0.07, -0.12, 0.7, 0.65, 0.75]
+    ];
+    twigOffsets.forEach(([ox, oy, oz, sx, sy, sz], idx) => {
+      const puff = new THREE.Mesh(branchGeo, mats.dryBush);
+      puff.position.set(ox, oy, oz);
+      puff.scale.set(sx, sy, sz);
+      puff.rotation.set(idx * 0.7, idx * 1.1, idx * 0.4);
+      puff.castShadow = true;
+      bushGroup.add(puff);
+    });
+    dioramaGroup.add(bushGroup);
+
+    // =========================================================================
+    // 7. PALE-GREEN SMOKE PARTICLE SYSTEM (EMITS WHEN DOOR IS OPEN)
+    // =========================================================================
+    const MAX_SMOKE = 28;
+    const smokeGeo = new THREE.DodecahedronGeometry(0.14, 1);
+    const smokeParticles = [];
+    const smokeGroup = new THREE.Group();
+    scene.add(smokeGroup);
+
+    for (let i = 0; i < MAX_SMOKE; i++) {
+      const pMat = new THREE.MeshStandardMaterial({
+        color: 0xb5f291,
+        emissive: 0x52a336,
+        emissiveIntensity: 0.32,
+        roughness: 0.9,
+        transparent: true,
+        opacity: 0.0,
+        depthWrite: false,
+        flatShading: true
+      });
+      const mesh = new THREE.Mesh(smokeGeo, pMat);
+      mesh.visible = false;
+      smokeGroup.add(mesh);
+      smokeParticles.push({
+        mesh,
+        active: false,
+        age: 0,
+        life: 2.4,
+        vel: new THREE.Vector3(),
+        rotSpeed: new THREE.Vector3()
+      });
+    }
+
+    let isDoorOpen = false;
+    let targetDoorAngle = 0;
+    let currentDoorAngle = 0;
+    let smokeSpawnTimer = 0;
+    let rvBouncePhase = 0;
+
+    const doorWorldSpawn = new THREE.Vector3();
+
+    function spawnSmokePuff() {
+      const p = smokeParticles.find((item) => !item.active);
+      if (!p) return;
+
+      // Get world coordinates of the open RV doorway
+      doorInsideRecess.getWorldPosition(doorWorldSpawn);
+
+      p.active = true;
+      p.age = 0;
+      p.life = 2.1 + Math.random() * 0.9;
+      p.mesh.visible = true;
+      p.mesh.position.set(
+        doorWorldSpawn.x + (Math.random() - 0.5) * 0.16,
+        doorWorldSpawn.y + 0.18 + (Math.random() - 0.5) * 0.12,
+        doorWorldSpawn.z + 0.14 + Math.random() * 0.12
+      );
+      p.mesh.scale.setScalar(0.35);
+      p.mesh.material.opacity = 0.0;
+
+      // Drift outward from doorway, then curl upward into the desert breeze
+      p.vel.set(
+        (Math.random() - 0.35) * 0.28,
+        0.52 + Math.random() * 0.28,
+        0.42 + Math.random() * 0.25
+      );
+      p.rotSpeed.set(
+        (Math.random() - 0.5) * 1.5,
+        (Math.random() - 0.5) * 1.5,
+        (Math.random() - 0.5) * 1.5
+      );
+    }
+
+    // =========================================================================
+    // 8. RAYCAST INTERACTION (TAP DOOR TO TOGGLE, TAP SKY TO CYCLE TIME)
+    // =========================================================================
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let pointerDownPos = { x: 0, y: 0 };
+    let pointerDownTime = 0;
+
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      pointerDownPos.x = e.clientX;
+      pointerDownPos.y = e.clientY;
+      pointerDownTime = performance.now();
+    });
+
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      const dx = e.clientX - pointerDownPos.x;
+      const dy = e.clientY - pointerDownPos.y;
+      const dist = Math.hypot(dx, dy);
+      const elapsed = performance.now() - pointerDownTime;
+
+      // Distinguish deliberate tap/click from camera orbit drag
+      if (dist > 9 || elapsed > 500) return;
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+
+      // 1. Check RV Door first
+      const doorHits = raycaster.intersectObjects(doorPivot.children, false);
+      if (doorHits.length > 0) {
+        isDoorOpen = !isDoorOpen;
+        targetDoorAngle = isDoorOpen ? Math.PI * 0.62 : 0;
+        rvBouncePhase = 1.0; // Subtle suspension jolt when door slams/opens
+        if (isDoorOpen) {
+          spawnSmokePuff();
+          spawnSmokePuff();
+        }
+        return;
+      }
+
+      // 2. Check if user tapped on the diorama body vs. tapping the sky
+      const dioramaHits = raycaster.intersectObjects(dioramaGroup.children, true);
+      if (dioramaHits.length === 0) {
+        // Tapped the sky dome -> cycle time of day
+        currentSkyIndex = (currentSkyIndex + 1) % SKY_PRESETS.length;
+      }
+    });
+
+    // =========================================================================
+    // 9. RESIZE & ANIMATION LOOP
+    // =========================================================================
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      updateCameraForAspect();
+    });
+
+    const clock = new THREE.Clock();
+
+    // Hide loading screen once first frame renders
+    requestAnimationFrame(() => {
+      const loader = document.getElementById('loader');
+      if (loader) loader.classList.add('hidden');
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const dt = Math.min(clock.getDelta(), 0.1);
+      controls.update();
+
+      // Smoothly swing RV door
+      currentDoorAngle = THREE.MathUtils.lerp(currentDoorAngle, targetDoorAngle, Math.min(1, dt * 8.5));
+      doorPivot.rotation.y = currentDoorAngle;
+
+      // Subtle RV chassis suspension rock when door toggles or cooking smoke is active
+      if (rvBouncePhase > 0.001) {
+        rvBouncePhase = Math.max(0, rvBouncePhase - dt * 2.5);
+      }
+      const idleRock = isDoorOpen ? Math.sin(clock.elapsedTime * 5.5) * 0.005 : 0;
+      const slamRock = Math.sin(rvBouncePhase * Math.PI * 3) * rvBouncePhase * 0.025;
+      chassisGroup.rotation.x = idleRock + slamRock;
+
+      // Update interior green glow intensity
+      const targetInteriorGlow = isDoorOpen ? 1.85 : 0.35;
+      rvInteriorLight.intensity = THREE.MathUtils.lerp(
+        rvInteriorLight.intensity,
+        targetInteriorGlow,
+        dt * 5
+      );
+
+      // Emit & update pale-green smoke particles
+      if (isDoorOpen) {
+        smokeSpawnTimer += dt;
+        if (smokeSpawnTimer > 0.14) {
+          smokeSpawnTimer = 0;
+          spawnSmokePuff();
+        }
+      }
+
+      for (let i = 0; i < MAX_SMOKE; i++) {
+        const p = smokeParticles[i];
+        if (!p.active) continue;
+
+        p.age += dt;
+        if (p.age >= p.life) {
+          p.active = false;
+          p.mesh.visible = false;
+          continue;
+        }
+
+        const t = p.age / p.life;
+        // Upward buoyancy + gentle breeze curl
+        p.mesh.position.x += (p.vel.x + Math.sin(p.age * 2.5 + i) * 0.12) * dt;
+        p.mesh.position.y += p.vel.y * dt;
+        p.mesh.position.z += p.vel.z * (1.0 - t * 0.6) * dt;
+
+        p.mesh.rotation.x += p.rotSpeed.x * dt;
+        p.mesh.rotation.y += p.rotSpeed.y * dt;
+
+        const scale = 0.32 + t * 1.45;
+        p.mesh.scale.setScalar(scale);
+
+        // Smooth fade-in then dissipate
+        const alpha = t < 0.2 ? (t / 0.2) * 0.58 : (1.0 - (t - 0.2) / 0.8) * 0.58;
+        p.mesh.material.opacity = Math.max(0, alpha);
+      }
+
+      // Smoothly interpolate Sky, Fog, Sun & Stars toward active preset
+      const targetPreset = SKY_PRESETS[currentSkyIndex];
+      const lerpSpeed = Math.min(1, dt * 3.0);
+
+      skyState.top.lerp(targetPreset.top, lerpSpeed);
+      skyState.mid.lerp(targetPreset.mid, lerpSpeed);
+      skyState.bottom.lerp(targetPreset.bottom, lerpSpeed);
+      skyState.fog.lerp(targetPreset.fog, lerpSpeed);
+      skyState.sunColor.lerp(targetPreset.sunColor, lerpSpeed);
+      skyState.sunLightColor.lerp(targetPreset.sunLightColor, lerpSpeed);
+      skyState.sunPos.lerp(targetPreset.sunPos, lerpSpeed);
+      skyState.hemiSky.lerp(targetPreset.hemiSky, lerpSpeed);
+      skyState.hemiGround.lerp(targetPreset.hemiGround, lerpSpeed);
+
+      skyState.sunIntensity = THREE.MathUtils.lerp(skyState.sunIntensity, targetPreset.sunIntensity, lerpSpeed);
+      skyState.hemiIntensity = THREE.MathUtils.lerp(skyState.hemiIntensity, targetPreset.hemiIntensity, lerpSpeed);
+      skyState.starOpacity = THREE.MathUtils.lerp(skyState.starOpacity, targetPreset.starOpacity, lerpSpeed);
+      skyState.sunSize = THREE.MathUtils.lerp(skyState.sunSize, targetPreset.sunSize, lerpSpeed);
+      skyState.windowEmissive = THREE.MathUtils.lerp(skyState.windowEmissive, targetPreset.windowEmissive, lerpSpeed);
+
+      skyUniforms.uTopColor.value.copy(skyState.top);
+      skyUniforms.uMidColor.value.copy(skyState.mid);
+      skyUniforms.uBottomColor.value.copy(skyState.bottom);
+      skyUniforms.uSunColor.value.copy(skyState.sunColor);
+      skyUniforms.uSunPos.value.copy(skyState.sunPos).normalize();
+      skyUniforms.uSunSize.value = skyState.sunSize;
+
+      scene.fog.color.copy(skyState.fog);
+      sunLight.color.copy(skyState.sunLightColor);
+      sunLight.intensity = skyState.sunIntensity;
+      sunLight.position.copy(skyState.sunPos);
+
+      hemiLight.color.copy(skyState.hemiSky);
+      hemiLight.groundColor.copy(skyState.hemiGround);
+      hemiLight.intensity = skyState.hemiIntensity;
+
+      starMat.opacity = skyState.starOpacity;
+      stars.rotation.y += dt * 0.008;
+
+      mats.rvWindow.emissiveIntensity = skyState.windowEmissive + (isDoorOpen ? 0.35 : 0);
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Desert RV — 3D Diorama</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #120e0a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      position: relative;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      outline: none;
+    }
+    /* Loading Overlay */
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: #110d0a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.8s;
+      color: #e6d3b3;
+    }
+    #loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 2px solid rgba(230, 211, 179, 0.15);
+      border-top-color: #e6a145;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin-bottom: 16px;
+    }
+    .loader-text {
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      font-weight: 600;
+      color: #d8c3a5;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    /* UI Overlays */
+    .ui-header {
+      position: fixed;
+      top: max(18px, env(safe-area-inset-top, 18px));
+      left: max(20px, env(safe-area-inset-left, 20px));
+      right: 20px;
+      pointer-events: none;
+      z-index: 10;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+    }
+    .title {
+      font-size: clamp(18px, 4.5vw, 24px);
+      font-weight: 700;
+      color: #fdf6e9;
+      letter-spacing: 0.02em;
+      line-height: 1.15;
+    }
+    .subtitle {
+      font-size: clamp(11px, 2.8vw, 13px);
+      font-weight: 400;
+      color: rgba(253, 246, 233, 0.78);
+      margin-top: 3px;
+      letter-spacing: 0.02em;
+    }
+    .ui-footer {
+      position: fixed;
+      bottom: max(18px, env(safe-area-inset-bottom, 18px));
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .hint-pill {
+      background: rgba(18, 14, 10, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 240, 215, 0.14);
+      color: rgba(253, 246, 233, 0.9);
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: clamp(10.5px, 2.8vw, 12px);
+      letter-spacing: 0.03em;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+      white-space: nowrap;
+    }
+  </style>
+
+  <!-- Pinned Three.js 0.160.0 CDN Import Map -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="loader">
+    <div class="spinner"></div>
+    <div class="loader-text">CRAFTING MINIATURE</div>
+  </div>
+
+  <div class="ui-header">
+    <div class="title">Desert RV</div>
+    <div class="subtitle">a tiny scene inspired by Breaking Bad</div>
+  </div>
+
+  <div class="ui-footer">
+    <div class="hint-pill">Tap the RV door - tap the sky for night</div>
+  </div>
+
+  <div id="canvas-container"></div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // =========================================================================
+    // 1. SCENE, CAMERA & RENDERER SETUP
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xe89b6c, 0.015);
+
+    const camera = new THREE.PerspectiveCamera(
+      42,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      160
+    );
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enablePan = false;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.55;
+    controls.target.set(0, 0.55, 0);
+    controls.minPolarAngle = 0.25;
+    controls.maxPolarAngle = Math.PI * 0.47;
+    controls.minDistance = 6.2;
+    controls.maxDistance = 17.5;
+
+    function updateCameraForAspect() {
+      const aspect = window.innerWidth / window.innerHeight;
+      camera.aspect = aspect;
+      camera.updateProjectionMatrix();
+      // Pull camera slightly further back on narrow portrait screens (e.g. 320px width)
       const dist = aspect < 0.75 ? 12.6 : aspect < 1.1 ? 10.6 : 9.2;
       const dir = camera.position.clone().sub(controls.target).normalize();
       if (dir.lengthSq() < 0.001) dir.set(0.7, 0.42, 0.78).normalize();
