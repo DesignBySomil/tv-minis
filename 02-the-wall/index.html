@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>The Wall — 3D Diorama</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0b1119;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      position: relative;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      outline: none;
+    }
+    /* Minimal Elegant Dark Loading Overlay */
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: #0a0f16;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.8s;
+      color: #d8e6f2;
+    }
+    #loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 2px solid rgba(190, 220, 245, 0.15);
+      border-top-color: #7cc4ff;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin-bottom: 16px;
+    }
+    .loader-text {
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      font-weight: 600;
+      color: #b5cde0;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    /* Unobtrusive UI Overlays */
+    .ui-header {
+      position: fixed;
+      top: max(18px, env(safe-area-inset-top, 18px));
+      left: max(20px, env(safe-area-inset-left, 20px));
+      right: 20px;
+      pointer-events: none;
+      z-index: 10;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.65);
+    }
+    .title {
+      font-size: clamp(18px, 4.5vw, 24px);
+      font-weight: 700;
+      color: #f0f7ff;
+      letter-spacing: 0.03em;
+      line-height: 1.15;
+    }
+    .subtitle {
+      font-size: clamp(11px, 2.8vw, 13px);
+      font-weight: 400;
+      color: rgba(230, 242, 255, 0.78);
+      margin-top: 3px;
+      letter-spacing: 0.02em;
+    }
+    .ui-footer {
+      position: fixed;
+      bottom: max(18px, env(safe-area-inset-bottom, 18px));
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .hint-pill {
+      background: rgba(11, 17, 25, 0.58);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(195, 225, 255, 0.16);
+      color: rgba(240, 248, 255, 0.92);
+      padding: 7px 15px;
+      border-radius: 999px;
+      font-size: clamp(10.5px, 2.8vw, 12px);
+      letter-spacing: 0.03em;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      white-space: nowrap;
+    }
+  </style>
+
+  <!-- Pinned Three.js 0.160.0 CDN Import Map -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="loader">
+    <div class="spinner"></div>
+    <div class="loader-text">CRAFTING MINIATURE</div>
+  </div>
+
+  <div class="ui-header">
+    <div class="title">The Wall</div>
+    <div class="subtitle">a tiny scene inspired by Game of Thrones</div>
+  </div>
+
+  <div class="ui-footer">
+    <div class="hint-pill">Tap the lift - tap the sky for snow</div>
+  </div>
+
+  <div id="canvas-container"></div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // =========================================================================
+    // 1. SCENE, CAMERA & RENDERER SETUP
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xbad4e8, 0.014);
+
+    const camera = new THREE.PerspectiveCamera(
+      42,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      160
+    );
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enablePan = false;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.48;
+    controls.target.set(0, 1.45, 0.3);
+    controls.minPolarAngle = 0.25;
+    controls.maxPolarAngle = Math.PI * 0.47;
+    controls.minDistance = 7.2;
+    controls.maxDistance = 18.5;
+
+    function updateCameraForAspect() {
+      const aspect = window.innerWidth / window.innerHeight;
+      camera.aspect = aspect;
+      camera.updateProjectionMatrix();
+      const dist = aspect < 0.75 ? 17.5 : aspect < 1.1 ? 14.5 : 12.0;
+      const dir = camera.position.clone().sub(controls.target).normalize();
+      if (dir.lengthSq() < 0.001) dir.set(0.55, 0.38, 0.78).normalize();
+      camera.position.copy(controls.target).addScaledVector(dir, dist);
+    }
+    camera.position.set(5.8, 4.4, 8.8);
+    updateCameraForAspect();
+
+    // =========================================================================
+    // 2. LIGHTING & SKY PRESETS (CLEAR DAY / SNOWFALL BLIZZARD / STARRY NIGHT)
+    // =========================================================================
+    const hemiLight = new THREE.HemisphereLight(0xdff0ff, 0x4f6880, 0.85);
+    hemiLight.position.set(0, 18, 0);
+    scene.add(hemiLight);
+
+    const sunLight = new THREE.DirectionalLight(0xeef7ff, 2.1);
+    sunLight.position.set(-9, 8.5, 10);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 1024;
+    sunLight.shadow.mapSize.height = 1024;
+    sunLight.shadow.camera.near = 2;
+    sunLight.shadow.camera.far = 32;
+    const d = 5.6;
+    sunLight.shadow.camera.left = -d;
+    sunLight.shadow.camera.right = d;
+    sunLight.shadow.camera.top = d;
+    sunLight.shadow.camera.bottom = -d;
+    sunLight.shadow.bias = -0.0006;
+    sunLight.shadow.normalBias = 0.025;
+    scene.add(sunLight);
+
+    // Subtle rim light from behind the ice wall to accentuate icy translucency
+    const iceBackLight = new THREE.DirectionalLight(0x6ec6ff, 0.9);
+    iceBackLight.position.set(4, 6, -12);
+    scene.add(iceBackLight);
+
+    // Warm point light along the top of the wall for night torches
+    const wallTopLight = new THREE.PointLight(0xff8c3b, 0.0, 7.5, 1.6);
+    wallTopLight.position.set(0, 4.35, -0.35);
+    scene.add(wallTopLight);
+
+    // Warm gate lantern light at the base tunnel
+    const gateLight = new THREE.PointLight(0xff9b42, 0.85, 3.2, 1.8);
+    gateLight.position.set(0.65, 0.45, 0.65);
+    scene.add(gateLight);
+
+    // Sky Dome Shader
+    const skyUniforms = {
+      uTopColor: { value: new THREE.Color(0x2b4c73) },
+      uMidColor: { value: new THREE.Color(0x7ca6c9) },
+      uBottomColor: { value: new THREE.Color(0xcce2f2) },
+      uSunPos: { value: new THREE.Vector3(-0.55, 0.24, -0.75).normalize() },
+      uSunColor: { value: new THREE.Color(0xf2f8ff) },
+      uSunSize: { value: 0.017 }
+    };
+
+    const skyMat = new THREE.ShaderMaterial({
+      uniforms: skyUniforms,
+      side: THREE.BackSide,
+      depthWrite: false,
+      vertexShader: `
+        varying vec3 vWorldPos;
+        void main() {
+          vec4 wp = modelMatrix * vec4(position, 1.0);
+          vWorldPos = wp.xyz;
+          gl_Position = projectionMatrix * viewMatrix * wp;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vWorldPos;
+        uniform vec3 uTopColor;
+        uniform vec3 uMidColor;
+        uniform vec3 uBottomColor;
+        uniform vec3 uSunPos;
+        uniform vec3 uSunColor;
+        uniform float uSunSize;
+
+        void main() {
+          vec3 dir = normalize(vWorldPos);
+          float h = clamp(dir.y, -0.2, 1.0);
+          vec3 col;
+          if (h < 0.24) {
+            col = mix(uBottomColor, uMidColor, smoothstep(-0.15, 0.24, h));
+          } else {
+            col = mix(uMidColor, uTopColor, smoothstep(0.24, 0.88, h));
+          }
+          float sunDot = max(dot(dir, normalize(uSunPos)), 0.0);
+          float disc = smoothstep(1.0 - uSunSize, 1.0 - uSunSize * 0.7, sunDot);
+          float halo = pow(sunDot, 12.0) * 0.35;
+          col += uSunColor * (disc * 1.1 + halo);
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `
+    });
+
+    const skyDome = new THREE.Mesh(new THREE.SphereGeometry(68, 32, 24), skyMat);
+    skyDome.name = 'skyDome';
+    scene.add(skyDome);
+
+    // Night Stars
+    const starCount = 240;
+    const starPositions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(Math.random() * 0.82 + 0.12);
+      const r = 60;
+      starPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      starPositions[i * 3 + 1] = r * Math.cos(phi);
+      starPositions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+    }
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    const starMat = new THREE.PointsMaterial({
+      color: 0xe8f4ff,
+      size: 0.42,
+      transparent: true,
+      opacity: 0.0,
+      depthWrite: false
+    });
+    const stars = new THREE.Points(starGeo, starMat);
+    scene.add(stars);
+
+    // 3 Weather/Sky Presets: 0 = Clear Cold Day, 1 = Snowfall Blizzard, 2 = Night with Stars & Torches
+    const SKY_PRESETS = [
+      {
+        name: 'Clear Cold Day',
+        top: new THREE.Color(0x284b73),
+        mid: new THREE.Color(0x7ca7cc),
+        bottom: new THREE.Color(0xd2e6f5),
+        fogColor: new THREE.Color(0xbad4e8),
+        fogDensity: 0.013,
+        sunColor: new THREE.Color(0xf5faff),
+        sunLightColor: new THREE.Color(0xeef7ff),
+        sunIntensity: 2.15,
+        sunPos: new THREE.Vector3(-9, 8.5, 10),
+        hemiSky: new THREE.Color(0xdff0ff),
+        hemiGround: new THREE.Color(0x4f6880),
+        hemiIntensity: 0.88,
+        starOpacity: 0.0,
+        sunSize: 0.017,
+        torchScale: 0.0,
+        torchLight: 0.0,
+        snowSpeed: 1.0,
+        snowWind: 0.25,
+        snowOpacity: 0.65
+      },
+      {
+        name: 'Snowfall Blizzard',
+        top: new THREE.Color(0x4c6073),
+        mid: new THREE.Color(0x7b90a3),
+        bottom: new THREE.Color(0xa9bac9),
+        fogColor: new THREE.Color(0x8fa3b5),
+        fogDensity: 0.036,
+        sunColor: new THREE.Color(0xc8d8e6),
+        sunLightColor: new THREE.Color(0xb8cde0),
+        sunIntensity: 1.15,
+        sunPos: new THREE.Vector3(-6, 7.0, 8),
+        hemiSky: new THREE.Color(0xa6b9c9),
+        hemiGround: new THREE.Color(0x4a5866),
+        hemiIntensity: 0.75,
+        starOpacity: 0.0,
+        sunSize: 0.026,
+        torchScale: 0.45,
+        torchLight: 0.6,
+        snowSpeed: 2.75,
+        snowWind: 1.85,
+        snowOpacity: 0.95
+      },
+      {
+        name: 'Night Watch',
+        top: new THREE.Color(0x040812),
+        mid: new THREE.Color(0x0d1b30),
+        bottom: new THREE.Color(0x182e4a),
+        fogColor: new THREE.Color(0x0d1a2b),
+        fogDensity: 0.018,
+        sunColor: new THREE.Color(0xd4e9ff),
+        sunLightColor: new THREE.Color(0x6ea2d6),
+        sunIntensity: 0.72,
+        sunPos: new THREE.Vector3(8, 10, -9),
+        hemiSky: new THREE.Color(0x2a4569),
+        hemiGround: new THREE.Color(0x121b26),
+        hemiIntensity: 0.45,
+        starOpacity: 0.95,
+        sunSize: 0.011,
+        torchScale: 1.0,
+        torchLight: 2.2,
+        snowSpeed: 0.85,
+        snowWind: 0.18,
+        snowOpacity: 0.55
+      }
+    ];
+
+    let currentSkyIndex = 0;
+    const skyState = {
+      top: SKY_PRESETS[0].top.clone(),
+      mid: SKY_PRESETS[0].mid.clone(),
+      bottom: SKY_PRESETS[0].bottom.clone(),
+      fogColor: SKY_PRESETS[0].fogColor.clone(),
+      fogDensity: SKY_PRESETS[0].fogDensity,
+      sunColor: SKY_PRESETS[0].sunColor.clone(),
+      sunLightColor: SKY_PRESETS[0].sunLightColor.clone(),
+      sunIntensity: SKY_PRESETS[0].sunIntensity,
+      sunPos: SKY_PRESETS[0].sunPos.clone(),
+      hemiSky: SKY_PRESETS[0].hemiSky.clone(),
+      hemiGround: SKY_PRESETS[0].hemiGround.clone(),
+      hemiIntensity: SKY_PRESETS[0].hemiIntensity,
+      starOpacity: SKY_PRESETS[0].starOpacity,
+      sunSize: SKY_PRESETS[0].sunSize,
+      torchScale: SKY_PRESETS[0].torchScale,
+      torchLight: SKY_PRESETS[0].torchLight,
+      snowSpeed: SKY_PRESETS[0].snowSpeed,
+      snowWind: SKY_PRESETS[0].snowWind,
+      snowOpacity: SKY_PRESETS[0].snowOpacity
+    };
+
+    // =========================================================================
+    // 3. SHARED MATERIALS
+    // =========================================================================
+    const mats = {
+      woodDark: new THREE.MeshStandardMaterial({
+        color: 0x24150e,
+        roughness: 0.46,
+        metalness: 0.08
+      }),
+      woodTrim: new THREE.MeshStandardMaterial({
+        color: 0x160c08,
+        roughness: 0.36,
+        metalness: 0.14
+      }),
+      brassPlaque: new THREE.MeshStandardMaterial({
+        color: 0xc99b49,
+        roughness: 0.32,
+        metalness: 0.82
+      }),
+      snowGround: new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        roughness: 0.85,
+        metalness: 0.02,
+        flatShading: true
+      }),
+      iceWall: new THREE.MeshPhysicalMaterial({
+        vertexColors: true,
+        roughness: 0.24,
+        metalness: 0.06,
+        transmission: 0.22,
+        ior: 1.31,
+        reflectivity: 0.65,
+        emissive: 0x1a4b75,
+        emissiveIntensity: 0.18,
+        transparent: true,
+        opacity: 0.94,
+        flatShading: true
+      }),
+      scaffoldingWood: new THREE.MeshStandardMaterial({
+        color: 0x4a3222,
+        roughness: 0.85,
+        flatShading: true
+      }),
+      cageWood: new THREE.MeshStandardMaterial({
+        color: 0x5c3d28,
+        roughness: 0.8,
+        flatShading: true
+      }),
+      ironDark: new THREE.MeshStandardMaterial({
+        color: 0x222629,
+        roughness: 0.5,
+        metalness: 0.65
+      }),
+      gateTunnelDark: new THREE.MeshBasicMaterial({
+        color: 0x06090e
+      }),
+      cloakBlack: new THREE.MeshStandardMaterial({
+        color: 0x14171c,
+        roughness: 0.92,
+        flatShading: true
+      }),
+      pineBark: new THREE.MeshStandardMaterial({
+        color: 0x3b281d,
+        roughness: 0.9
+      }),
+      pineNeedles: new THREE.MeshStandardMaterial({
+        color: 0x1f3b2c,
+        roughness: 0.85,
+        flatShading: true
+      }),
+      pineSnow: new THREE.MeshStandardMaterial({
+        color: 0xeaf4fc,
+        roughness: 0.75,
+        flatShading: true
+      }),
+      rockGray: new THREE.MeshStandardMaterial({
+        color: 0x4d5b69,
+        roughness: 0.88,
+        flatShading: true
+      }),
+      torchFlame: new THREE.MeshBasicMaterial({
+        color: 0xffaa33
+      }),
+      torchGlow: new THREE.MeshBasicMaterial({
+        color: 0xff6a00,
+        transparent: true,
+        opacity: 0.48,
+        depthWrite: false
+      }),
+      dragonSilhouette: new THREE.MeshStandardMaterial({
+        color: 0x121822,
+        roughness: 0.6,
+        metalness: 0.2,
+        flatShading: true
+      })
+    };
+
+    // =========================================================================
+    // 4. DARK WOODEN PEDESTAL & SNOW-COVERED BASE
+    // =========================================================================
+    const dioramaGroup = new THREE.Group();
+    scene.add(dioramaGroup);
+
+    const pedestalGroup = new THREE.Group();
+    const baseMain = new THREE.Mesh(
+      new THREE.CylinderGeometry(4.45, 4.65, 0.72, 48),
+      mats.woodDark
+    );
+    baseMain.position.y = -0.44;
+    baseMain.receiveShadow = true;
+    pedestalGroup.add(baseMain);
+
+    const baseLip = new THREE.Mesh(
+      new THREE.CylinderGeometry(4.62, 4.55, 0.14, 48),
+      mats.woodTrim
+    );
+    baseLip.position.y = -0.09;
+    pedestalGroup.add(baseLip);
+
+    const baseFoot = new THREE.Mesh(
+      new THREE.CylinderGeometry(4.78, 4.88, 0.18, 48),
+      mats.woodTrim
+    );
+    baseFoot.position.y = -0.82;
+    pedestalGroup.add(baseFoot);
+
+    const plaque = new THREE.Mesh(
+      new THREE.BoxGeometry(0.95, 0.24, 0.08),
+      mats.brassPlaque
+    );
+    plaque.position.set(0, -0.44, 4.58);
+    plaque.rotation.x = -0.08;
+    pedestalGroup.add(plaque);
+    dioramaGroup.add(pedestalGroup);
+
+    // Snow surface height helper
+    function getSnowHeight(x, z) {
+      const r = Math.hypot(x, z);
+      let h =
+        Math.sin(x * 0.7 + 0.3) * Math.cos(z * 0.65 - 0.4) * 0.12 +
+        Math.sin((x - z) * 1.3) * 0.04;
+
+      // Subtle path leading from gate tunnel (x = 0.65, z = 0.4..3.5)
+      if (z > 0.2 && z < 3.8) {
+        const pathDist = Math.abs(x - (0.65 + Math.sin(z * 0.6) * 0.18));
+        const rut = Math.max(0, 1.0 - pathDist / 0.35);
+        h -= rut * rut * 0.055;
+      }
+
+      const edgeTaper = THREE.MathUtils.smoothstep(r, 3.85, 4.36);
+      return h * (1.0 - edgeTaper);
+    }
+
+    const snowGeo = new THREE.CylinderGeometry(4.36, 4.4, 0.36, 56, 22);
+    const snowPos = snowGeo.attributes.position;
+    const snowColors = new Float32Array(snowPos.count * 3);
+    const colSnowPure = new THREE.Color(0xf2f8ff);
+    const colSnowShade = new THREE.Color(0xc3daf0);
+    const colPath = new THREE.Color(0x95afc7);
+    const tmpCol = new THREE.Color();
+
+    for (let i = 0; i < snowPos.count; i++) {
+      const vx = snowPos.getX(i);
+      const vy = snowPos.getY(i);
+      const vz = snowPos.getZ(i);
+
+      if (vy > 0) {
+        const h = getSnowHeight(vx, vz);
+        snowPos.setY(i, vy + h);
+
+        let pathFactor = 0;
+        if (vz > 0.2 && vz < 3.8) {
+          const pd = Math.abs(vx - (0.65 + Math.sin(vz * 0.6) * 0.18));
+          pathFactor = Math.max(0, 1.0 - pd / 0.38);
+        }
+
+        const n = 0.5 + 0.35 * Math.sin(vx * 1.2 + vz * 1.1) + 0.15 * Math.cos(vx * 2.5);
+        tmpCol.copy(colSnowShade).lerp(colSnowPure, THREE.MathUtils.clamp(n, 0, 1));
+        tmpCol.lerp(colPath, pathFactor * 0.55);
+
+        snowColors[i * 3] = tmpCol.r;
+        snowColors[i * 3 + 1] = tmpCol.g;
+        snowColors[i * 3 + 2] = tmpCol.b;
+      } else {
+        snowColors[i * 3] = colSnowShade.r;
+        snowColors[i * 3 + 1] = colSnowShade.g;
+        snowColors[i * 3 + 2] = colSnowShade.b;
+      }
+    }
+    snowGeo.setAttribute('color', new THREE.BufferAttribute(snowColors, 3));
+    snowGeo.computeVertexNormals();
+
+    const snowMesh = new THREE.Mesh(snowGeo, mats.snowGround);
+    snowMesh.position.y = -0.15;
+    snowMesh.receiveShadow = true;
+    dioramaGroup.add(snowMesh);
+
+    // =========================================================================
+    // 5. MASSIVE FACETED PALE-BLUE ICE WALL (SPANS FULL DIORAMA DIAMETER)
+    // =========================================================================
+    const wallRadius = 4.31;
+    const wallCenterZ = -0.55;
+    const wallHeight = 3.95;
+
+    const wallGeo = new THREE.BoxGeometry(8.6, wallHeight, 1.85, 38, 16, 6);
+    const wPos = wallGeo.attributes.position;
+    const wColors = new Float32Array(wPos.count * 3);
+
+    const colIceBase = new THREE.Color(0x5da4d6);
+    const colIceMid = new THREE.Color(0xa6d8f5);
+    const colIceCrest = new THREE.Color(0xebf7ff);
+
+    // Deterministic pseudo-noise for organic ice facets
+    function pseudoHash(a, b, c) {
+      return Math.sin(a * 12.9898 + b * 78.233 + c * 37.719) * 43758.5453 % 1;
+    }
+
+    for (let i = 0; i < wPos.count; i++) {
+      let x = wPos.getX(i);
+      let y = wPos.getY(i) + wallHeight * 0.5; // 0 at bottom, wallHeight at top
+      let z = wPos.getZ(i) + wallCenterZ;
+
+      const hNorm = THREE.MathUtils.clamp(y / wallHeight, 0, 1);
+
+      // Taper wall thickness slightly as it rises
+      const zLocal = z - wallCenterZ;
+      const taper = 1.0 - hNorm * 0.28;
+      z = wallCenterZ + zLocal * taper;
+
+      // Craggy faceted ice displacement on front & back faces (keep elevator shaft around x = -0.55 flatter)
+      const liftClearance = THREE.MathUtils.smoothstep(Math.abs(x - -0.55), 0.15, 0.55);
+      if (Math.abs(zLocal) > 0.2 && y > 0.05) {
+        const facet =
+          Math.sin(x * 3.1 + y * 2.4) * 0.09 +
+          Math.cos(x * 7.2 - y * 4.8) * 0.045 +
+          pseudoHash(Math.round(x * 4), Math.round(y * 4), Math.round(z * 4)) * 0.06;
+        z += facet * (0.35 + 0.65 * liftClearance);
+      }
+
+      // Jagged top ridge
+      if (hNorm > 0.82) {
+        const ridge =
+          Math.sin(x * 2.3) * 0.14 +
+          Math.cos(x * 5.7 + z * 3.2) * 0.09 +
+          Math.sin(x * 11.0) * 0.04;
+        y += ridge * ((hNorm - 0.82) / 0.18);
+      }
+
+      // Clamp precisely to circular diorama boundary so wall spans full chord
+      const maxXAtZ = Math.sqrt(Math.max(0.01, wallRadius * wallRadius - z * z));
+      if (Math.abs(x) > maxXAtZ) {
+        x = Math.sign(x) * maxXAtZ;
+      }
+      const r = Math.hypot(x, z);
+      if (r > wallRadius) {
+        const scale = wallRadius / r;
+        x *= scale;
+        z *= scale;
+      }
+
+      wPos.setXYZ(i, x, y, z);
+
+      // Vertical gradient from deep glacial blue at base to frosty white crest
+      const cMix = THREE.MathUtils.clamp(hNorm + pseudoHash(i, x, y) * 0.08, 0, 1);
+      if (cMix < 0.55) {
+        tmpCol.copy(colIceBase).lerp(colIceMid, cMix / 0.55);
+      } else {
+        tmpCol.copy(colIceMid).lerp(colIceCrest, (cMix - 0.55) / 0.45);
+      }
+      wColors[i * 3] = tmpCol.r;
+      wColors[i * 3 + 1] = tmpCol.g;
+      wColors[i * 3 + 2] = tmpCol.b;
+    }
+
+    wallGeo.setAttribute('color', new THREE.BufferAttribute(wColors, 3));
+    wallGeo.computeVertexNormals();
+
+    const iceWall = new THREE.Mesh(wallGeo, mats.iceWall);
+    iceWall.castShadow = true;
+    iceWall.receiveShadow = true;
+    dioramaGroup.add(iceWall);
+
+    // =========================================================================
+    // 6. GATE TUNNEL, WOODEN ELEVATOR CAGE & WALL-TOP TORCHES
+    // =========================================================================
+    const gateX = 0.65;
+    const gateZ = 0.32;
+
+    const gateGroup = new THREE.Group();
+    gateGroup.position.set(gateX, 0.0, gateZ);
+    dioramaGroup.add(gateGroup);
+
+    // Heavy timber & stone arch framing the tunnel
+    const archOuter = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.42, 0.46, 0.34, 12, 1, false, 0, Math.PI),
+      mats.scaffoldingWood
+    );
+    archOuter.rotation.z = -Math.PI / 2;
+    archOuter.rotation.y = Math.PI / 2;
+    archOuter.position.set(0, 0.22, 0.02);
+    archOuter.castShadow = true;
+    gateGroup.add(archOuter);
+
+    // Dark recessed tunnel interior
+    const tunnelDark = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.32, 0.32, 0.36, 12, 1, false, 0, Math.PI),
+      mats.gateTunnelDark
+    );
+    tunnelDark.rotation.z = -Math.PI / 2;
+    tunnelDark.rotation.y = Math.PI / 2;
+    tunnelDark.position.set(0, 0.2, 0.03);
+    gateGroup.add(tunnelDark);
+
+    // Iron portcullis bars inside tunnel arch
+    const barGeo = new THREE.CylinderGeometry(0.014, 0.014, 0.46, 6);
+    for (let b = -2; b <= 2; b++) {
+      const bar = new THREE.Mesh(barGeo, mats.ironDark);
+      bar.position.set(b * 0.09, 0.24, 0.14);
+      gateGroup.add(bar);
+    }
+
+    // Elevator Gantry & Wooden Lift Cage (Positioned at x = -0.55 on south wall face)
+    const liftX = -0.55;
+    const liftFaceZ = 0.38;
+    const liftMinY = 0.28;
+    const liftMaxY = 3.45;
+
+    const gantryGroup = new THREE.Group();
+    gantryGroup.position.set(liftX, 0, liftFaceZ);
+    dioramaGroup.add(gantryGroup);
+
+    // Two vertical guide rails up the face of the Wall
+    const railGeo = new THREE.BoxGeometry(0.045, 3.85, 0.045);
+    const railLeft = new THREE.Mesh(railGeo, mats.scaffoldingWood);
+    railLeft.position.set(-0.22, 1.92, -0.06);
+    const railRight = new THREE.Mesh(railGeo, mats.scaffoldingWood);
+    railRight.position.set(0.22, 1.92, -0.06);
+    gantryGroup.add(railLeft, railRight);
+
+    // Cantilevered wooden crane beam at top of the Wall
+    const craneBeamL = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.08, 0.55),
+      mats.scaffoldingWood
+    );
+    craneBeamL.position.set(-0.18, 3.92, -0.05);
+    const craneBeamR = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.08, 0.55),
+      mats.scaffoldingWood
+    );
+    craneBeamR.position.set(0.18, 3.92, -0.05);
+    const craneCross = new THREE.Mesh(
+      new THREE.BoxGeometry(0.48, 0.07, 0.08),
+      mats.scaffoldingWood
+    );
+    craneCross.position.set(0, 3.96, 0.16);
+    const pulleyWheel = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.09, 0.09, 0.05, 12),
+      mats.ironDark
+    );
+    pulleyWheel.rotation.z = Math.PI / 2;
+    pulleyWheel.position.set(0, 3.92, 0.14);
+    gantryGroup.add(craneBeamL, craneBeamR, craneCross, pulleyWheel);
+
+    // Dynamic Rope/Chain connecting top pulley to elevator cage
+    const ropeGeo = new THREE.CylinderGeometry(0.015, 0.015, 1.0, 6);
+    const liftRope = new THREE.Mesh(ropeGeo, mats.ironDark);
+    liftRope.position.set(0, 2.0, 0.14);
+    gantryGroup.add(liftRope);
+
+    // Interactive Wooden Elevator Cage
+    const elevatorCage = new THREE.Group();
+    elevatorCage.position.set(0, liftMinY, 0.14);
+    gantryGroup.add(elevatorCage);
+
+    const cageFloor = new THREE.Mesh(
+      new THREE.BoxGeometry(0.36, 0.045, 0.32),
+      mats.cageWood
+    );
+    cageFloor.castShadow = true;
+    cageFloor.name = 'liftCage';
+    elevatorCage.add(cageFloor);
+
+    const cageRoof = new THREE.Mesh(
+      new THREE.BoxGeometry(0.38, 0.045, 0.34),
+      mats.cageWood
+    );
+    cageRoof.position.y = 0.42;
+    cageRoof.castShadow = true;
+    cageRoof.name = 'liftCage';
+    elevatorCage.add(cageRoof);
+
+    const postGeo = new THREE.BoxGeometry(0.038, 0.42, 0.038);
+    const postCoords = [
+      [-0.15, 0.21, -0.13],
+      [0.15, 0.21, -0.13],
+      [-0.15, 0.21, 0.13],
+      [0.15, 0.21, 0.13]
+    ];
+    postCoords.forEach(([px, py, pz]) => {
+      const post = new THREE.Mesh(postGeo, mats.cageWood);
+      post.position.set(px, py, pz);
+      post.castShadow = true;
+      post.name = 'liftCage';
+      elevatorCage.add(post);
+    });
+
+    // Mid-height wooden safety rail around cage
+    const cageRail = new THREE.Mesh(
+      new THREE.BoxGeometry(0.37, 0.05, 0.33),
+      mats.scaffoldingWood
+    );
+    cageRail.position.y = 0.16;
+    cageRail.name = 'liftCage';
+    elevatorCage.add(cageRail);
+
+    // Tiny warm lantern hanging inside the lift cage
+    const cageLantern = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(0.045, 0),
+      mats.torchFlame
+    );
+    cageLantern.position.set(0, 0.32, 0);
+    cageLantern.name = 'liftCage';
+    elevatorCage.add(cageLantern);
+
+    // Generous invisible tap target around the cage and shaft for effortless mobile clicking
+    const cageHitbox = new THREE.Mesh(
+      new THREE.BoxGeometry(0.95, 0.95, 0.75),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    cageHitbox.position.set(0, 0.22, 0);
+    cageHitbox.name = 'liftCage';
+    elevatorCage.add(cageHitbox);
+
+    // Tiny Torches along the top ridge of the Wall (glow at night & during blizzard)
+    const torchGroup = new THREE.Group();
+    dioramaGroup.add(torchGroup);
+    const torchFlames = [];
+    const torchXPositions = [-3.2, -2.1, -1.1, 0.1, 1.15, 2.2, 3.25];
+    const torchPostGeo = new THREE.CylinderGeometry(0.02, 0.025, 0.18, 6);
+    const flameGeo = new THREE.ConeGeometry(0.055, 0.15, 6);
+    const haloGeo = new THREE.SphereGeometry(0.14, 8, 8);
+
+    torchXPositions.forEach((tx, idx) => {
+      const tHolder = new THREE.Group();
+      tHolder.position.set(tx, 3.96 + Math.sin(tx * 2.3) * 0.08, -0.25);
+
+      const post = new THREE.Mesh(torchPostGeo, mats.ironDark);
+      post.position.y = 0.08;
+      tHolder.add(post);
+
+      const flameCluster = new THREE.Group();
+      flameCluster.position.y = 0.2;
+      flameCluster.scale.setScalar(0.001);
+
+      const flame = new THREE.Mesh(flameGeo, mats.torchFlame);
+      const halo = new THREE.Mesh(haloGeo, mats.torchGlow);
+      flameCluster.add(flame, halo);
+
+      tHolder.add(flameCluster);
+      torchGroup.add(tHolder);
+      torchFlames.push({ group: flameCluster, phase: idx * 1.37 });
+    });
+
+    // =========================================================================
+    // 7. BLACK CLOAKED FIGURES, SNOWY PINE TREES & ROCKS
+    // =========================================================================
+    // Simple abstract capsule/cone silhouettes (no faces)
+    function createCloakedFigure(scale = 1) {
+      const fig = new THREE.Group();
+      const cloak = new THREE.Mesh(
+        new THREE.ConeGeometry(0.11 * scale, 0.34 * scale, 8),
+        mats.cloakBlack
+      );
+      cloak.position.y = 0.17 * scale;
+      cloak.castShadow = true;
+      fig.add(cloak);
+
+      const shoulders = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.065 * scale, 0.095 * scale, 0.14 * scale, 8),
+        mats.cloakBlack
+      );
+      shoulders.position.y = 0.27 * scale;
+      fig.add(shoulders);
+
+      const hood = new THREE.Mesh(
+        new THREE.SphereGeometry(0.055 * scale, 8, 6),
+        mats.cloakBlack
+      );
+      hood.position.y = 0.37 * scale;
+      hood.castShadow = true;
+      fig.add(hood);
+
+      return fig;
+    }
+
+    const figureSpecs = [
+      // Guards & brothers at the base near the gate & path
+      { x: 0.42, z: 0.92, ry: 0.3, s: 1.0, onWall: false },
+      { x: 0.88, z: 1.15, ry: -0.5, s: 0.96, onWall: false },
+      { x: 0.58, z: 2.05, ry: 0.15, s: 1.02, onWall: false },
+      { x: -0.35, z: 1.35, ry: 0.8, s: 0.95, onWall: false },
+      // Tiny sentinel watching from the top of the Wall
+      { x: -0.12, z: -0.22, ry: 0.0, s: 0.88, onWall: true }
+    ];
+
+    figureSpecs.forEach((f) => {
+      const fig = createCloakedFigure(f.s);
+      const yPos = f.onWall ? 3.96 : getSnowHeight(f.x, f.z) - 0.01;
+      fig.position.set(f.x, yPos, f.z);
+      fig.rotation.y = f.ry;
+      dioramaGroup.add(fig);
+    });
+
+    // Snow-laden Pine Trees
+    function createSnowPine(scale = 1) {
+      const tree = new THREE.Group();
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05 * scale, 0.08 * scale, 0.38 * scale, 7),
+        mats.pineBark
+      );
+      trunk.position.y = 0.19 * scale;
+      trunk.castShadow = true;
+      tree.add(trunk);
+
+      const tiers = [
+        { r: 0.38, h: 0.52, y: 0.48 },
+        { r: 0.3, h: 0.46, y: 0.78 },
+        { r: 0.21, h: 0.4, y: 1.05 }
+      ];
+      tiers.forEach((t) => {
+        const foliage = new THREE.Mesh(
+          new THREE.ConeGeometry(t.r * scale, t.h * scale, 7),
+          mats.pineNeedles
+        );
+        foliage.position.y = t.y * scale;
+        foliage.castShadow = true;
+        foliage.receiveShadow = true;
+        tree.add(foliage);
+
+        const snowCap = new THREE.Mesh(
+          new THREE.ConeGeometry(t.r * 0.94 * scale, t.h * 0.58 * scale, 7),
+          mats.pineSnow
+        );
+        snowCap.position.y = (t.y + t.h * 0.23) * scale;
+        snowCap.rotation.y = 0.25;
+        tree.add(snowCap);
+      });
+
+      return tree;
+    }
+
+    const pineSpecs = [
+      // South of the Wall
+      { x: -2.45, z: 1.55, s: 1.15, ry: 0.4 },
+      { x: -1.85, z: 2.35, s: 0.88, ry: 1.7 },
+      { x: -2.95, z: 0.75, s: 0.95, ry: 2.3 },
+      { x: 2.25, z: 1.65, s: 1.1, ry: 0.9 },
+      { x: 2.75, z: 0.95, s: 0.85, ry: 3.1 },
+      { x: 1.85, z: 2.55, s: 0.78, ry: 1.2 },
+      // Haunted Forest North of the Wall
+      { x: -2.15, z: -2.35, s: 1.18, ry: 0.5 },
+      { x: -1.25, z: -2.95, s: 0.92, ry: 2.1 },
+      { x: 1.55, z: -2.65, s: 1.08, ry: 1.4 },
+      { x: 2.45, z: -2.05, s: 0.86, ry: 2.8 },
+      { x: 0.25, z: -3.15, s: 0.95, ry: 0.2 }
+    ];
+
+    pineSpecs.forEach((p) => {
+      const tree = createSnowPine(p.s);
+      tree.position.set(p.x, getSnowHeight(p.x, p.z) - 0.02, p.z);
+      tree.rotation.y = p.ry;
+      dioramaGroup.add(tree);
+    });
+
+    // Jagged snow-dusted outcrops
+    const rockGeo = new THREE.DodecahedronGeometry(1, 0);
+    const rockSpecs = [
+      { x: -1.45, z: 1.15, sx: 0.34, sy: 0.22, sz: 0.28, ry: 0.5 },
+      { x: 1.55, z: 1.25, sx: 0.4, sy: 0.26, sz: 0.32, ry: 1.8 },
+      { x: -2.35, z: 2.25, sx: 0.28, sy: 0.18, sz: 0.25, ry: 2.4 },
+      { x: -0.65, z: -2.45, sx: 0.44, sy: 0.28, sz: 0.35, ry: 0.9 },
+      { x: 1.95, z: -1.85, sx: 0.32, sy: 0.22, sz: 0.28, ry: 1.3 }
+    ];
+    rockSpecs.forEach((r) => {
+      const rock = new THREE.Mesh(rockGeo, mats.rockGray);
+      rock.scale.set(r.sx, r.sy, r.sz);
+      rock.position.set(r.x, getSnowHeight(r.x, r.z) + r.sy * 0.25, r.z);
+      rock.rotation.set(0.2, r.ry, 0.15);
+      rock.castShadow = true;
+      rock.receiveShadow = true;
+      dioramaGroup.add(rock);
+    });
+
+    // =========================================================================
+    // 8. STYLIZED DRAGON SILHOUETTE WITH FLAPPING WINGS
+    // =========================================================================
+    const dragonGroup = new THREE.Group();
+    scene.add(dragonGroup);
+
+    // Core body & elongated neck/tail
+    const dBody = new THREE.Mesh(
+      new THREE.ConeGeometry(0.11, 0.55, 6),
+      mats.dragonSilhouette
+    );
+    dBody.rotation.x = Math.PI / 2;
+    dragonGroup.add(dBody);
+
+    const dNeck = new THREE.Mesh(
+      new THREE.ConeGeometry(0.055, 0.38, 5),
+      mats.dragonSilhouette
+    );
+    dNeck.rotation.x = Math.PI * 0.42;
+    dNeck.position.set(0, 0.06, 0.38);
+    dragonGroup.add(dNeck);
+
+    const dHead = new THREE.Mesh(
+      new THREE.ConeGeometry(0.045, 0.16, 5),
+      mats.dragonSilhouette
+    );
+    dHead.rotation.x = Math.PI * 0.52;
+    dHead.position.set(0, 0.1, 0.58);
+    dragonGroup.add(dHead);
+
+    const dTail = new THREE.Mesh(
+      new THREE.ConeGeometry(0.05, 0.72, 5),
+      mats.dragonSilhouette
+    );
+    dTail.rotation.x = -Math.PI * 0.5;
+    dTail.position.set(0, 0, -0.58);
+    dragonGroup.add(dTail);
+
+    // Left & Right Swept Delta Wings attached to pivots for flapping
+    function createDragonWing(isLeft) {
+      const pivot = new THREE.Group();
+      const sign = isLeft ? 1 : -1;
+
+      const innerWing = new THREE.Mesh(
+        new THREE.BoxGeometry(0.58, 0.02, 0.34),
+        mats.dragonSilhouette
+      );
+      innerWing.position.set(sign * 0.28, 0, -0.02);
+      innerWing.rotation.y = sign * -0.22;
+      pivot.add(innerWing);
+
+      const outerWing = new THREE.Mesh(
+        new THREE.ConeGeometry(0.22, 0.56, 4),
+        mats.dragonSilhouette
+      );
+      outerWing.scale.set(1.0, 1.0, 0.12);
+      outerWing.rotation.z = sign * -Math.PI / 2;
+      outerWing.rotation.y = sign * -0.42;
+      outerWing.position.set(sign * 0.72, 0, -0.14);
+      pivot.add(outerWing);
+
+      return pivot;
+    }
+
+    const leftWingPivot = createDragonWing(true);
+    const rightWingPivot = createDragonWing(false);
+    dragonGroup.add(leftWingPivot, rightWingPivot);
+    dragonGroup.scale.setScalar(0.88);
+
+    // =========================================================================
+    // 9. DRIFTING SNOW PARTICLES (CAPPED COUNT FOR 60FPS MOBILE PERFORMANCE)
+    // =========================================================================
+    const SNOW_COUNT = 220;
+    const snowParticleGeo = new THREE.BufferGeometry();
+    const snowPositions = new Float32Array(SNOW_COUNT * 3);
+    const snowPhases = new Float32Array(SNOW_COUNT);
+
+    for (let i = 0; i < SNOW_COUNT; i++) {
+      const r = Math.sqrt(Math.random()) * 4.9;
+      const theta = Math.random() * Math.PI * 2;
+      snowPositions[i * 3] = Math.cos(theta) * r;
+      snowPositions[i * 3 + 1] = Math.random() * 5.8;
+      snowPositions[i * 3 + 2] = Math.sin(theta) * r;
+      snowPhases[i] = Math.random() * Math.PI * 2;
+    }
+
+    snowParticleGeo.setAttribute('position', new THREE.BufferAttribute(snowPositions, 3));
+    const snowParticleMat = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.095,
+      transparent: true,
+      opacity: 0.65,
+      depthWrite: false
+    });
+    const snowSystem = new THREE.Points(snowParticleGeo, snowParticleMat);
+    scene.add(snowSystem);
+
+    // =========================================================================
+    // 10. RAYCAST INTERACTIONS (TAP LIFT TO CLIMB/DESCEND, TAP SKY FOR WEATHER)
+    // =========================================================================
+    let isLiftAtTop = false;
+    let targetLiftY = liftMinY;
+    let currentLiftY = liftMinY;
+    let cageSwingImpulse = 0;
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let pointerDownPos = { x: 0, y: 0 };
+    let pointerDownTime = 0;
+
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      pointerDownPos.x = e.clientX;
+      pointerDownPos.y = e.clientY;
+      pointerDownTime = performance.now();
+    });
+
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      const dx = e.clientX - pointerDownPos.x;
+      const dy = e.clientY - pointerDownPos.y;
+      const dist = Math.hypot(dx, dy);
+      const elapsed = performance.now() - pointerDownTime;
+
+      // Ignore camera drags
+      if (dist > 9 || elapsed > 500) return;
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+
+      // 1. Check if the Wooden Elevator Cage was tapped
+      const liftHits = raycaster.intersectObjects(elevatorCage.children, false);
+      if (liftHits.length > 0) {
+        isLiftAtTop = !isLiftAtTop;
+        targetLiftY = isLiftAtTop ? liftMaxY : liftMinY;
+        cageSwingImpulse = 1.0;
+        return;
+      }
+
+      // 2. Check if tap missed the diorama body -> cycle sky / weather
+      const dioramaHits = raycaster.intersectObjects(dioramaGroup.children, true);
+      if (dioramaHits.length === 0) {
+        currentSkyIndex = (currentSkyIndex + 1) % SKY_PRESETS.length;
+      }
+    });
+
+    // =========================================================================
+    // 11. RESIZE & ANIMATION LOOP
+    // =========================================================================
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      updateCameraForAspect();
+    });
+
+    const clock = new THREE.Clock();
+    const nextDragonPos = new THREE.Vector3();
+
+    requestAnimationFrame(() => {
+      const loader = document.getElementById('loader');
+      if (loader) loader.classList.add('hidden');
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const dt = Math.min(clock.getDelta(), 0.1);
+      const elapsed = clock.elapsedTime;
+      controls.update();
+
+      // 1. Animate Elevator Cage climbing / descending slowly up the Wall face
+      const liftDiff = targetLiftY - currentLiftY;
+      if (Math.abs(liftDiff) > 0.002) {
+        const step = Math.sign(liftDiff) * Math.min(Math.abs(liftDiff), dt * 0.95);
+        currentLiftY += step;
+        pulleyWheel.rotation.x += step * 8.0;
+      }
+      elevatorCage.position.y = currentLiftY;
+
+      // Update rope length from top pulley (y = 3.92) to cage roof (currentLiftY + 0.42)
+      const ropeTop = 3.92;
+      const ropeBottom = currentLiftY + 0.42;
+      const ropeLen = Math.max(0.05, ropeTop - ropeBottom);
+      liftRope.scale.y = ropeLen;
+      liftRope.position.y = ropeBottom + ropeLen * 0.5;
+
+      // Subtle pendulum sway on the hanging wooden cage
+      if (cageSwingImpulse > 0.001) {
+        cageSwingImpulse = Math.max(0, cageSwingImpulse - dt * 1.4);
+      }
+      const movingFactor = THREE.MathUtils.clamp(Math.abs(liftDiff) * 2.0, 0, 1);
+      elevatorCage.rotation.z =
+        Math.sin(elapsed * 4.5) * (0.025 * movingFactor + 0.06 * cageSwingImpulse);
+
+      // 2. Stylized Dragon flying across the sky on a curved path with flapping wings
+      const dragonOrbitAngle = elapsed * 0.26;
+      const getDragonPath = (a, target) => {
+        const radiusX = 6.2;
+        const radiusZ = 4.8;
+        target.set(
+          Math.cos(a) * radiusX,
+          5.35 + Math.sin(a * 2.0) * 0.65,
+          Math.sin(a) * radiusZ - 0.5
+        );
+      };
+      getDragonPath(dragonOrbitAngle, dragonGroup.position);
+      getDragonPath(dragonOrbitAngle + 0.05, nextDragonPos);
+      dragonGroup.lookAt(nextDragonPos);
+      // Bank gently into the curved turn
+      dragonGroup.rotation.z += Math.sin(dragonOrbitAngle) * 0.22;
+
+      const flapAngle = Math.sin(elapsed * 6.8) * 0.48;
+      leftWingPivot.rotation.z = flapAngle;
+      rightWingPivot.rotation.z = -flapAngle;
+
+      // 3. Update Drifting Snow Particles
+      const posAttr = snowParticleGeo.attributes.position;
+      const speedMult = skyState.snowSpeed;
+      const windMult = skyState.snowWind;
+
+      for (let i = 0; i < SNOW_COUNT; i++) {
+        let sx = posAttr.getX(i);
+        let sy = posAttr.getY(i);
+        let sz = posAttr.getZ(i);
+        const phase = snowPhases[i];
+
+        sy -= (0.55 + (i % 5) * 0.08) * speedMult * dt;
+        sx += (Math.sin(elapsed * 1.2 + phase) * 0.22 + windMult * 0.45) * dt;
+        sz += Math.cos(elapsed * 1.0 + phase) * 0.18 * dt;
+
+        if (sy < 0.05) {
+          sy = 5.6 + Math.random() * 0.5;
+          const r = Math.sqrt(Math.random()) * 4.8;
+          const theta = Math.random() * Math.PI * 2;
+          sx = Math.cos(theta) * r;
+          sz = Math.sin(theta) * r;
+        }
+        posAttr.setXYZ(i, sx, sy, sz);
+      }
+      posAttr.needsUpdate = true;
+      snowParticleMat.opacity = skyState.snowOpacity;
+
+      // 4. Smoothly interpolate Sky, Fog, Sun, Stars & Wall-Top Torches
+      const targetPreset = SKY_PRESETS[currentSkyIndex];
+      const lerpSpeed = Math.min(1, dt * 3.0);
+
+      skyState.top.lerp(targetPreset.top, lerpSpeed);
+      skyState.mid.lerp(targetPreset.mid, lerpSpeed);
+      skyState.bottom.lerp(targetPreset.bottom, lerpSpeed);
+      skyState.fogColor.lerp(targetPreset.fogColor, lerpSpeed);
+      skyState.sunColor.lerp(targetPreset.sunColor, lerpSpeed);
+      skyState.sunLightColor.lerp(targetPreset.sunLightColor, lerpSpeed);
+      skyState.sunPos.lerp(targetPreset.sunPos, lerpSpeed);
+      skyState.hemiSky.lerp(targetPreset.hemiSky, lerpSpeed);
+      skyState.hemiGround.lerp(targetPreset.hemiGround, lerpSpeed);
+
+      skyState.fogDensity = THREE.MathUtils.lerp(skyState.fogDensity, targetPreset.fogDensity, lerpSpeed);
+      skyState.sunIntensity = THREE.MathUtils.lerp(skyState.sunIntensity, targetPreset.sunIntensity, lerpSpeed);
+      skyState.hemiIntensity = THREE.MathUtils.lerp(skyState.hemiIntensity, targetPreset.hemiIntensity, lerpSpeed);
+      skyState.starOpacity = THREE.MathUtils.lerp(skyState.starOpacity, targetPreset.starOpacity, lerpSpeed);
+      skyState.sunSize = THREE.MathUtils.lerp(skyState.sunSize, targetPreset.sunSize, lerpSpeed);
+      skyState.torchScale = THREE.MathUtils.lerp(skyState.torchScale, targetPreset.torchScale, lerpSpeed);
+      skyState.torchLight = THREE.MathUtils.lerp(skyState.torchLight, targetPreset.torchLight, lerpSpeed);
+      skyState.snowSpeed = THREE.MathUtils.lerp(skyState.snowSpeed, targetPreset.snowSpeed, lerpSpeed);
+      skyState.snowWind = THREE.MathUtils.lerp(skyState.snowWind, targetPreset.snowWind, lerpSpeed);
+      skyState.snowOpacity = THREE.MathUtils.lerp(skyState.snowOpacity, targetPreset.snowOpacity, lerpSpeed);
+
+      skyUniforms.uTopColor.value.copy(skyState.top);
+      skyUniforms.uMidColor.value.copy(skyState.mid);
+      skyUniforms.uBottomColor.value.copy(skyState.bottom);
+      skyUniforms.uSunColor.value.copy(skyState.sunColor);
+      skyUniforms.uSunPos.value.copy(skyState.sunPos).normalize();
+      skyUniforms.uSunSize.value = skyState.sunSize;
+
+      scene.fog.color.copy(skyState.fogColor);
+      scene.fog.density = skyState.fogDensity;
+
+      sunLight.color.copy(skyState.sunLightColor);
+      sunLight.intensity = skyState.sunIntensity;
+      sunLight.position.copy(skyState.sunPos);
+
+      hemiLight.color.copy(skyState.hemiSky);
+      hemiLight.groundColor.copy(skyState.hemiGround);
+      hemiLight.intensity = skyState.hemiIntensity;
+
+      starMat.opacity = skyState.starOpacity;
+      stars.rotation.y += dt * 0.008;
+
+      // Flicker torches along the top of the Wall
+      wallTopLight.intensity =
+        skyState.torchLight * (0.92 + Math.sin(elapsed * 13.0) * 0.08);
+      gateLight.intensity = 0.8 + Math.sin(elapsed * 11.0) * 0.1;
+
+      for (let i = 0; i < torchFlames.length; i++) {
+        const tf = torchFlames[i];
+        const flicker = 0.88 + 0.18 * Math.sin(elapsed * 14.0 + tf.phase);
+        const s = Math.max(0.001, skyState.torchScale * flicker);
+        tf.group.scale.set(s, s * (1.0 + 0.15 * Math.cos(elapsed * 18.0 + tf.phase)), s);
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
