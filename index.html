@@ -50,6 +50,70 @@ const scenes=[
  ["11-smoky-street","Smoky Street","Peaky Blinders","linear-gradient(160deg,#8f8578,#4a4438 55%,#191512)"],
  ["12-mdr-corridor","MDR Corridor","Severance","linear-gradient(160deg,#9fd4c8,#3f7a70 55%,#14302c)"]
 ];
+const BUILT=new Set(["01-desert-rv","02-the-wall"]);
+document.getElementById('grid').innerHTML=scenes.map(([slug,name,show,bg],i)=>{
+ const inner=`<div class="thumb" style="background:${bg}"></div>
+   <div class="meta"><div class="num">${String(i+1).padStart(2,'0')}</div>
+   <div class="name">${name}</div><div class="show">${show}</div></div>`;
+ return BUILT.has(slug)
+  ? `<a class="card" href="./${slug}/" data-scene="${slug}">${inner}</a>`
+  : `<div class="card soon" data-scene="${slug}">${inner}</div>`;
+}).join('');
+</script>
+</body>
+</html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TV Minis - twelve tiny worlds from famous shows</title>
+<meta name="theme-color" content="#0d0b09">
+<meta name="description" content="Twelve tiny interactive 3D dioramas inspired by famous TV shows.">
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box;margin:0}
+body{background:#0d0b09;color:#e8ddc9;font-family:Georgia,'Times New Roman',serif;min-height:100dvh;padding:48px 20px 64px;
+ background-image:radial-gradient(120% 80% at 50% 0%,#1c1712 0%,#0d0b09 60%)}
+header{max-width:860px;margin:0 auto 36px;text-align:center}
+h1{font-size:clamp(26px,6vw,40px);letter-spacing:.02em;font-weight:400}
+.sub{margin-top:10px;font-size:13px;letter-spacing:.28em;text-transform:uppercase;color:#9c8c6e}
+.grid{max-width:860px;margin:0 auto;display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr))}
+a.card{display:block;text-decoration:none;color:inherit;border:1px solid #2a241c;border-radius:14px;overflow:hidden;background:#14110d;transition:transform .25s ease,border-color .25s}
+a.card:hover{transform:translateY(-3px);border-color:#6b5b3e}
+.thumb{aspect-ratio:16/9;position:relative}
+.thumb::after{content:"";position:absolute;inset:0;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .4 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");opacity:.5;mix-blend-mode:overlay}
+.meta{padding:14px 16px 16px}
+.num{font-size:11px;letter-spacing:.3em;color:#8a7a5c}
+.name{font-size:19px;margin:4px 0 2px}
+.show{font-size:12.5px;color:#a5947a;font-style:italic}
+.soon{opacity:.45}
+.soon .name::after{content:" - soon";font-size:12px;color:#8a7a5c;font-style:italic}
+footer{max-width:860px;margin:44px auto 0;text-align:center;font-size:12px;color:#6f6350;line-height:1.7}
+</style>
+</head>
+<body>
+<header>
+  <h1>TV Minis</h1>
+  <div class="sub">twelve tiny worlds from famous shows</div>
+</header>
+<main class="grid" id="grid"></main>
+<footer>Original low-poly geometry, generated as open-source fan tributes.<br>No show logos, characters, fonts or audio.</footer>
+<script>
+const scenes=[
+ ["01-desert-rv","Desert RV","Breaking Bad","linear-gradient(160deg,#e8b06a,#a8662c 55%,#5c3a1e)"],
+ ["02-the-wall","The Wall","Game of Thrones","linear-gradient(160deg,#bcd8e8,#5f87a3 55%,#24384a)"],
+ ["03-central-perk","Central Perk","Friends","linear-gradient(160deg,#d9a05b,#8a5a33 55%,#3d2b1a)"],
+ ["04-red-light","Red Light, Green Light","Squid Game","linear-gradient(160deg,#e8a0b4,#b0486a 55%,#46203a)"],
+ ["05-overgrown-street","Overgrown Street","The Last of Us","linear-gradient(160deg,#9db87c,#5a7040 55%,#26301c)"],
+ ["06-split-dorm","Split Dorm","Wednesday","linear-gradient(90deg,#3a3a3e 0 50%,#7a4ad0 50% 100%)"],
+ ["07-the-mint","The Mint","Money Heist","linear-gradient(160deg,#d8c690,#8f7a3a 55%,#3f3416)"],
+ ["08-cave-of-time","Cave of Time","Dark","linear-gradient(160deg,#7d8ea0,#3d4a58 55%,#141c24)"],
+ ["09-baker-street","221B Baker Street","Sherlock","linear-gradient(160deg,#b08a5e,#6b4b2e 55%,#2b1d10)"],
+ ["10-office-floor","The Office Floor","The Office","linear-gradient(160deg,#a8b8c0,#68808c 55%,#2c3a42)"],
+ ["11-smoky-street","Smoky Street","Peaky Blinders","linear-gradient(160deg,#8f8578,#4a4438 55%,#191512)"],
+ ["12-mdr-corridor","MDR Corridor","Severance","linear-gradient(160deg,#9fd4c8,#3f7a70 55%,#14302c)"]
+];
 document.getElementById('grid').innerHTML=scenes.map(([slug,name,show,bg],i)=>`
  <a class="card" href="./${slug}/" data-scene="${slug}">
    <div class="thumb" style="background:${bg}"></div>
