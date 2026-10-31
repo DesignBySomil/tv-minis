@@ -1,0 +1,8 @@
+RV 3D model: "Generic class A motorhome"
+Source: https://www.innerscene.com/tools/library/3d-parts/generic-class-a-motorhome-33f075ee
+Author: Innerscene (original model)
+License: CC0 1.0 Universal / public domain - https://creativecommons.org/publicdomain/zero/1.0/
+Free to use, modify and redistribute for any purpose, including commercially. No attribution required.
+
+Modifications: interior cabin meshes removed; geometry welded, simplified and
+quantized with gltf-transform. Generic design - no logos, brands or third-party marks.
