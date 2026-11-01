@@ -303,7 +303,7 @@ monitor(deskD, 0, -0.18, true);  mug(deskD, 0.5, 0.05, MAT.mugWhite); papers(des
 const jelloG = new THREE.Group();
 jelloG.position.set(2.05, DESK_H+0.03, 1.45);
 base.add(jelloG);
-const jello = rbox(0.36, 0.22, 0.3, 0.06, MAT.jello, 0, 0.11, 0, 0, jelloG);
+const jello = rbox(0.46, 0.28, 0.4, 0.07, MAT.jello, 0, 0.14, 0, 0, jelloG);
 /* stapler suspended inside */
 box(0.18, 0.035, 0.06, MAT.stapler, 0, 0.11, 0, 0.15, jelloG);
 const stapTop = box(0.18, 0.025, 0.05, MAT.stapler, 0, 0.15, 0.01, 0.15, jelloG);
@@ -500,13 +500,20 @@ function tick(){
   for (const s of screenMats) s.m.color.setHex(s.on ? (nightK > 0.4 ? 0x8ec8ff : 0x7ab8e8) : 0x1a1d22);
   exitMat.color.setHex(0x3aff7a);
 
-  /* jello wobble */
-  if (wobbleT < 3){
+  /* jello wobble: squash/stretch scale + tilt, anchored at base */
+  if (wobbleT < 3.4){
     wobbleT += rawDt;
-    const w = Math.sin(wobbleT*16) * 0.34 * Math.exp(-wobbleT*1.1);
-    jelloG.rotation.z = w;
-    jelloG.rotation.x = Math.sin(wobbleT*13+1) * 0.22 * Math.exp(-wobbleT*1.1);
-  } else { jelloG.rotation.z = 0; jelloG.rotation.x = 0; }
+    const decay = Math.exp(-wobbleT*0.9);
+    const sq = Math.sin(wobbleT*14) * 0.42 * decay;
+    const sy = Math.max(0.45, 1 - sq);
+    jello.scale.set(1+sq*0.75, sy, 1+sq*0.75);
+    jello.position.y = 0.11*sy;
+    stapTop.rotation.z = 0.1 + Math.sin(wobbleT*11+0.6) * 0.35 * decay;
+    jelloG.rotation.z = Math.sin(wobbleT*14+0.5) * 0.16 * decay;
+  } else {
+    jello.scale.set(1,1,1); jello.position.y = 0.11;
+    stapTop.rotation.z = 0.1; jelloG.rotation.z = 0;
+  }
 
   /* copier scan + paper */
   if (scanT < 1.3){
