@@ -158,13 +158,13 @@ const GROUND = 0;
     const warm = x > 0.05;
     const tone = warm ? (0x9a6b48 + ((i%3)-1)*0x060402) : (0x6e6a70 + ((i%3)-1)*0x040404);
     const b = box(bw-0.035, 0.07, 6.9, M(tone,{roughness:0.85}));
-    b.position.set(x, GROUND-0.035, 0.4);
+    b.position.set(x, GROUND-0.012, 0.4);
     b.castShadow = false;
     scene.add(b);
     // board end seams
     for (let s=0;s<2;s++){
       const seam = box(bw-0.05, 0.012, 0.03, M(0x241c22,{roughness:1}));
-      seam.position.set(x, GROUND+0.009, -2.4 + ((i*1.7+s*2.9)%5.6));
+      seam.position.set(x, GROUND+0.025, -2.4 + ((i*1.7+s*2.9)%5.6));
       seam.castShadow = false;
       scene.add(seam);
     }
@@ -173,8 +173,8 @@ const GROUND = 0;
 
 /* ---------- walls: back (with circular window) + left return ---------- */
 const WALL_H = 3.55, WALL_T = 0.22, WALL_Z = -2.85;
-const wallM = M(0x54465a,{roughness:0.96});       // dusty plum plaster
-const wallML = M(0x453c46,{roughness:0.96});      // left half, greyed
+const wallM = M(0x685a70,{roughness:0.96});       // dusty plum plaster
+const wallML = M(0x564e58,{roughness:0.96});      // left half, greyed
 const wainsM = M(0x2c2230,{roughness:0.9});
 const windowGroup = new THREE.Group();
 {
@@ -223,7 +223,7 @@ let moonMesh, starPts;
   const bandCols = [0x9fb8d8, 0xc9d4de, 0xe6ddc8];
   for (let i=0;i<3;i++){
     const b = new THREE.Mesh(new THREE.PlaneGeometry(2.7, 1.06), new THREE.MeshBasicMaterial({color:bandCols[i], fog:false}));
-    b.position.set(0, 3.14 - i*1.05, WALL_Z-0.6);
+    b.position.set(0, 2.98 - i*1.02, WALL_Z-0.6);
     scene.add(b); skyBands.push(b);
   }
   moonMesh = new THREE.Mesh(new THREE.CircleGeometry(0.5, 24), new THREE.MeshBasicMaterial({color:0xf2ead0, fog:false, transparent:true, opacity:0}));
@@ -465,7 +465,7 @@ let fairyLight;
 }
 
 /* ---------- lights ---------- */
-const hemi = new THREE.HemisphereLight(0xcfd8e8, 0x4a3a48, 1.25);
+const hemi = new THREE.HemisphereLight(0xcfd8e8, 0x4a3a48, 1.6);
 scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff0d8, 1.6); // day: warm daylight through window
 sun.position.set(4.5, 7, 5.5);
@@ -503,11 +503,11 @@ scene.add(new THREE.Points(dustGeo, dustMat));
 /* ---------- states: window light + mood ---------- */
 const STATES = [
   { name:'day',
-    sky:[0x9fb8d8, 0xc9d4de, 0xe6ddc8], hemi:[0xcfd8e8, 0x4a3a48, 1.25], sunC:0xfff0d8, sunI:1.5, moonI:0,
-    fillI:0.45, exp:1.16, stars:0, moon:0, fairy:0.5, lamp:0.55, candle:0.0, glass:0.7, dust:0.35 },
+    sky:[0x9fb8d8, 0xc9d4de, 0xe6ddc8], hemi:[0xcfd8e8, 0x4a3a48, 1.6], sunC:0xfff0d8, sunI:1.9, moonI:0,
+    fillI:0.5, exp:1.22, stars:0, moon:0, fairy:0.5, lamp:0.55, candle:0.0, glass:0.7, dust:0.35 },
   { name:'dusk',
-    sky:[0x8a6a9a, 0xd88a6a, 0xf2b878], hemi:[0xd8b49a, 0x463040, 0.95], sunC:0xffb060, sunI:1.0, moonI:0.1,
-    fillI:0.4, exp:1.12, stars:0.2, moon:0.25, fairy:0.9, lamp:0.8, candle:0.5, glass:0.9, dust:0.42 },
+    sky:[0x8a6a9a, 0xd88a6a, 0xf2b878], hemi:[0xd8b49a, 0x463040, 1.15], sunC:0xffb060, sunI:1.2, moonI:0.1,
+    fillI:0.45, exp:1.16, stars:0.2, moon:0.25, fairy:0.9, lamp:0.8, candle:0.5, glass:0.9, dust:0.42 },
   { name:'night',
     sky:[0x141c30, 0x1d2842, 0x27354e], hemi:[0x4a5878, 0x241c28, 0.66], sunC:0x8898d8, sunI:0.0, moonI:0.9,
     fillI:0.38, exp:1.1, stars:1, moon:1, fairy:1.5, lamp:1.0, candle:1.4, glass:1.4, dust:0.5 },
