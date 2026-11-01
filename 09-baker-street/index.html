@@ -118,7 +118,7 @@ function frameForViewport(){
   camera.aspect = aspect;
   camera.updateProjectionMatrix();
   const dir = camera.position.clone().sub(controls.target);
-  if (aspect < 0.8) dir.set(0.45, 0.7, 0.56);
+  if (aspect < 0.8) dir.set(0.46, 0.44, 0.64);
   else dir.set(0.52, 0.48, 0.7);
   dir.normalize();
   let lo = 4, hi = 60;
@@ -457,7 +457,7 @@ mud.rotation.x = -Math.PI/2; mud.position.set(2.6, 0.075, 3.2);
 base.add(mud); clues.push(mud);
 
 /* ---------- lighting ---------- */
-const hemi = new THREE.HemisphereLight(0x8a7a5a, 0x241a12, 0.95); scene.add(hemi);
+const hemi = new THREE.HemisphereLight(0x8a7a5a, 0x2e2318, 1.15); scene.add(hemi);
 const fireLight = new THREE.PointLight(0xff8a3a, 2.6, 9, 1.8);
 fireLight.position.set(FP_X, 0.9, FP_Z+0.7); scene.add(fireLight);
 fireLight.castShadow = true; fireLight.shadow.mapSize.set(512,512);
