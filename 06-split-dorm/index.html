@@ -298,6 +298,10 @@ const typeGroup = new THREE.Group();
   // typed lines appear on the paper per tap
   typeGroup.userData.lineM = M(0x2a2626,{roughness:1});
   typeGroup.userData.lineCount = 0;
+  const tProxy = new THREE.Mesh(new THREE.BoxGeometry(0.8,0.62,0.66),
+    new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,colorWrite:false}));
+  tProxy.position.set(0,0.28,-0.02); tProxy.castShadow=false; tProxy.receiveShadow=false;
+  typeGroup.add(tProxy);
   scene.add(typeGroup);
   // book stack + ink bottle + quill cup
   const stackCols = [0x3c3438, 0x22201f, 0x54484a, 0x2e2a2c];
@@ -604,6 +608,8 @@ renderer.domElement.addEventListener('pointerup', e=>{
   }catch(err){ (window.__tapLog=window.__tapLog||[]).push(['ERR', String(err && err.message || err)]); }
 });
 
+window.__proj = (x,y,z)=>{ const v = new THREE.Vector3(x,y,z).project(camera);
+  return [Math.round((v.x+1)/2*innerWidth), Math.round((1-v.y)/2*innerHeight)]; };
 /* ---------- resize / loop ---------- */
 addEventListener('resize', ()=>{
   renderer.setSize(innerWidth, innerHeight);
