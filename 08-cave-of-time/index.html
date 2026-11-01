@@ -224,7 +224,7 @@ const floor = box(7.6, 0.14, 7.6, M(0x5c4834)); floor.position.y = 0.07; scene.a
 
 /* ---------- cave walls ---------- */
 const wallBack = rockFace(8.6, 5.6, 30, 20, 1.0, 3.1, 1.7, 0.9, 0.7, 1); wallBack.position.set(0, 2.5, -3.35); scene.add(wallBack);
-const wallLeft = rockFace(8.2, 5.6, 28, 20, 1.0, 11.3, 5.2, 0.9, 0.7, -1); wallLeft.rotation.y = Math.PI/2; wallLeft.position.set(-3.35, 2.5, 0); scene.add(wallLeft);
+const wallLeft = rockFace(8.2, 5.6, 28, 20, 1.35, 5.9, 9.4, 1.05, 0.8, -1); wallLeft.rotation.y = Math.PI/2; wallLeft.position.set(-3.35, 2.5, 0); scene.add(wallLeft);
 
 const rocks = new THREE.Group(); scene.add(rocks);
 function rockRow(x0,z0,x1,z1,n,rMin,rMax,y0,yStep,rows){
