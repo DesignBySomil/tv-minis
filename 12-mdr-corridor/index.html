@@ -93,8 +93,8 @@ controls.minDistance = 4;
 controls.maxDistance = 70;
 
 const FIT_BOXES = [
-  new THREE.Box3(new THREE.Vector3(-5.1, -1.1, -2.3), new THREE.Vector3(5.1, 0.2, 2.1)),
-  new THREE.Box3(new THREE.Vector3(-4.6, 0, -1.9), new THREE.Vector3(4.6, 2.8, 1.4)),
+  new THREE.Box3(new THREE.Vector3(-5.4, -2.1, -2.5), new THREE.Vector3(5.4, 0.2, 2.3)),
+  new THREE.Box3(new THREE.Vector3(-4.6, 0, -1.9), new THREE.Vector3(4.6, 3.0, 1.4)),
 ];
 const FIT_CORNERS = [];
 for (const b of FIT_BOXES)
@@ -169,6 +169,9 @@ const MAT = {
 /* ---------- layered base ---------- */
 const base = new THREE.Group(); scene.add(base);
 box(10.2, 0.55, 4.4, MAT.soil, 0, -0.85, -0.1, 0, base);
+box(10.5, 0.42, 4.6, MAT.slabEdge, 0, -1.32, -0.1, 0, base);
+box(10.8, 0.34, 4.85, MAT.soil, 0, -1.68, -0.1, 0, base);
+box(11.0, 0.22, 5.0, MAT.slabTop, 0, -1.93, -0.1, 0, base);
 box(9.8, 0.42, 4.1, MAT.slabEdge, 0, -0.42, -0.1, 0, base);
 box(9.4, 0.24, 3.9, MAT.slabTop, 0, -0.12, -0.1, 0, base);
 /* carpet with subtle tiles */
@@ -258,12 +261,33 @@ cyl(0.02, 0.02, 0.1, MAT.chairBase, 3.75, 1.36, -1.58, 8);
 box(0.2, 0.3, 0.03, MAT.baseboard, 3.75, 1.15, -1.62, 0);
 box(0.5, 0.18, 0.03, MAT.brass, 1.45, 1.7, -1.62, 0);            // department plaque
 
+/* ---------- ceiling duct + vents + exit sign ---------- */
+box(8.6, 0.2, 0.34, MAT.baseboard, 0, 2.44, -1.25, 0, room);
+for (const vx of [-2.4, 0.6, 3.2]) box(0.7, 0.16, 0.3, MAT.wallLow, vx, 2.33, -1.25, 0, room);
+box(0.44, 0.2, 0.06, MAT.chairBase, 0.3, 2.16, -1.55, 0, room);
+{
+  const eg = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.13),
+    new THREE.MeshBasicMaterial({ color:0x3aff7a }));
+  eg.position.set(0.3, 2.16, -1.51); scene.add(eg);
+}
 /* ---------- security dome ---------- */
 const dome = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 8, 0, Math.PI*2, 0, Math.PI/2),
   new THREE.MeshStandardMaterial({ color:0x14161c, roughness:0.25, metalness:0.3 }));
 dome.rotation.x = Math.PI; dome.position.set(4.35, 2.45, -1.5); scene.add(dome);
 box(0.06, 0.12, 0.06, MAT.chairBase, 4.35, 2.52, -1.5, 0);
 
+/* ---------- water cooler ---------- */
+cyl(0.16, 0.14, 0.52, MAT.wallLow, 4.1, 0.26, 0.75, 12);
+cyl(0.13, 0.13, 0.3, new THREE.MeshStandardMaterial({ color:0xbcd8e8, roughness:0.15, transparent:true, opacity:0.75 }), 4.1, 0.67, 0.75, 12);
+box(0.06, 0.05, 0.06, MAT.extRed, 4.1, 0.42, 0.9, 0);
+/* ---------- wastebasket ---------- */
+cyl(0.14, 0.11, 0.3, MAT.slabTop, -2.0, 0.15, -1.25, 10);
+/* ---------- wall clock ---------- */
+cyl(0.16, 0.16, 0.03, MAT.frame, -1.2, 1.95, -1.585, 16).rotation.x = Math.PI/2;
+const clockFace = new THREE.Mesh(new THREE.CircleGeometry(0.13, 16), new THREE.MeshBasicMaterial({ color:0xf2f4ea }));
+clockFace.position.set(-1.2, 1.95, -1.565); scene.add(clockFace);
+box(0.015, 0.09, 0.008, MAT.chairBase, -1.2, 1.98, -1.56, 0);
+box(0.06, 0.015, 0.008, MAT.chairBase, -1.17, 1.95, -1.56, 0);
 /* ---------- rolling chair ---------- */
 const chairG = new THREE.Group(); chairG.position.set(1.6, 0, 0.45); chairG.rotation.y = -0.6; scene.add(chairG);
 box(0.44, 0.07, 0.42, MAT.chairSeat, 0, 0.5, 0, 0, chairG);
