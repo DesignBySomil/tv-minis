@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cave of Time - a tiny scene inspired by Dark</title>
+<meta name="theme-color" content="#0e0c0a">
+<style>
+  *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;background:#0e0c0a}
+  body{font-family:Georgia,'Times New Roman',serif;color:#f3ead8}
+  #app{position:fixed;inset:0}
+  canvas{display:block;touch-action:none}
+  #vignette{position:fixed;inset:0;pointer-events:none;z-index:3;
+    background:radial-gradient(115% 90% at 50% 42%,transparent 55%,rgba(10,8,6,.44) 100%)}
+  #grain{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.06;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 .5 0 0 0 0 .5 0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+  #loader{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+    background:#0e0c0a;transition:opacity 1.1s ease}
+  #loader.done{opacity:0;pointer-events:none}
+  #loader .t{font-size:12px;letter-spacing:.5em;text-transform:uppercase;color:#c9a86a;text-indent:.5em}
+  #loader .bar{width:120px;height:1px;background:#2e2820;overflow:hidden}
+  #loader .bar i{display:block;height:100%;width:40%;background:#c9a86a;animation:sweep 1.2s ease-in-out infinite}
+  @keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+  #title{position:fixed;top:max(18px,env(safe-area-inset-top));left:20px;z-index:4;pointer-events:none;opacity:0;transition:opacity 1.4s ease .3s}
+  body.ready #title{opacity:1}
+  #title h1{font-weight:400;font-size:clamp(20px,5.4vw,30px);letter-spacing:.02em;text-shadow:0 1px 2px rgba(10,8,6,.95),0 2px 8px rgba(10,8,6,.8),0 4px 22px rgba(10,8,6,.55)}
+  #title p{font-size:12.5px;font-style:italic;color:#e8dcc0;margin-top:3px;text-shadow:0 1px 2px rgba(10,8,6,.95),0 2px 6px rgba(10,8,6,.75),0 3px 14px rgba(10,8,6,.5)}
+  #hint{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:4;pointer-events:none;
+    font-size:11.5px;letter-spacing:.14em;color:#f2ecd8;background:rgba(20,16,12,.55);border:1px solid rgba(240,228,200,.18);
+    padding:7px 14px;border-radius:99px;backdrop-filter:blur(6px);white-space:nowrap;opacity:0;transition:opacity 1.4s ease .6s}
+  body.ready #hint{opacity:1}
+  @media (max-width:430px){
+    #hint{font-size:10px;letter-spacing:.07em;padding:6px 10px;max-width:92vw;text-align:center}
+    #title{left:14px}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="vignette"></div>
+<div id="grain"></div>
+<div id="title"><h1>Cave of Time</h1><p>a tiny scene inspired by Dark</p></div>
+<div id="hint">tap the tunnels &nbsp;&middot;&nbsp; tap the lantern &nbsp;&middot;&nbsp; tap the portal</div>
+<div id="loader"><div class="t">Crafting miniature</div><div class="bar"><i></i></div></div>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+/* ============================================================
+   THE MINT - a printing hall mid-heist.
+   A huge circular vault door, a banknote press, pallets of
+   cash bricks and loose bills everywhere. All procedural.
+   ============================================================ */
+
+const app = document.getElementById('app');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+app.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x14100c);
+scene.fog = new THREE.FogExp2(0x0c0a08, 0.004);
+
+const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.1, 220);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.enablePan = false;
+controls.target.set(0, 1.15, -0.3);
+controls.minPolarAngle = 0.22;
+controls.maxPolarAngle = Math.PI * 0.48;
+controls.minDistance = 4;
+controls.maxDistance = 60;
+
+const FIT_BOXES = [
+  new THREE.Box3(new THREE.Vector3(-4.4, -1.1, -3.4), new THREE.Vector3(4.4, 0.2, 4.2)),
+  new THREE.Box3(new THREE.Vector3(-4.2, 0, -3.2), new THREE.Vector3(4.2, 3.9, 4.0)),
+];
+const FIT_CORNERS = [];
+for (const b of FIT_BOXES)
+  for (const x of [b.min.x, b.max.x])
+    for (const y of [b.min.y, b.max.y])
+      for (const z of [b.min.z, b.max.z])
+        FIT_CORNERS.push(new THREE.Vector3(x, y, z));
+const SAFE = { x: 0.93, yTop: 0.85, yBottom: 0.8 };
+function allCornersFit(){
+  const p = new THREE.Vector3();
+  for (const c of FIT_CORNERS){
+    p.copy(c).project(camera);
+    if (Math.abs(p.x) > SAFE.x || p.y > SAFE.yTop || p.y < -SAFE.yBottom) return false;
+  }
+  return true;
+}
+function frameForViewport(){
+  const aspect = innerWidth/innerHeight;
+  camera.aspect = aspect;
+  camera.updateProjectionMatrix();
+  const dir = camera.position.clone().sub(controls.target);
+  if (aspect < 0.8) dir.set(0.42, 0.72, 0.55);
+  else dir.set(0.5, 0.5, 0.7);
+  dir.normalize();
+  let lo = 4, hi = 60;
+  for (let i=0;i<28;i++){
+    const mid = (lo+hi)/2;
+    camera.position.copy(controls.target).addScaledVector(dir, mid);
+    camera.lookAt(controls.target); camera.updateMatrixWorld();
+    if (allCornersFit()) hi = mid; else lo = mid;
+  }
+  camera.position.copy(controls.target).addScaledVector(dir, hi);
+  camera.lookAt(controls.target);
+}
+camera.position.set(4.6, 4.4, 6.4);
+frameForViewport();
+
+const rand = (a,b)=>a+Math.random()*(b-a);
+function M(color, opts={}){ return new THREE.MeshStandardMaterial(Object.assign({color, roughness:0.92, metalness:0.0}, opts)); }
+function box(w,h,d,mat){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.castShadow=true; m.receiveShadow=true; return m; }
+function rbox(w,h,d,r,mat){ const m=new THREE.Mesh(new RoundedBoxGeometry(w,h,d,3,r),mat); m.castShadow=true; m.receiveShadow=true; return m; }
+function cyl(rt,rb,h,mat,seg=12){ const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),mat); m.castShadow=true; m.receiveShadow=true; return m; }
+function sph(r,mat,w=10,h=8){ const m=new THREE.Mesh(new THREE.SphereGeometry(r,w,h),mat); m.castShadow=true; m.receiveShadow=true; return m; }
+
+
+/* ============================================================
+   CAVE OF TIME - a cave chamber with three tunnel mouths.
+   Lantern, tripod flashlight, drifting mist, portal in the
+   center tunnel. Tapping the portal shifts the era:
+   1921 (torch-warm) / 1986 (cold flashlight) / 2052 (teal portal).
+   ============================================================ */
+
+const ROCK = [0x4a3a2b, 0x42342a, 0x52402e, 0x3a2e24];
+function rock(r, mat){ const m = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), mat); m.castShadow=true; m.receiveShadow=true; return m; }
+
+/* ---------- cutaway base: rock strata ---------- */
+const s1 = box(8.4, 0.4, 8.4, M(0x3a2f24)); s1.position.y = -0.2; scene.add(s1);
+const s2 = box(8.9, 0.35, 8.9, M(0x302620)); s2.position.y = -0.58; scene.add(s2);
+const s3 = box(9.5, 0.5, 9.5, M(0x261d17)); s3.position.y = -1.0; scene.add(s3);
+const floor = box(7.6, 0.14, 7.6, M(0x463728)); floor.position.y = 0.07; scene.add(floor);
+
+/* ---------- cave walls ---------- */
+const wallBack = box(7.6, 4.2, 0.3, M(0x241c14)); wallBack.position.set(0, 2.1, -3.25); scene.add(wallBack);
+const wallLeft = box(0.3, 4.2, 7.6, M(0x241c14)); wallLeft.position.set(-3.25, 2.1, 0); scene.add(wallLeft);
+const capB = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.06, 0.32), new THREE.MeshBasicMaterial({color:0x120d09})); capB.position.set(0,4.23,-3.25); scene.add(capB);
+const capL = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.06, 7.6), new THREE.MeshBasicMaterial({color:0x120d09})); capL.position.set(-3.25,4.23,0); scene.add(capL);
+
+const rocks = new THREE.Group(); scene.add(rocks);
+function rockRow(x0,z0,x1,z1,n,rMin,rMax,y0,yStep,rows){
+  for(let r=0;r<rows;r++){
+    for(let i=0;i<n;i++){
+      const t = n>1 ? i/(n-1) : 0.5;
+      const m = rock(rand(rMin,rMax), M(ROCK[(Math.random()*ROCK.length)|0]));
+      m.position.set(x0+(x1-x0)*t+rand(-0.2,0.2), y0+r*yStep+rand(-0.12,0.12), z0+(z1-z0)*t+rand(-0.2,0.2));
+      m.scale.y *= 0.78; m.rotation.set(rand(0,3),rand(0,3),rand(0,3));
+      rocks.add(m);
+    }
+  }
+}
+rockRow(-3.3,-2.8, -1.5,-2.8, 3, 0.55, 0.9, 0.5, 0.85, 4);
+rockRow(-0.85,-2.8, 0.85,-2.8, 2, 0.55, 0.8, 2.75, 0.9, 2);
+rockRow(1.5,-2.8, 3.3,-2.8, 3, 0.55, 0.9, 0.5, 0.85, 4);
+rockRow(-2.8,-3.3, -2.8,3.3, 6, 0.55, 0.9, 0.5, 0.85, 4);
+rockRow(2.9,0.2, 2.9,3.3, 3, 0.4, 0.65, 0.3, 0.55, 2);
+
+/* scattered floor stones + stalagmites */
+for (let i=0;i<14;i++){
+  const m = rock(rand(0.08,0.24), M(ROCK[(Math.random()*4)|0]));
+  m.position.set(rand(-2.6,2.6), 0.16, rand(-2.4,2.8));
+  m.scale.y *= 0.7; m.rotation.y = rand(0,3); scene.add(m);
+}
+for (let i=0;i<5;i++){
+  const h = rand(0.35,0.8);
+  const m = cyl(0.03, rand(0.12,0.2), h, M(0x4a3a2b));
+  m.position.set(rand(-2.4,2.4), h/2+0.12, rand(-2.2,2.4)); scene.add(m);
+}
+
+/* ---------- three tunnel mouths ---------- */
+const tunnelProxies = [];
+const tunnelGlows = [];
+const tunnelPulse = [0,0,0];
+const tunnelXs = [-2.05, 0, 2.05];
+for (let i=0;i<3;i++){
+  const tx = tunnelXs[i];
+  const dark = new THREE.Mesh(new THREE.CircleGeometry(0.78, 20), new THREE.MeshBasicMaterial({color:0x060403}));
+  dark.position.set(tx, 1.05, -3.06); scene.add(dark);
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(0.6, 20), new THREE.MeshBasicMaterial({color:0xff8040, transparent:true, opacity:0.12}));
+  glow.position.set(tx, 1.05, -3.05); scene.add(glow); tunnelGlows.push(glow);
+  for (const sx of [-0.88, 0.88]){
+    const b = rock(rand(0.5,0.62), M(ROCK[(Math.random()*4)|0]));
+    b.position.set(tx+sx, 0.85, -2.78); b.scale.y=1.4; b.rotation.set(rand(0,3),rand(0,3),0); scene.add(b);
+  }
+  const lintel = rock(0.72, M(ROCK[(Math.random()*4)|0]));
+  lintel.position.set(tx, 2.0, -2.78); lintel.scale.set(1.7,0.6,1.0); lintel.rotation.z=rand(-0.08,0.08); scene.add(lintel);
+  const proxy = new THREE.Mesh(new THREE.BoxGeometry(1.7, 2.2, 0.6), new THREE.MeshBasicMaterial({visible:false}));
+  proxy.position.set(tx, 1.05, -2.7); proxy.userData.tunnel = i; scene.add(proxy);
+  tunnelProxies.push(proxy);
+}
+
+/* ---------- portal in the center tunnel ---------- */
+const portalRing = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.045, 10, 40), new THREE.MeshBasicMaterial({color:0x35e0c8, transparent:true, opacity:0.85}));
+portalRing.position.set(0, 1.05, -3.0); scene.add(portalRing);
+const portalCore = new THREE.Mesh(new THREE.CircleGeometry(0.46, 24), new THREE.MeshBasicMaterial({color:0x0d3a34, transparent:true, opacity:0.6}));
+portalCore.position.set(0, 1.05, -3.02); scene.add(portalCore);
+const PORTAL_N = 90;
+const portalGeo = new THREE.BufferGeometry();
+const portalPos = new Float32Array(PORTAL_N*3);
+const portalAng = new Float32Array(PORTAL_N);
+const portalRad = new Float32Array(PORTAL_N);
+for (let i=0;i<PORTAL_N;i++){ portalAng[i]=rand(0,Math.PI*2); portalRad[i]=rand(0.08,0.46); }
+portalGeo.setAttribute('position', new THREE.BufferAttribute(portalPos, 3));
+function softDot(color){
+  const c = document.createElement('canvas'); c.width=c.height=64;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(32,32,0,32,32,32);
+  grd.addColorStop(0, color); grd.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle=grd; g.fillRect(0,0,64,64);
+  const t = new THREE.CanvasTexture(c); return t;
+}
+const portalMat = new THREE.PointsMaterial({size:0.07, map:softDot('rgba(120,255,230,1)'), transparent:true, opacity:0.9, depthWrite:false, blending:THREE.AdditiveBlending, color:0x9ff5e6});
+const portalPts = new THREE.Points(portalGeo, portalMat); portalPts.position.set(0,1.05,-2.98); scene.add(portalPts);
+let portalBoost = 0;
+const portalLight = new THREE.PointLight(0x35e0c8, 0.5, 7, 1.8); portalLight.position.set(0,1.2,-2.4); scene.add(portalLight);
+
+/* ---------- lantern on a boulder (left) ---------- */
+const lanternBoulder = rock(0.5, M(0x3a2e24)); lanternBoulder.position.set(-1.9, 0.35, 1.3); lanternBoulder.scale.y=0.75; scene.add(lanternBoulder);
+const lantern = new THREE.Group(); lantern.position.set(-1.9, 0.78, 1.3); scene.add(lantern);
+const lBase = cyl(0.11, 0.13, 0.05, M(0x2a2a2c, {metalness:0.6, roughness:0.4})); lantern.add(lBase);
+const lGlass = cyl(0.085, 0.1, 0.16, new THREE.MeshStandardMaterial({color:0xffc070, emissive:0xffa030, emissiveIntensity:1.6, transparent:true, opacity:0.85})); lGlass.position.y=0.13; lantern.add(lGlass);
+const lTop = cyl(0.05, 0.11, 0.06, M(0x2a2a2c, {metalness:0.6, roughness:0.4})); lTop.position.y=0.24; lantern.add(lTop);
+const lHandle = new THREE.Mesh(new THREE.TorusGeometry(0.07,0.012,6,16,Math.PI), M(0x2a2a2c,{metalness:0.6,roughness:0.4})); lHandle.position.y=0.27; lantern.add(lHandle);
+const lanternLight = new THREE.PointLight(0xffa040, 2.0, 9, 1.7); lanternLight.position.set(-1.9, 1.1, 1.3); scene.add(lanternLight);
+let lanternFlare = 0;
+const lanternProxy = new THREE.Mesh(new THREE.BoxGeometry(0.8,1.0,0.8), new THREE.MeshBasicMaterial({visible:false}));
+lanternProxy.position.set(-1.9, 0.85, 1.3); scene.add(lanternProxy);
+
+/* ---------- tripod flashlight (right) ---------- */
+const tripod = new THREE.Group(); tripod.position.set(1.9, 0, 1.5); scene.add(tripod);
+for (let i=0;i<3;i++){
+  const leg = cyl(0.02,0.02,1.0, M(0x333336,{metalness:0.5,roughness:0.5}));
+  const a = i/3*Math.PI*2;
+  leg.position.set(Math.cos(a)*0.22, 0.45, Math.sin(a)*0.22);
+  leg.rotation.set(Math.sin(a)*0.42, 0, -Math.cos(a)*0.42);
+  tripod.add(leg);
+}
+const flashHead = cyl(0.09,0.11,0.24, M(0x444448,{metalness:0.6,roughness:0.35}));
+flashHead.position.y=0.95; flashHead.rotation.x=Math.PI/2-0.5; tripod.add(flashHead);
+const flashLens = new THREE.Mesh(new THREE.CircleGeometry(0.075,14), new THREE.MeshStandardMaterial({color:0xcfe0ff, emissive:0x88aaff, emissiveIntensity:1.2}));
+flashLens.position.set(0,1.05,1.42); flashLens.rotation.x=-0.5; scene.add(flashLens);
+const flashLight = new THREE.SpotLight(0x88aaff, 0.0, 12, 0.5, 0.5, 1.5);
+flashLight.position.set(1.9, 1.05, 1.42);
+flashLight.target.position.set(0, 1.05, -3.0);
+scene.add(flashLight); scene.add(flashLight.target);
+
+/* ---------- crate + rope + papers ---------- */
+const crate = box(0.55,0.55,0.55, M(0x6a4e30)); crate.position.set(2.0,0.4,-0.4); crate.rotation.y=0.4; scene.add(crate);
+for (const e of [-0.2,0.2]){ const strip=box(0.06,0.57,0.57,M(0x543d24)); strip.position.set(2.0+e*Math.cos(0.4),0.4,-0.4-e*Math.sin(0.4)); strip.rotation.y=0.4; scene.add(strip); }
+const rope = new THREE.Group(); rope.position.set(-0.9, 0.16, 2.1); scene.add(rope);
+for (let i=0;i<3;i++){ const t=new THREE.Mesh(new THREE.TorusGeometry(0.22-i*0.045,0.035,8,20), M(0x9a7a4a)); t.rotation.x=Math.PI/2; t.position.y=0.03+i*0.055; t.castShadow=true; rope.add(t); }
+for (let i=0;i<3;i++){ const p=box(0.3,0.005,0.42,M(0xcbbfa8)); p.position.set(rand(-0.4,0.6),0.15+i*0.006,rand(0.6,1.4)); p.rotation.y=rand(0,3); scene.add(p); }
+
+/* ---------- mist + dust ---------- */
+const MIST_N = 60;
+const mistGeo = new THREE.BufferGeometry();
+const mistPos = new Float32Array(MIST_N*3);
+for (let i=0;i<MIST_N;i++){ mistPos[i*3]=rand(-3,3); mistPos[i*3+1]=rand(0.15,1.1); mistPos[i*3+2]=rand(-2.8,3.2); }
+mistGeo.setAttribute('position', new THREE.BufferAttribute(mistPos,3));
+const mist = new THREE.Points(mistGeo, new THREE.PointsMaterial({size:1.6, map:softDot('rgba(180,190,200,1)'), transparent:true, opacity:0.05, depthWrite:false}));
+scene.add(mist);
+const DUST_N = 50;
+const dustGeo = new THREE.BufferGeometry();
+const dustPos = new Float32Array(DUST_N*3);
+for (let i=0;i<DUST_N;i++){ dustPos[i*3]=rand(-2.6,2.6); dustPos[i*3+1]=rand(0.3,3.4); dustPos[i*3+2]=rand(-2.8,2.8); }
+dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos,3));
+const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({size:0.035, map:softDot('rgba(255,230,180,1)'), transparent:true, opacity:0.5, depthWrite:false, blending:THREE.AdditiveBlending}));
+scene.add(dust);
+
+/* ---------- lighting rig + era states ---------- */
+const hemi = new THREE.HemisphereLight(0x8a6a4a, 0x241a12, 0.3); scene.add(hemi);
+const dir = new THREE.DirectionalLight(0xffe0b0, 0.35);
+dir.position.set(3, 6, 4); dir.castShadow = true;
+dir.shadow.mapSize.set(1024,1024);
+dir.shadow.camera.left=-6; dir.shadow.camera.right=6; dir.shadow.camera.top=6; dir.shadow.camera.bottom=-6;
+scene.add(dir);
+
+const ERAS = [
+  { name:'1921', lantern:2.4, flash:0.0,  portal:0.35, hemi:0.28, hemiSky:0x8a5a30, dir:0.22, dirColor:0xffc080, glow:0xff8040, fog:0x0c0805 },
+  { name:'1986', lantern:0.7, flash:2.2,  portal:0.55, hemi:0.34, hemiSky:0x5a6a8a, dir:0.30, dirColor:0xc0d0f0, glow:0x88aaff, fog:0x080810 },
+  { name:'2052', lantern:0.5, flash:0.4,  portal:2.4,  hemi:0.30, hemiSky:0x3a8a7a, dir:0.18, dirColor:0x80e0d0, glow:0x35e0c8, fog:0x05100c },
+];
+let eraIdx = 1;             // start 1986
+const cur = { lantern:0.7, flash:2.2, portal:0.55, hemi:0.34, dir:0.30 };
+const curCol = { hemiSky:new THREE.Color(0x5a6a8a), dir:new THREE.Color(0xc0d0f0), glow:new THREE.Color(0x88aaff), fog:new THREE.Color(0x080810) };
+const tgtCol = { hemiSky:new THREE.Color(), dir:new THREE.Color(), glow:new THREE.Color(), fog:new THREE.Color() };
+
+const stateLabel = document.createElement('div');
+stateLabel.style.cssText = 'position:fixed;top:14px;right:16px;padding:6px 14px;border:1px solid #2e2820;border-radius:999px;background:rgba(14,12,10,.72);color:#c9a86a;font:12px/1.2 system-ui;letter-spacing:.12em;z-index:5;';
+document.body.appendChild(stateLabel);
+
+function applyEraTargets(){
+  const e = ERAS[eraIdx];
+  stateLabel.textContent = e.name;
+  tgtCol.hemiSky.set(e.hemiSky); tgtCol.dir.set(e.dirColor); tgtCol.glow.set(e.glow); tgtCol.fog.set(e.fog);
+}
+applyEraTargets();
+
+
+/* refit camera bounds for the taller cave chamber */
+FIT_BOXES.length = 0;
+FIT_BOXES.push(new THREE.Box3(new THREE.Vector3(-4.9,-1.3,-4.9), new THREE.Vector3(4.9,0.2,4.9)));
+FIT_BOXES.push(new THREE.Box3(new THREE.Vector3(-3.7,0,-3.6), new THREE.Vector3(3.7,4.4,4.0)));
+FIT_CORNERS.length = 0;
+for (const b of FIT_BOXES)
+  for (const x of [b.min.x, b.max.x])
+    for (const y of [b.min.y, b.max.y])
+      for (const z of [b.min.z, b.max.z])
+        FIT_CORNERS.push(new THREE.Vector3(x, y, z));
+frameForViewport();
+
+/* ---------- interaction ---------- */
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let pDown = null, pDownT = 0, lastUp = 0;
+function tapTargets(){ return [...tunnelProxies, lanternProxy]; }
+renderer.domElement.addEventListener('pointerdown', e=>{ pDown=[e.clientX,e.clientY]; pDownT=performance.now(); });
+renderer.domElement.addEventListener('pointerup', e=>{
+  if (!pDown) return;
+  const dt = performance.now()-pDownT;
+  const dx = e.clientX-pDown[0], dy = e.clientY-pDown[1];
+  if (dt>350 || dx*dx+dy*dy>64){ pDown=null; return; }
+  if (performance.now()-lastUp < 150){ pDown=null; return; }
+  lastUp = performance.now(); pDown=null;
+  pointer.set((e.clientX/innerWidth)*2-1, -(e.clientY/innerHeight)*2+1);
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(tapTargets());
+  if (!hits.length) return;
+  const o = hits[0].object;
+  if (o === lanternProxy){ lanternFlare = 1.6; return; }
+  const ti = o.userData.tunnel;
+  if (ti === 1){ eraIdx = (eraIdx+1)%3; applyEraTargets(); portalBoost = 1.5; }
+  else tunnelPulse[ti] = 1.4;
+});
+
+/* ---------- tick ---------- */
+const clock = new THREE.Clock();
+function tick(){
+  requestAnimationFrame(tick);
+  const rawDt = clock.getDelta();
+  const dt = Math.min(rawDt, 0.05);
+  const t = clock.elapsedTime;
+  const e = ERAS[eraIdx];
+  const k = 1 - Math.exp(-rawDt*2.2);   // elapsed-time blend (throttle-proof)
+  cur.lantern += (e.lantern-cur.lantern)*k;
+  cur.flash += (e.flash-cur.flash)*k;
+  cur.portal += (e.portal-cur.portal)*k;
+  cur.hemi += (e.hemi-cur.hemi)*k;
+  cur.dir += (e.dir-cur.dir)*k;
+  curCol.hemiSky.lerp(tgtCol.hemiSky, k); curCol.dir.lerp(tgtCol.dir, k);
+  curCol.glow.lerp(tgtCol.glow, k); curCol.fog.lerp(tgtCol.fog, k);
+
+  lanternFlare = Math.max(0, lanternFlare - rawDt*1.4);
+  portalBoost = Math.max(0, portalBoost - rawDt*0.9);
+  for (let i=0;i<3;i++) tunnelPulse[i] = Math.max(0, tunnelPulse[i]-rawDt*1.1);
+
+  const flick = 1 + Math.sin(t*11)*0.06 + Math.sin(t*23.7)*0.04;
+  lanternLight.intensity = (cur.lantern + lanternFlare*2.2) * flick;
+  lGlass.material.emissiveIntensity = (1.1 + cur.lantern*0.45 + lanternFlare*1.6) * flick;
+  flashLight.intensity = cur.flash;
+  flashLens.material.emissiveIntensity = 0.3 + cur.flash*0.55;
+  hemi.intensity = cur.hemi; hemi.color.copy(curCol.hemiSky);
+  dir.intensity = cur.dir; dir.color.copy(curCol.dir);
+  scene.fog.color.copy(curCol.fog);
+  scene.background.copy(curCol.fog);
+
+  for (let i=0;i<3;i++){
+    tunnelGlows[i].material.color.copy(curCol.glow);
+    const base = i===1 ? 0.12+cur.portal*0.22 : 0.10;
+    tunnelGlows[i].material.opacity = Math.min(1, base + tunnelPulse[i]*0.5 + (i===1?portalBoost*0.3:0));
+  }
+  portalLight.intensity = cur.portal*(1+portalBoost) * (1+Math.sin(t*3.1)*0.12);
+  portalRing.material.opacity = Math.min(1, 0.25+cur.portal*0.35+portalBoost*0.3);
+  portalCore.material.opacity = Math.min(1, 0.2+cur.portal*0.3+portalBoost*0.25);
+  portalRing.rotation.z = t*0.4;
+  const pr = 1 + Math.sin(t*2.2)*0.03 + portalBoost*0.1;
+  portalRing.scale.set(pr,pr,1);
+  for (let i=0;i<PORTAL_N;i++){
+    portalAng[i] += rawDt*(0.8 + portalBoost*2.5) * (0.5+portalRad[i]);
+    const r = portalRad[i]*(1+Math.sin(t*1.7+i)*0.08);
+    portalPos[i*3] = Math.cos(portalAng[i])*r;
+    portalPos[i*3+1] = Math.sin(portalAng[i])*r;
+    portalPos[i*3+2] = 0;
+  }
+  portalGeo.attributes.position.needsUpdate = true;
+  portalMat.opacity = Math.min(1, 0.3+cur.portal*0.35+portalBoost*0.3);
+
+  mist.rotation.y = t*0.012;
+  dust.rotation.y = -t*0.02;
+  dust.position.y = Math.sin(t*0.4)*0.06;
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+tick();
+
+addEventListener('resize', ()=>{
+  renderer.setSize(innerWidth, innerHeight);
+  frameForViewport();
+});
+
+const loader = document.getElementById('loader');
+if (loader) loader.style.display = 'none';
+
+</script>
+</body>
+</html>
