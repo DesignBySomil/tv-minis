@@ -503,9 +503,9 @@ function tick(){
   /* jello wobble */
   if (wobbleT < 3){
     wobbleT += rawDt;
-    const w = Math.sin(wobbleT*16) * 0.24 * Math.exp(-wobbleT*1.3);
+    const w = Math.sin(wobbleT*16) * 0.34 * Math.exp(-wobbleT*1.1);
     jelloG.rotation.z = w;
-    jelloG.rotation.x = Math.sin(wobbleT*13+1) * 0.15 * Math.exp(-wobbleT*1.3);
+    jelloG.rotation.x = Math.sin(wobbleT*13+1) * 0.22 * Math.exp(-wobbleT*1.1);
   } else { jelloG.rotation.z = 0; jelloG.rotation.x = 0; }
 
   /* copier scan + paper */
