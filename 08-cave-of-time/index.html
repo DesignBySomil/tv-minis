@@ -348,7 +348,7 @@ renderer.domElement.addEventListener('pointerup', e=>{
   const hits = raycaster.intersectObjects(tapTargets());
   if (!hits.length) return;
   const o = hits[0].object;
-  if (o === lanternProxy){ lanternFlare = 1.6; return; }
+  if (o === lanternProxy){ lanternFlare = 3.2; return; }
   const ti = o.userData.tunnel;
   if (ti === 1){ eraIdx = (eraIdx+1)%3; applyEraTargets(); portalBoost = 1.5; }
   else tunnelPulse[ti] = 1.4;
@@ -371,12 +371,12 @@ function tick(){
   curCol.hemiSky.lerp(tgtCol.hemiSky, k); curCol.dir.lerp(tgtCol.dir, k);
   curCol.glow.lerp(tgtCol.glow, k); curCol.fog.lerp(tgtCol.fog, k);
 
-  lanternFlare = Math.max(0, lanternFlare - rawDt*1.4);
+  lanternFlare = Math.max(0, lanternFlare - rawDt*1.1);
   portalBoost = Math.max(0, portalBoost - rawDt*0.9);
   for (let i=0;i<3;i++) tunnelPulse[i] = Math.max(0, tunnelPulse[i]-rawDt*1.1);
 
   const flick = 1 + Math.sin(t*11)*0.06 + Math.sin(t*23.7)*0.04;
-  lanternLight.intensity = (cur.lantern + lanternFlare*2.2) * flick;
+  lanternLight.intensity = (cur.lantern + lanternFlare*3.0) * flick;
   lGlass.material.emissiveIntensity = (1.1 + cur.lantern*0.45 + lanternFlare*1.6) * flick;
   flashLight.intensity = cur.flash;
   flashLens.material.emissiveIntensity = 0.3 + cur.flash*0.55;
