@@ -642,18 +642,21 @@ scene.add(sun);
 const fill = new THREE.DirectionalLight(0x9ab8a8, 0.4);
 fill.position.set(-6, 5, 4);
 scene.add(fill);
+const camFill = new THREE.DirectionalLight(0x5a6c94, 0);
+camFill.position.set(6, 4.5, 7);
+scene.add(camFill);
 
 /* ---------- states ---------- */
 const STATES = [
   { name:'day', top:0x8fb4c4, mid:0xcfd8c8, bottom:0xe8e0c0, fog:0xd8d8c8, fogD:0.006,
     hemi:[0xe0ecd8, 0x6a6248, 0.95], sunC:0xffeed0, sunI:2.4, sunPos:[5,8,4],
-    fillI:0.4, fillC:0x9ab8a8, exp:1.12, stars:0, lamp:0, glow:0, flies:0, dust:0.3 },
+    fillI:0.4, fillC:0x9ab8a8, cfill:0, exp:1.12, stars:0, lamp:0, glow:0, flies:0, dust:0.3 },
   { name:'dusk', top:0xa093af, mid:0xd9b6a4, bottom:0xf1cfab, fog:0x9a6a50, fogD:0.009,
     hemi:[0xffd0a0, 0x5a4632, 0.72], sunC:0xff9850, sunI:1.7, sunPos:[6,3.5,2],
-    fillI:0.3, fillC:0x8a7ab0, exp:1.09, stars:0.15, lamp:0.5, glow:0.5, flies:0.3, dust:0.42 },
+    fillI:0.3, fillC:0x8a7ab0, cfill:0.18, exp:1.09, stars:0.15, lamp:0.5, glow:0.5, flies:0.3, dust:0.42 },
   { name:'night', top:0x425678, mid:0x4f6385, bottom:0x5c7193, fog:0x080d14, fogD:0.012,
     hemi:[0x36405e, 0x20241c, 0.9], sunC:0x8898d8, sunI:0.85, sunPos:[-6,8,-4],
-    fillI:0.55, fillC:0x4a5490, exp:1.15, stars:1, lamp:1, glow:1, flies:1, dust:0.5 },
+    fillI:0.55, fillC:0x4a5490, cfill:0.62, exp:1.15, stars:1, lamp:1, glow:1, flies:1, dust:0.5 },
 ];
 let stateIdx = 0;
 let blend = { t:1, from:STATES[0], to:STATES[0] };
@@ -665,6 +668,7 @@ function applyState(s){
   hemi.color.set(s.hemi[0]); hemi.groundColor.set(s.hemi[1]); hemi.intensity = s.hemi[2];
   sun.color.set(s.sunC); sun.intensity = s.sunI; sun.position.set(...s.sunPos);
   fill.intensity = s.fillI; fill.color.set(s.fillC);
+  camFill.intensity = s.cfill;
   renderer.toneMappingExposure = s.exp;
   stars.material.opacity = s.stars;
   dustMat.opacity = s.dust;
@@ -683,7 +687,7 @@ function mixStates(p, n, t){
     hemi:[mixC(p.hemi[0],n.hemi[0]), mixC(p.hemi[1],n.hemi[1]), mixN(p.hemi[2],n.hemi[2])],
     sunC:mixC(p.sunC,n.sunC), sunI:mixN(p.sunI,n.sunI),
     sunPos:[0,1,2].map(i=>mixN(p.sunPos[i],n.sunPos[i])),
-    fillI:mixN(p.fillI,n.fillI), fillC:mixC(p.fillC,n.fillC), exp:mixN(p.exp,n.exp),
+    fillI:mixN(p.fillI,n.fillI), fillC:mixC(p.fillC,n.fillC), cfill:mixN(p.cfill,n.cfill), exp:mixN(p.exp,n.exp),
     stars:mixN(p.stars,n.stars), lamp:mixN(p.lamp,n.lamp), glow:mixN(p.glow,n.glow),
     flies:mixN(p.flies,n.flies), dust:mixN(p.dust,n.dust),
   };
