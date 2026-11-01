@@ -687,8 +687,6 @@ function mixStates(p, n, t){
   };
 }
 function cycleState(){
-  window.__cycles = (window.__cycles||0)+1;
-  window.__cycleSrc = window.__lastUp || null;
   const from = blend.t >= 1 ? STATES[stateIdx] : mixStates(blend.from, blend.to, blend.t);
   stateIdx = (stateIdx+1) % STATES.length;
   blend = { t:0, from, to:STATES[stateIdx] };
@@ -711,12 +709,8 @@ renderer.domElement.addEventListener('pointerup', e=>{
   ptr.set((e.clientX/innerWidth)*2-1, -(e.clientY/innerHeight)*2+1);
   ray.setFromCamera(ptr, camera);
   const mHit = ray.intersectObjects([machine, counter], true);
-  window.__ups = (window.__ups||0)+1;
-  window.__tap = {x:e.clientX, y:e.clientY, hit: mHit.length ? 'machine' : 'other', n: window.__ups};
-  window.__lastUp = window.__tap;
   if (mHit.length){
     steamBurst = 1.6;
-    window.__bursts = (window.__bursts||0)+1;
     for (let i=0;i<STEAM_N;i++) steamAge[i] = -Math.random()*0.5;
     return;
   }
