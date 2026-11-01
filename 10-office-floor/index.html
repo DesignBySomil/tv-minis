@@ -502,14 +502,14 @@ function tick(){
 
   /* jello wobble: squash/stretch scale + tilt, anchored at base */
   if (wobbleT < 3.4){
-    wobbleT += rawDt;
-    const decay = Math.exp(-wobbleT*0.9);
-    const sq = Math.sin(wobbleT*14) * 0.42 * decay;
-    const sy = Math.max(0.45, 1 - sq);
-    jello.scale.set(1+sq*0.75, sy, 1+sq*0.75);
+    wobbleT += Math.min(rawDt, 0.12);
+    const decay = Math.exp(-wobbleT*0.55);
+    const sq = Math.sin(wobbleT*9) * 0.55 * decay;
+    const sy = Math.max(0.42, 1 - sq);
+    jello.scale.set(1+sq*0.8, sy, 1+sq*0.8);
     jello.position.y = 0.11*sy;
-    stapTop.rotation.z = 0.1 + Math.sin(wobbleT*11+0.6) * 0.35 * decay;
-    jelloG.rotation.z = Math.sin(wobbleT*14+0.5) * 0.16 * decay;
+    stapTop.rotation.z = 0.1 + Math.sin(wobbleT*8+0.6) * 0.5 * decay;
+    jelloG.rotation.z = Math.sin(wobbleT*9+0.5) * 0.22 * decay;
   } else {
     jello.scale.set(1,1,1); jello.position.y = 0.11;
     stapTop.rotation.z = 0.1; jelloG.rotation.z = 0;
