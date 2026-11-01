@@ -173,14 +173,14 @@ const MAT = {
   bedDark:   new THREE.MeshStandardMaterial({ color:0x232021, roughness:0.95 }),
   pavement:  new THREE.MeshStandardMaterial({ color:0x42423f, roughness:0.85 }),
   puddle:    new THREE.MeshStandardMaterial({ color:0x141c28, roughness:0.12, metalness:0.55 }),
-  pubBrick:  new THREE.MeshStandardMaterial({ color:0x5c4636, roughness:0.9 }),
-  pubTrim:   new THREE.MeshStandardMaterial({ color:0x2e2620, roughness:0.85 }),
+  pubBrick:  new THREE.MeshStandardMaterial({ color:0x7a6048, roughness:0.9 }),
+  pubTrim:   new THREE.MeshStandardMaterial({ color:0x443a30, roughness:0.85 }),
   pubDoor:   new THREE.MeshStandardMaterial({ color:0x1e2b1e, roughness:0.7 }),
-  terrace1:  new THREE.MeshStandardMaterial({ color:0x463c3e, roughness:0.92 }),
-  terrace2:  new THREE.MeshStandardMaterial({ color:0x4d443a, roughness:0.92 }),
-  terrace3:  new THREE.MeshStandardMaterial({ color:0x433a3c, roughness:0.92 }),
-  roofDark:  new THREE.MeshStandardMaterial({ color:0x1f1b19, roughness:0.95 }),
-  chimBrick: new THREE.MeshStandardMaterial({ color:0x453227, roughness:0.92 }),
+  terrace1:  new THREE.MeshStandardMaterial({ color:0x675a5c, roughness:0.92 }),
+  terrace2:  new THREE.MeshStandardMaterial({ color:0x6f6151, roughness:0.92 }),
+  terrace3:  new THREE.MeshStandardMaterial({ color:0x635558, roughness:0.92 }),
+  roofDark:  new THREE.MeshStandardMaterial({ color:0x322c29, roughness:0.95 }),
+  chimBrick: new THREE.MeshStandardMaterial({ color:0x63493a, roughness:0.92 }),
   chimDark:  new THREE.MeshStandardMaterial({ color:0x2b2019, roughness:0.95 }),
   lampPost:  new THREE.MeshStandardMaterial({ color:0x16181c, roughness:0.6, metalness:0.4 }),
   cartWood:  new THREE.MeshStandardMaterial({ color:0x4a3626, roughness:0.9 }),
@@ -401,7 +401,7 @@ const wire = new THREE.Mesh(new THREE.TubeGeometry(wireCurve, 16, 0.012, 5), MAT
 wire.raycast = ()=>{}; scene.add(wire);
 
 /* ---------- lighting ---------- */
-const hemi = new THREE.HemisphereLight(0x46587c, 0x181410, 1.3); scene.add(hemi);
+const hemi = new THREE.HemisphereLight(0x526488, 0x1c1814, 1.55); scene.add(hemi);
 const moon = new THREE.DirectionalLight(0x93a7cc, 0.95);
 moon.position.set(-4, 7, 3); moon.castShadow = true;
 moon.shadow.mapSize.set(1024,1024);
@@ -409,7 +409,7 @@ moon.shadow.camera.left=-8; moon.shadow.camera.right=8;
 moon.shadow.camera.top=8; moon.shadow.camera.bottom=-8;
 moon.shadow.bias = -0.0004;
 scene.add(moon);
-const fill = new THREE.DirectionalLight(0x5a6c94, 0.72);
+const fill = new THREE.DirectionalLight(0x66779e, 0.9);
 fill.position.set(6, 4, 10); scene.add(fill);
 const lampLight = new THREE.PointLight(0xffb45a, 1.7, 8, 1.8);
 lampLight.position.set(1.8, 2.2, 1.6); scene.add(lampLight);
