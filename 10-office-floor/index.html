@@ -153,7 +153,7 @@ const MAT = {
   plantGrn:  new THREE.MeshStandardMaterial({ color:0x4a6e3a, roughness:0.9 }),
   potTerr:   new THREE.MeshStandardMaterial({ color:0x9a5a38, roughness:0.8 }),
   chairFab:  new THREE.MeshStandardMaterial({ color:0x3c454e, roughness:0.95 }),
-  jello:     new THREE.MeshStandardMaterial({ color:0xc87818, roughness:0.22, metalness:0.05, transparent:true, opacity:0.78, emissive:0x6a3a08, emissiveIntensity:0.3 }),
+  jello:     new THREE.MeshStandardMaterial({ color:0xe89a20, roughness:0.2, metalness:0.05, transparent:true, opacity:0.84, emissive:0x8a4f0a, emissiveIntensity:0.45 }),
   stapler:   new THREE.MeshStandardMaterial({ color:0x22252a, roughness:0.4, metalness:0.5 }),
   copier:    new THREE.MeshStandardMaterial({ color:0xd6d2c8, roughness:0.55, metalness:0.1 }),
   copierDk:  new THREE.MeshStandardMaterial({ color:0x4a4d52, roughness:0.6 }),
@@ -198,6 +198,7 @@ box(7.6, 0.13, 6.2, MAT.carpetIn, 0, -0.055, 0.4, 0, base);
 box(7.2, 0.14, 5.8, MAT.carpet, 0, -0.05, 0.4, 0, base);
 /* carpet seams */
 for (let i=0;i<3;i++) box(0.03, 0.145, 5.8, MAT.carpetIn, -2.4+i*2.4, -0.05, 0.4, 0, base);
+for (let i=0;i<2;i++) box(7.2, 0.145, 0.03, MAT.carpetIn, 0, -0.05, -1.03+i*2.6, 0, base);
 
 /* ---------- walls (cutaway: back + left) ---------- */
 const WALL_H = 3.2;
@@ -303,10 +304,10 @@ monitor(deskD, 0, -0.18, true);  mug(deskD, 0.5, 0.05, MAT.mugWhite); papers(des
 const jelloG = new THREE.Group();
 jelloG.position.set(2.05, DESK_H+0.03, 1.45);
 base.add(jelloG);
-const jello = rbox(0.62, 0.38, 0.54, 0.09, MAT.jello, 0, 0.19, 0, 0, jelloG);
+const jello = rbox(0.82, 0.5, 0.7, 0.12, MAT.jello, 0, 0.25, 0, 0, jelloG);
 /* stapler suspended inside */
-box(0.24, 0.05, 0.08, MAT.stapler, 0, 0.15, 0, 0.15, jelloG);
-const stapTop = box(0.24, 0.035, 0.07, MAT.stapler, 0, 0.2, 0.01, 0.15, jelloG);
+box(0.3, 0.06, 0.1, MAT.stapler, 0, 0.2, 0, 0.15, jelloG);
+const stapTop = box(0.3, 0.045, 0.09, MAT.stapler, 0, 0.26, 0.01, 0.15, jelloG);
 stapTop.rotation.z = 0.1;
 
 /* ---------- desk lamps (night glow) ---------- */
@@ -392,6 +393,55 @@ cyl(0.16, 0.12, 0.28, MAT.potTerr, -3.7, 0.14, -2.4, 12, base);
 sph(0.24, MAT.plantGrn, -3.7, 0.5, -2.4, base);
 sph(0.18, MAT.plantGrn, -3.55, 0.72, -2.45, base);
 sph(0.14, MAT.plantGrn, -3.85, 0.66, -2.3, base);
+
+/* ---------- break nook (front-right) ---------- */
+const BK_X = 3.15, BK_Z = 2.75;
+box(1.5, 0.9, 0.55, MAT.deskSide, BK_X, 0.45, BK_Z, 0, base);
+box(1.6, 0.06, 0.65, MAT.deskTop, BK_X, 0.93, BK_Z, 0, base);
+box(0.5, 0.3, 0.34, MAT.copierDk, BK_X-0.42, 1.11, BK_Z-0.06, 0, base);   /* microwave body */
+box(0.3, 0.2, 0.02, MAT.plasticB, BK_X-0.42, 1.11, BK_Z+0.12, 0, base);   /* microwave door */
+const mwLED = new THREE.MeshBasicMaterial({ color:0x3aff7a });
+const mwLEDm = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.02,0.02), mwLED);
+mwLEDm.position.set(BK_X-0.28, 1.2, BK_Z+0.12); base.add(mwLEDm);
+cyl(0.09, 0.07, 0.2, MAT.plasticB, BK_X+0.35, 1.06, BK_Z-0.08, 10, base); /* coffee base */
+cyl(0.07, 0.07, 0.14, MAT.water,    BK_X+0.35, 1.12, BK_Z-0.08, 10, base); /* coffee glass */
+cyl(0.045, 0.04, 0.1, MAT.mugWhite, BK_X+0.62, 1.01, BK_Z+0.1, 10, base);
+cyl(0.045, 0.04, 0.1, MAT.mugRed,   BK_X+0.62, 1.01, BK_Z-0.12, 10, base);
+cyl(0.14, 0.11, 0.34, MAT.metal, 4.15, 0.17, 1.9, 12, base);              /* trash bin */
+/* break table + chairs */
+const BT_X = 1.15, BT_Z = 3.05;
+cyl(0.05, 0.05, 0.66, MAT.metal, BT_X, 0.33, BT_Z, 10, base);
+cyl(0.26, 0.3, 0.04, MAT.plasticB, BT_X, 0.02, BT_Z, 16, base);
+rbox(0.85, 0.05, 0.85, 0.04, MAT.deskTop, BT_X, 0.7, BT_Z, 0, base);
+cyl(0.04, 0.035, 0.08, MAT.mugRed, BT_X+0.18, 0.77, BT_Z+0.1, 10, base);
+box(0.28, 0.015, 0.2, MAT.paper, BT_X-0.15, 0.73, BT_Z-0.12, 0.4, base);
+chair(BT_X-0.75, BT_Z, Math.PI/2+0.3);
+chair(BT_X+0.75, BT_Z, -Math.PI/2+0.2);
+
+/* ---------- credenza + whiteboard (left wall) ---------- */
+box(0.45, 0.8, 1.7, MAT.deskSide, -3.85, 0.4, 0.3, 0, base);
+box(0.5, 0.05, 1.8, MAT.deskTop, -3.85, 0.83, 0.3, 0, base);
+const binderMats = [MAT.mugRed, MAT.plasticB, MAT.water, MAT.plantGrn, MAT.paper, MAT.stapler];
+for (let i=0;i<8;i++) box(0.3, 0.3, 0.07, binderMats[i%6], -3.82, 1.0, -0.42+i*0.13, 0, base);
+box(0.28, 0.02, 0.2, MAT.paper, -3.82, 0.87, 0.95, 0.3, base);            /* stray form */
+cyl(0.05, 0.04, 0.09, MAT.mugWhite, -3.82, 0.9, 1.05, 10, base);
+box(0.05, 1.05, 1.5, MAT.paper, -4.1, 1.95, 0.3, 0, base);                 /* whiteboard */
+box(0.02, 0.05, 0.5, MAT.mugRed, -4.06, 2.2, 0.1, 0, base);                /* marker strokes */
+box(0.02, 0.05, 0.7, MAT.plasticB, -4.06, 2.05, 0.4, 0, base);
+box(0.02, 0.05, 0.4, MAT.plantGrn, -4.06, 1.85, 0.15, 0, base);
+box(0.02, 0.05, 0.3, MAT.stapler, -4.06, 1.7, 0.55, 0, base);
+
+/* ---------- wall clock (back wall, between windows) ---------- */
+const clockG = new THREE.Group(); clockG.position.set(1.3, 2.88, -2.86); base.add(clockG);
+const clockFace = new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,0.04,20), MAT.paper);
+clockFace.rotation.x = Math.PI/2; clockG.add(clockFace);
+box(0.02, 0.1, 0.02, MAT.plasticB, 0, 0.04, 0.03, 0, clockG);
+box(0.02, 0.07, 0.02, MAT.plasticB, 0.03, 0, 0.03, 0, clockG).rotation.z = -0.9;
+
+/* ---------- second plant (front-right corner) ---------- */
+cyl(0.16, 0.12, 0.28, MAT.potTerr, 4.05, 0.14, 3.5, 12, base);
+sph(0.22, MAT.plantGrn, 4.05, 0.48, 3.5, base);
+sph(0.16, MAT.plantGrn, 4.2, 0.66, 3.45, base);
 
 /* ---------- lighting ---------- */
 const hemi = new THREE.HemisphereLight(0xbcc8d8, 0x54503f, 1.15); scene.add(hemi);
