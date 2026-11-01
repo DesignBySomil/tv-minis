@@ -195,7 +195,7 @@ box(0.1, 2.2, 0.12, MAT.doorFrame, -4.5, 1.1, -0.82, 0, room);
 box(0.1, 0.12, 1.36, MAT.doorFrame, -4.5, 2.24, -0.2, 0, room);
 /* distant lit doorway deep in the void (appears on tap) */
 const farGlow = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 1.1), new THREE.MeshBasicMaterial({ color:0xf4f8ee, transparent:true, opacity:0 }));
-farGlow.position.set(-4.44, 1.0, -0.2); farGlow.rotation.y = Math.PI/2; scene.add(farGlow);
+farGlow.position.set(-4.44, 1.0, -0.2); farGlow.rotation.y = Math.PI/2; farGlow.material.opacity = 0.4; scene.add(farGlow);
 /* ceiling (partial: leaves the front edge open to the camera) */
 box(9.2, 0.14, 2.5, MAT.ceiling, 0, 2.67, -0.55, 0, room);
 box(9.2, 0.2, 0.16, MAT.wall, 0, 2.6, 0.72, 0, room);           // fascia lip
@@ -217,19 +217,19 @@ function wallDoor(x){
   const g = new THREE.Group(); g.position.set(x, 0, -1.6); scene.add(g);
   box(0.86, 1.95, 0.1, MAT.doorFrame, 0, 0.98, 0.02, 0, g);
   const leaf = box(0.72, 1.82, 0.07, MAT.doorWood, 0, 0.95, 0.07, 0, g);
-  box(0.5, 0.68, 0.02, MAT.doorFrame, 0, 1.35, 0.11, 0, g);
-  box(0.5, 0.6, 0.02, MAT.doorFrame, 0, 0.55, 0.11, 0, g);
+  box(0.5, 0.68, 0.02, MAT.doorFrame, 0, 0.4, 0.04, 0, leaf);
+  box(0.5, 0.6, 0.02, MAT.doorFrame, 0, -0.4, 0.04, 0, leaf);
   const knob = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), MAT.brass);
-  knob.position.set(0.27, 0.95, 0.12); g.add(knob);
+  knob.position.set(0.27, 0, 0.05); leaf.add(knob);
   return { g, leaf };
 }
 const doorA = wallDoor(-2.7);
 const doorB = wallDoor(0.3);
 /* black void + tiny far corridor behind door A */
-const voidA = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 1.8), MAT.voidDark);
-voidA.position.set(-2.7, 0.95, -1.62); scene.add(voidA);
+const voidA = new THREE.Mesh(new THREE.PlaneGeometry(0.66, 1.76), MAT.voidDark);
+voidA.position.set(-2.7, 0.95, -1.525); scene.add(voidA);
 const deepGlow = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.6), new THREE.MeshBasicMaterial({ color:0xe8f2e0, transparent:true, opacity:0 }));
-deepGlow.position.set(-2.7, 0.95, -1.61); scene.add(deepGlow);
+deepGlow.position.set(-2.7, 0.95, -1.52); scene.add(deepGlow);
 
 /* ---------- painting (pastoral, procedural) ---------- */
 const paintCan = document.createElement('canvas'); paintCan.width = 160; paintCan.height = 112;
