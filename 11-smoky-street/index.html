@@ -99,9 +99,11 @@ const FIT_BOXES = [
   new THREE.Box3(new THREE.Vector3(2.6, 0, -4.4), new THREE.Vector3(3.6, 3.95, -3.6)),
 ];
 const FIT_BOXES_PORTRAIT = [
-  new THREE.Box3(new THREE.Vector3(-3.4, -1.15, -3.5), new THREE.Vector3(3.4, 0.15, 3.35)),
-  new THREE.Box3(new THREE.Vector3(-3.4, 0, -3.1), new THREE.Vector3(3.4, 3.45, 2.6)),
+  new THREE.Box3(new THREE.Vector3(-4.2, -1.15, -3.5), new THREE.Vector3(3.85, 0.15, 3.35)),
+  new THREE.Box3(new THREE.Vector3(-4.2, 0, -3.1), new THREE.Vector3(3.85, 3.75, 2.6)),
   new THREE.Box3(new THREE.Vector3(2.35, 0, -4.4), new THREE.Vector3(3.35, 3.95, -3.6)),
+  new THREE.Box3(new THREE.Vector3(-4.05, 3.0, -2.9), new THREE.Vector3(-3.35, 4.2, -2.1)),
+  new THREE.Box3(new THREE.Vector3(-1.35, 3.2, -2.9), new THREE.Vector3(2.85, 4.2, -1.6)),
 ];
 function cornersOf(boxes){
   const out = [];
@@ -180,6 +182,7 @@ const MAT = {
   terrace2:  new THREE.MeshStandardMaterial({ color:0x6f6151, roughness:0.92 }),
   terrace3:  new THREE.MeshStandardMaterial({ color:0x635558, roughness:0.92 }),
   roofDark:  new THREE.MeshStandardMaterial({ color:0x504540, roughness:0.95 }),
+  roofTile:  new THREE.MeshStandardMaterial({ color:0x9c6046, roughness:0.88 }),
   chimBrick: new THREE.MeshStandardMaterial({ color:0x63493a, roughness:0.92 }),
   chimDark:  new THREE.MeshStandardMaterial({ color:0x2b2019, roughness:0.95 }),
   lampPost:  new THREE.MeshStandardMaterial({ color:0x16181c, roughness:0.6, metalness:0.4 }),
@@ -234,7 +237,7 @@ const pub = new THREE.Group(); scene.add(pub);
 box(3.2, 2.7, 1.4, MAT.pubBrick, -2.7, 1.35, -2.2, 0, pub);
 box(3.36, 0.24, 1.56, MAT.pubTrim, -2.7, 0.12, -2.2, 0, pub);      // base course
 box(3.36, 0.14, 1.56, MAT.pubTrim, -2.7, 2.62, -2.2, 0, pub);      // cornice
-box(3.36, 0.1, 1.5, MAT.roofDark, -2.7, 2.78, -2.2, 0, pub);       // roof cap
+gable(1.62, 0.62, 3.5, MAT.roofTile, -2.7, 2.8, -2.2, pub);
 /* pub chimney */
 box(0.42, 1.0, 0.42, MAT.chimBrick, -3.7, 3.3, -2.5, 0, pub);
 box(0.54, 0.14, 0.54, MAT.chimDark, -3.7, 3.84, -2.5, 0, pub);
@@ -288,8 +291,22 @@ const signFace = new THREE.Mesh(new THREE.PlaneGeometry(0.48, 0.34), new THREE.M
 signFace.position.z = 0.025; signBoardG.add(signFace);
 const signFace2 = signFace.clone(); signFace2.rotation.y = Math.PI; signFace2.position.z = -0.025; signBoardG.add(signFace2);
 
+/* gable roof: ridge runs along local z; rotate y 90deg for ridge along x */
+function gable(cw, h, len, mat, x, y, z, parent){
+  const s = new THREE.Shape();
+  s.moveTo(-cw/2, 0); s.lineTo(cw/2, 0); s.lineTo(0, h); s.closePath();
+  const g = new THREE.ExtrudeGeometry(s, { depth: len, bevelEnabled: false });
+  g.translate(0, 0, -len/2);
+  const m = new THREE.Mesh(g, mat);
+  m.rotation.y = Math.PI/2;
+  m.position.set(x, y, z);
+  m.castShadow = true;
+  (parent || scene).add(m);
+  return m;
+}
 /* ---------- terrace houses ---------- */
 const terrace = new THREE.Group(); scene.add(terrace);
+terrace.position.x = -0.9;
 const houseDefs = [
   { x:0.35, w:1.7, h:2.9, mat:MAT.terrace1 },
   { x:2.05, w:1.7, h:3.1, mat:MAT.terrace2 },
@@ -298,7 +315,7 @@ const houseDefs = [
 const houseGlow = [];
 for (const hd of houseDefs){
   box(hd.w, hd.h, 1.35, hd.mat, hd.x, hd.h/2, -2.25, 0, terrace);
-  box(hd.w+0.1, 0.12, 1.45, MAT.roofDark, hd.x, hd.h+0.05, -2.25, 0, terrace);
+  gable(1.55, 0.55, hd.w+0.24, MAT.roofTile, hd.x, hd.h+0.02, -2.25, terrace);
   box(0.34, 0.8, 0.34, MAT.chimBrick, hd.x-0.4, hd.h+0.5, -2.5, 0, terrace);
   box(0.44, 0.12, 0.44, MAT.chimDark, hd.x-0.4, hd.h+0.94, -2.5, 0, terrace);
   box(0.56, 1.05, 0.06, MAT.pubTrim, hd.x+0.3, 0.56, -1.56, 0, terrace);   // door
