@@ -369,14 +369,14 @@ for (const [sx,sz,sr] of [[-2.9,-0.4,0.34],[-2.45,-0.75,0.28]]){
 
 /* ---------- foreground dolly with cash ---------- */
 {
-  const dollyM = M(0x8a3a2e,{roughness:0.55, metalness:0.3});
+  const dollyM = M(0x70342a,{roughness:0.6, metalness:0.3});
   const dg = new THREE.Group(); dg.position.set(0.55,0.28,2.3); dg.rotation.y = -0.5; scene.add(dg);
-  const back = box(0.09,1.05,0.5,dollyM); back.position.set(-0.22,0.55,0); back.rotation.z=0.28; dg.add(back);
-  const toe = box(0.5,0.05,0.5,dollyM); toe.position.set(0.1,0.06,0); dg.add(toe);
-  for (const wz of [-0.24,0.24]){
-    const wh = cyl(0.11,0.11,0.06,steelDark,14); wh.rotation.x=Math.PI/2; wh.position.set(-0.28,0.11,wz); dg.add(wh);
+  const back = box(0.07,0.7,0.42,dollyM); back.position.set(-0.14,0.4,0); back.rotation.z=0.42; dg.add(back);
+  const toe = box(0.42,0.05,0.42,dollyM); toe.position.set(0.08,0.06,0); dg.add(toe);
+  for (const wz of [-0.2,0.2]){
+    const wh = cyl(0.1,0.1,0.06,steelDark,14); wh.rotation.x=Math.PI/2; wh.position.set(-0.22,0.1,wz); dg.add(wh);
   }
-  const grip = box(0.05,0.05,0.44,dollyM); grip.position.set(-0.37,1.1,0); dg.add(grip);
+  const grip = cyl(0.025,0.025,0.4,dollyM,8); grip.rotation.x=Math.PI/2; grip.position.set(-0.31,0.74,0); dg.add(grip);
   const noteM = M(0x9db38a,{roughness:0.9}), bandM = M(0xd8cfb8,{roughness:0.85});
   for (let i=0;i<2;i++){
     const br = box(0.34,0.14,0.5,noteM); br.position.set(0.1,0.16+i*0.15,0); br.rotation.y=rand(-0.06,0.06); dg.add(br);
