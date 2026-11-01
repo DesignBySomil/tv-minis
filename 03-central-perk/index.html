@@ -601,7 +601,7 @@ const puffTex = (()=>{
   return new THREE.CanvasTexture(cv);
 })();
 const steamMat = new THREE.PointsMaterial({
-  color:0xf4f8fa, size:0.14, map:puffTex, transparent:true, opacity:0, depthWrite:false });
+  color:0xf4f8fa, size:0.3, map:puffTex, transparent:true, opacity:0, depthWrite:false });
 const steam = new THREE.Points(steamGeo, steamMat);
 scene.add(steam);
 const WAND = new THREE.Vector3(1.9, 1.05, -1.85);
@@ -610,12 +610,12 @@ function updateSteam(dt){
   steamMat.opacity += ((steamBurst>0?0.75:0) - steamMat.opacity) * Math.min(1, dt*4);
   for (let i=0;i<STEAM_N;i++){
     steamAge[i] += dt;
-    if (steamAge[i] > 1.4){ if (steamBurst>0) steamAge[i] = -Math.random()*0.3; else continue; }
+    if (steamAge[i] > 2.0){ if (steamBurst>0) steamAge[i] = -Math.random()*0.3; else continue; }
     if (steamAge[i] < 0) continue;
-    const a = steamAge[i], seed = i*1.7;
-    steamPos[i*3]   = WAND.x + Math.sin(seed+a*6)*0.04;
-    steamPos[i*3+1] = WAND.y + a*0.5;
-    steamPos[i*3+2] = WAND.z + Math.cos(seed+a*5)*0.04;
+    const a = steamAge[i], seed = i*1.7, spread = 0.04 + a*0.16;
+    steamPos[i*3]   = WAND.x + Math.sin(seed+a*6)*spread;
+    steamPos[i*3+1] = WAND.y + a*0.62;
+    steamPos[i*3+2] = WAND.z + Math.cos(seed+a*5)*spread;
   }
   steamGeo.attributes.position.needsUpdate = true;
 }
@@ -760,7 +760,7 @@ renderer.domElement.addEventListener('pointerup', e=>{
   ray.setFromCamera(ptr, camera);
   const mHit = ray.intersectObjects([machine, counter], true);
   if (mHit.length){
-    steamBurst = 1.6;
+    steamBurst = 2.6;
     for (let i=0;i<STEAM_N;i++) steamAge[i] = -Math.random()*0.5;
     return;
   }
