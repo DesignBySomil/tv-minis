@@ -657,6 +657,7 @@ const STATES = [
 ];
 let stateIdx = 0;
 let blend = { t:1, from:STATES[0], to:STATES[0] };
+window.__dbg=()=>JSON.stringify({idx:stateIdx,bt:Math.round(blend.t*100)/100,top:skyUniforms.topColor.value.getHexString(),mid:skyUniforms.midColor.value.getHexString(),bot:skyUniforms.bottomColor.value.getHexString(),fog:scene.fog.color.getHexString(),fogD:scene.fog.density,exp:renderer.toneMappingExposure,skyVis:sky.visible});
 function applyState(s){
   skyUniforms.topColor.value.set(s.top);
   skyUniforms.midColor.value.set(s.mid);
