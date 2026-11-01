@@ -578,16 +578,23 @@ renderer.domElement.addEventListener('pointerdown', e=>{
 });
 let lastUpAt = -999;
 renderer.domElement.addEventListener('pointerup', e=>{
-  const nowUp = performance.now();
-  if (nowUp - lastUpAt < 150) return;
-  lastUpAt = nowUp;
-  if (nowUp-downAt > 350) return;
-  if (Math.hypot(e.clientX-downPos[0], e.clientY-downPos[1]) > 8) return;
-  ptr.set((e.clientX/innerWidth)*2-1, -(e.clientY/innerHeight)*2+1);
-  ray.setFromCamera(ptr, camera);
-  if (ray.intersectObjects([typeGroup], true).length){ clack(); return; }
-  if (ray.intersectObjects([fairyGroup], true).length){ fairyChase = !fairyChase; return; }
-  if (ray.intersectObjects([windowGroup], true).length){ cycleState(); return; }
+  try{
+    window.__tapLog = window.__tapLog||[];
+    const nowUp = performance.now();
+    if (nowUp - lastUpAt < 150){ __tapLog.push(['dup']); return; }
+    lastUpAt = nowUp;
+    if (nowUp-downAt > 350){ __tapLog.push(['slow', Math.round(nowUp-downAt)]); return; }
+    if (Math.hypot(e.clientX-downPos[0], e.clientY-downPos[1]) > 8){ __tapLog.push(['drag']); return; }
+    ptr.set((e.clientX/innerWidth)*2-1, -(e.clientY/innerHeight)*2+1);
+    ray.setFromCamera(ptr, camera);
+    const tH = ray.intersectObjects([typeGroup], true).length;
+    const fH = ray.intersectObjects([fairyGroup], true).length;
+    const wH = ray.intersectObjects([windowGroup], true).length;
+    __tapLog.push([Math.round(e.clientX), Math.round(e.clientY), tH, fH, wH]);
+    if (tH){ clack(); return; }
+    if (fH){ fairyChase = !fairyChase; return; }
+    if (wH){ cycleState(); return; }
+  }catch(err){ (window.__tapLog=window.__tapLog||[]).push(['ERR', String(err && err.message || err)]); }
 });
 
 /* ---------- resize / loop ---------- */
