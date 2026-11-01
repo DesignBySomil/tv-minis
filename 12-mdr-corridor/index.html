@@ -94,7 +94,7 @@ controls.maxDistance = 70;
 
 const FIT_BOXES = [
   new THREE.Box3(new THREE.Vector3(-5.4, -2.1, -2.5), new THREE.Vector3(5.4, 0.2, 2.3)),
-  new THREE.Box3(new THREE.Vector3(-4.78, 0, -1.9), new THREE.Vector3(4.78, 3.0, 1.4)),
+  new THREE.Box3(new THREE.Vector3(-4.82, 0, -1.9), new THREE.Vector3(4.82, 3.0, 1.4)),
 ];
 const FIT_CORNERS = [];
 for (const b of FIT_BOXES)
@@ -102,7 +102,7 @@ for (const b of FIT_BOXES)
     for (const y of [b.min.y, b.max.y])
       for (const z of [b.min.z, b.max.z])
         FIT_CORNERS.push(new THREE.Vector3(x, y, z));
-const SAFE = { x: 0.93, yTop: 0.85, yBottom: 0.8 };
+const SAFE = { x: 0.94, yTop: 0.9, yBottom: 0.86 };
 function allCornersFit(){
   const p = new THREE.Vector3();
   for (const c of FIT_CORNERS){
@@ -147,10 +147,10 @@ function cyl(rt,rb,h,mat,x,y,z,seg,parent){
 
 /* ---------- materials ---------- */
 const MAT = {
-  soil:      new THREE.MeshStandardMaterial({ color:0x181614, roughness:0.95 }),
-  slabEdge:  new THREE.MeshStandardMaterial({ color:0x2e2c2a, roughness:0.9 }),
+  soil:      new THREE.MeshStandardMaterial({ color:0x26211b, roughness:0.95 }),
+  slabEdge:  new THREE.MeshStandardMaterial({ color:0x413d38, roughness:0.9 }),
   slabTop:   new THREE.MeshStandardMaterial({ color:0x3a3835, roughness:0.9 }),
-  shell:     new THREE.MeshStandardMaterial({ color:0x23262c, roughness:0.9 }),
+  shell:     new THREE.MeshStandardMaterial({ color:0x2e3239, roughness:0.9 }),
   carpet:    new THREE.MeshStandardMaterial({ color:0x7fa88c, roughness:0.98 }),
   carpetDk:  new THREE.MeshStandardMaterial({ color:0x6e967c, roughness:0.98 }),
   wall:      new THREE.MeshStandardMaterial({ color:0xdfe4da, roughness:0.85 }),
@@ -173,6 +173,8 @@ box(10.2, 0.55, 4.4, MAT.soil, 0, -0.85, -0.1, 0, base);
 box(10.5, 0.42, 4.6, MAT.slabEdge, 0, -1.32, -0.1, 0, base);
 box(10.8, 0.34, 4.85, MAT.soil, 0, -1.68, -0.1, 0, base);
 box(11.0, 0.22, 5.0, MAT.slabTop, 0, -1.93, -0.1, 0, base);
+box(10.6, 0.07, 4.7, new THREE.MeshStandardMaterial({ color:0x59544c, roughness:0.85 }), 0, -1.53, -0.1, 0, base);
+box(10.35, 0.06, 4.55, new THREE.MeshStandardMaterial({ color:0x4a4640, roughness:0.85 }), 0, -1.13, -0.1, 0, base);
 box(9.8, 0.42, 4.1, MAT.slabEdge, 0, -0.42, -0.1, 0, base);
 box(9.4, 0.24, 3.9, MAT.slabTop, 0, -0.12, -0.1, 0, base);
 /* carpet with subtle tiles */
@@ -193,6 +195,13 @@ box(0.2, 0.85, 2.9, MAT.wallLow, 4.53, 0.425, -0.2, 0, room);
 /* dark shell caps on the outer faces of the end walls (diorama exterior) */
 box(0.04, 2.72, 3.02, MAT.shell, 4.66, 1.32, -0.2, 0, room);
 box(0.04, 2.72, 3.02, MAT.shell, -4.66, 1.32, -0.2, 0, room);
+/* shell panel seams + top trim so the ends read as model shell, not void */
+for (const sx of [4.69, -4.69]){
+  box(0.015, 0.05, 3.02, MAT.slabEdge, sx, 1.32, -0.2, 0, room);
+  box(0.015, 0.05, 3.02, MAT.slabEdge, sx, 2.1, -0.2, 0, room);
+  box(0.015, 2.72, 0.05, MAT.slabEdge, sx, 1.32, 0.4, 0, room);
+  box(0.05, 0.08, 3.06, MAT.baseboard, sx, 2.72, -0.2, 0, room);
+}
 /* closed dark door at the right end of the corridor (interior face) */
 const endDoor = new THREE.Group(); endDoor.position.set(4.42, 0, -0.55); endDoor.rotation.y = -Math.PI/2; scene.add(endDoor);
 box(0.86, 1.95, 0.1, MAT.doorFrame, 0, 0.98, 0, 0, endDoor);
@@ -404,7 +413,7 @@ const clock = new THREE.Clock();
 let t = 0;
 const cPanelOn = new THREE.Color(0xf6fbf2);
 const cPanelOff = new THREE.Color(0x1d2320);
-const cSlabEHi = new THREE.Color(0x2e2c2a), cSlabELo = new THREE.Color(0x4c3630);
+const cSlabEHi = new THREE.Color(0x413d38), cSlabELo = new THREE.Color(0x4c3630);
 const cSlabTHi = new THREE.Color(0x3a3835), cSlabTLo = new THREE.Color(0x58423a);
 const cSeatHi = new THREE.Color(0x2c3a34), cSeatLo = new THREE.Color(0x8a5a48);
 const cBaseHi = new THREE.Color(0x1c2226), cBaseLo = new THREE.Color(0x6b4238);
