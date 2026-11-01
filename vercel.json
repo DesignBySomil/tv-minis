@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "breakingbad.somiljain.com" }], "destination": "/01-desert-rv/$1" },
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "gameofthrones.somiljain.com" }], "destination": "/02-the-wall/$1" },
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "friends.somiljain.com" }], "destination": "/03-central-perk/$1" },
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "squidgame.somiljain.com" }], "destination": "/04-red-light/$1" },
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "thelastofus.somiljain.com" }], "destination": "/05-overgrown-street/$1" },
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "wednesday.somiljain.com" }], "destination": "/06-split-dorm/$1" },
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "moneyheist.somiljain.com" }], "destination": "/07-the-mint/$1" },
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "dark.somiljain.com" }], "destination": "/08-cave-of-time/$1" },
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "sherlock.somiljain.com" }], "destination": "/09-baker-street/$1" },
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "theoffice.somiljain.com" }], "destination": "/10-office-floor/$1" },
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "peakyblinders.somiljain.com" }], "destination": "/11-smoky-street/$1" },
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "severance.somiljain.com" }], "destination": "/12-mdr-corridor/$1" }
+  ]
+}
