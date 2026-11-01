@@ -223,13 +223,13 @@ let moonMesh, starPts;
   const bandCols = [0x9fb8d8, 0xc9d4de, 0xe6ddc8];
   for (let i=0;i<3;i++){
     const b = new THREE.Mesh(new THREE.PlaneGeometry(2.7, 1.06), new THREE.MeshBasicMaterial({color:bandCols[i], fog:false}));
-    b.position.set(0, 2.98 - i*1.02, WALL_Z-0.6);
+    b.position.set(0, 2.72 - i*0.97, WALL_Z-0.6);
     scene.add(b); skyBands.push(b);
   }
   moonMesh = new THREE.Mesh(new THREE.CircleGeometry(0.5, 24), new THREE.MeshBasicMaterial({color:0xf2ead0, fog:false, transparent:true, opacity:0}));
   moonMesh.position.set(-0.62, 2.78, WALL_Z-0.55); scene.add(moonMesh);
   const sg = new THREE.BufferGeometry(); const sp=[];
-  for (let i=0;i<60;i++) sp.push(rand(-1.2,1.2), rand(0.7,3.5), WALL_Z-0.5);
+  for (let i=0;i<60;i++) sp.push(rand(-1.2,1.2), rand(0.7,3.1), WALL_Z-0.5);
   sg.setAttribute('position', new THREE.Float32BufferAttribute(sp,3));
   starPts = new THREE.Points(sg, new THREE.PointsMaterial({color:0xd8e2f8, size:0.05, transparent:true, opacity:0, fog:false}));
   scene.add(starPts);
@@ -386,7 +386,14 @@ let fairyLight;
     }
     const wire = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
       new THREE.LineBasicMaterial({color:0x3a3230}));
+    wire.raycast = ()=>{};
     fairyGroup.add(wire);
+    // invisible forgiving hit-proxy along the run
+    const mid = new THREE.Vector3().lerpVectors(p0,p1,0.5); mid.y -= sag*0.6;
+    const proxy = new THREE.Mesh(new THREE.BoxGeometry(p0.distanceTo(p1)+0.3, 0.55, 0.45),
+      new THREE.MeshBasicMaterial({transparent:true, opacity:0, depthWrite:false, colorWrite:false}));
+    proxy.position.copy(mid); proxy.castShadow=false; proxy.receiveShadow=false;
+    fairyGroup.add(proxy);
     for (let i=1;i<n;i++){
       const bm = new THREE.MeshStandardMaterial({color:bulbCols[i%bulbCols.length], emissive:bulbCols[i%bulbCols.length], emissiveIntensity:1.4, roughness:0.4});
       const bulb = sph(0.035,bm,8,6);
