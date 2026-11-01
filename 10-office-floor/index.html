@@ -271,10 +271,28 @@ box(0.07, 0.55, 1.9, MAT.partition, POD_X, DESK_H+0.28, POD_Z+0.1, 0, base);
 /* monitor with screen plane */
 const screenMats = [];
 function monitor(g, x, z, on){
-  box(0.5, 0.34, 0.05, MAT.plasticB, x, DESK_H+0.32, z, 0, g);
+  // shell with a proud bezel around an inset screen, neck + foot, power LED
+  box(0.52, 0.36, 0.045, MAT.plasticB, x, DESK_H+0.32, z, 0, g);
   const sm = new THREE.MeshBasicMaterial({ color: on ? 0x7ab8e8 : 0x1a1d22 });
-  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.28), sm);
-  scr.position.set(x, DESK_H+0.32, z+0.03); g.add(scr); screenMats.push({m:sm, on});
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.26), sm);
+  scr.position.set(x, DESK_H+0.325, z+0.024); g.add(scr); screenMats.push({m:sm, on});
+  // bezel lips
+  box(0.47, 0.022, 0.02, MAT.plasticG, x, DESK_H+0.468, z+0.024, 0, g);
+  box(0.47, 0.03, 0.02, MAT.plasticG, x, DESK_H+0.185, z+0.024, 0, g);
+  box(0.022, 0.27, 0.02, MAT.plasticG, x-0.232, DESK_H+0.325, z+0.024, 0, g);
+  box(0.022, 0.27, 0.02, MAT.plasticG, x+0.232, DESK_H+0.325, z+0.024, 0, g);
+  // power LED bottom-right of bezel
+  const led = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.012, 0.008),
+    new THREE.MeshBasicMaterial({ color: on ? 0x6fe08a : 0x27211a }));
+  led.position.set(x+0.19, DESK_H+0.185, z+0.036); g.add(led);
+  if (on){
+    // faint document rows on the screen so it reads as working, not blank glow
+    for (let li=0; li<3; li++){
+      const row = new THREE.Mesh(new THREE.PlaneGeometry(0.3 - li*0.05, 0.018),
+        new THREE.MeshBasicMaterial({ color:0xbfe4ff, transparent:true, opacity:0.75 }));
+      row.position.set(x-0.02, DESK_H+0.385 - li*0.055, z+0.028); g.add(row);
+    }
+  }
   box(0.08, 0.12, 0.05, MAT.plasticB, x, DESK_H+0.1, z, 0, g);
   box(0.24, 0.02, 0.16, MAT.plasticB, x, DESK_H+0.04, z, 0, g);
 }
@@ -302,8 +320,13 @@ function papers(g, x, z, ry){
 monitor(deskA, 0, -0.18, true);  keyboard(deskA, 0, 0.12); mug(deskA, -0.5, 0.1, MAT.mugRed); phone(deskA, 0.5, -0.1);
 monitor(deskB, 0, -0.18, true);  papers(deskB, -0.4, 0.05, 0.15); keyboard(deskB, 0.1, 0.12);
 monitor(deskC, 0, -0.18, false); keyboard(deskC, 0, 0.12);
-box(0.3, 0.06, 0.24, MAT.plasticG, 0.45, DESK_H+0.06, -0.05, 0, deskC); /* inbox tray */
-box(0.26, 0.05, 0.2, MAT.paper, 0.45, DESK_H+0.11, -0.05, 0.1, deskC);
+/* open inbox tray: base, back + side walls, paper stack inside */
+box(0.3, 0.015, 0.24, MAT.plasticG, 0.45, DESK_H+0.045, -0.05, 0, deskC);
+box(0.3, 0.07, 0.015, MAT.plasticG, 0.45, DESK_H+0.075, -0.163, 0, deskC);
+box(0.015, 0.07, 0.24, MAT.plasticG, 0.307, DESK_H+0.075, -0.05, 0, deskC);
+box(0.015, 0.07, 0.24, MAT.plasticG, 0.593, DESK_H+0.075, -0.05, 0, deskC);
+box(0.26, 0.035, 0.2, MAT.paper, 0.45, DESK_H+0.075, -0.05, 0.1, deskC);
+box(0.24, 0.012, 0.18, MAT.paper, 0.46, DESK_H+0.1, -0.045, 0.28, deskC);
 monitor(deskD, 0, -0.18, true);  mug(deskD, 0.5, 0.05, MAT.mugWhite); papers(deskD, -0.35, 0.1, -0.2);
 
 /* ---------- THE JELLO (stapler inside) on desk B ---------- */
