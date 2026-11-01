@@ -385,6 +385,31 @@ const lampLight = new THREE.PointLight(0xffc37a, 0, 3.5, 1.7);
   scene.add(lampLight);
 }
 
+/* ---------- wall sconces + framed print (left wall) ---------- */
+const sconceLight = new THREE.PointLight(0xffc37a, 0, 4.5, 1.5);
+sconceLight.position.set(-2.9, 1.95, -0.5); scene.add(sconceLight);
+window.__sconceBulbs = [];
+{
+  const shadeMat = new THREE.MeshStandardMaterial({ color:0x8a5a34, roughness:0.5, metalness:0.35, emissive:0xff9a50, emissiveIntensity:0 });
+  for (const sz of [-1.7, 0.7]){
+    const arm = box(0.14, 0.04, 0.04, shadeMat); arm.position.set(-3.28, 2.06, sz); scene.add(arm);
+    const shade = box(0.17, 0.16, 0.17, shadeMat); shade.position.set(-3.16, 2.0, sz); scene.add(shade);
+    const bulbM = new THREE.MeshBasicMaterial({ color:0x3a3a3a });
+    const bulb = box(0.08, 0.08, 0.08, bulbM); bulb.position.set(-3.16, 1.89, sz); scene.add(bulb);
+    window.__sconceBulbs.push({ shadeM: shadeMat, bulbM });
+    /* warm glow card on wall behind each sconce */
+    const glowM = new THREE.MeshBasicMaterial({ color:0xff9a50, transparent:true, opacity:0 });
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.9), glowM);
+    glow.position.set(-3.34, 2.0, sz); glow.rotation.y = Math.PI/2; scene.add(glow);
+    window.__sconceBulbs.push({ glowM });
+  }
+  /* framed coffee-house print between sconces (no text) */
+  const pf = box(0.05, 0.85, 0.65, M(0x5a4028,{roughness:0.6})); pf.position.set(-3.32, 1.7, -0.5); scene.add(pf);
+  const artM = new THREE.MeshStandardMaterial({ color:0xc8734a, roughness:0.85 });
+  const pa = box(0.04, 0.7, 0.5, artM); pa.position.set(-3.3, 1.7, -0.5); scene.add(pa);
+  const pc = box(0.03, 0.2, 0.3, M(0xe8d8b8,{roughness:0.85})); pc.position.set(-3.29, 1.78, -0.5); scene.add(pc);
+}
+
 /* ---------- floor lamp (left corner, warms green chair + left wall) ---------- */
 const floorLampLight = new THREE.PointLight(0xffc37a, 0, 5.5, 1.4);
 {
@@ -660,7 +685,7 @@ const STATES = [
     fillI:0.4, fillC:0x9aa2cc, exp:1.1, stars:0,
     lamps:0.7, neon:1, outGlow:0.5, street:0xa8788a },
   { name:'night', top:0x0a0e26, mid:0x1a2048, bottom:0x2c2c58, fog:0x0e0c18, fogD:0.013,
-    hemi:[0x4a5288, 0x40302a, 1.05], sunC:0x8a96d8, sunI:0.6, sunPos:[-6,8,-4],
+    hemi:[0x4a5288, 0x4a382c, 1.05], sunC:0x8a96d8, sunI:0.6, sunPos:[-6,8,-4],
     fillI:0.5, fillC:0x7079bc, exp:1.04, stars:1,
     lamps:2.1, neon:1.6, outGlow:1, street:0x1a2438 },
 ];
@@ -684,6 +709,12 @@ function applyState(s){
   }
   lampLight.intensity = s.lamps * 1.1;
   floorLampLight.intensity = s.lamps * 1.05;
+  sconceLight.intensity = s.lamps * 1.5;
+  for (const b of (window.__sconceBulbs||[])){
+    if (b.shadeM) b.shadeM.emissiveIntensity = s.lamps * 0.55;
+    if (b.bulbM) b.bulbM.color.set(s.lamps > 0.1 ? 0xffe0a8 : 0x3a3a3a);
+    if (b.glowM) b.glowM.opacity = Math.min(0.4, s.lamps * 0.18);
+  }
   if (window.__floorLampShade) window.__floorLampShade.material.emissiveIntensity = s.lamps * 0.5;
   if (window.__lampShade) window.__lampShade.material.emissiveIntensity = s.lamps * 0.55;
   neonLight.intensity = s.neon * 0.9;
