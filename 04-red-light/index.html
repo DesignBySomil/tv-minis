@@ -259,7 +259,7 @@ let eyeM = null; // assigned inside the doll build block; used by tick()
   // head group (rotates)
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.23, 18, 14), skin);
   head.castShadow = true; dollHead.add(head);
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.245, 18, 14, 0, Math.PI*2, 0, Math.PI*0.62), hairM);
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.245, 18, 14, 0, Math.PI*2, 0, Math.PI*0.5), hairM);
   hair.position.y = 0.015; dollHead.add(hair);
   for (const sx of [-1,1]){ // pigtails
     const tail = new THREE.Mesh(new THREE.SphereGeometry(0.085, 10, 8), hairM);
@@ -267,20 +267,26 @@ let eyeM = null; // assigned inside the doll build block; used by tick()
     const tie = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), M(0xe8853f,{roughness:0.7}));
     tie.position.set(sx*0.2, 0.02, -0.01); dollHead.add(tie);
   }
-  // eyes + mouth on +z face (large, readable from above)
+  // pale face plate: a lighter front band so the face reads against the hair
+  const faceM = new THREE.MeshStandardMaterial({ color:0xf6e2cc, roughness:0.85 });
+  const face = new THREE.Mesh(new THREE.SphereGeometry(0.233, 18, 14, -Math.PI/2.8, Math.PI/1.4, Math.PI*0.3, Math.PI*0.52), faceM);
+  dollHead.add(face);
+  // eyes: white sclera + dark pupil (pupil glows red while watching)
   eyeM = new THREE.MeshStandardMaterial({ color:0x1a1210, roughness:0.25, emissive:0xff2a2a, emissiveIntensity:0 });
-  const dollEyes = [];
+  const scleraM = new THREE.MeshStandardMaterial({ color:0xf8f4ee, roughness:0.5 });
   for (const sx of [-1,1]){
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.042, 10, 8), eyeM);
-    eye.position.set(sx*0.082, 0.03, 0.185); dollHead.add(eye); dollEyes.push(eye);
-    const lash = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.012, 0.02), M(0x2a1a14,{roughness:0.7}));
-    lash.position.set(sx*0.082, 0.075, 0.185); lash.rotation.z = sx*-0.15; dollHead.add(lash);
-    const blush = new THREE.Mesh(new THREE.CircleGeometry(0.032, 10),
+    const sclera = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 10), scleraM);
+    sclera.position.set(sx*0.088, 0.025, 0.175); dollHead.add(sclera);
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), eyeM);
+    pupil.position.set(sx*0.088, 0.025, 0.222); dollHead.add(pupil);
+    const lash = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.016, 0.022), M(0x2a1a14,{roughness:0.7}));
+    lash.position.set(sx*0.088, 0.085, 0.185); lash.rotation.z = sx*-0.18; dollHead.add(lash);
+    const blush = new THREE.Mesh(new THREE.CircleGeometry(0.038, 10),
       new THREE.MeshStandardMaterial({ color:0xf0a08a, roughness:0.9 }));
-    blush.position.set(sx*0.13, -0.045, 0.165); blush.rotation.y = sx*0.35; dollHead.add(blush);
+    blush.position.set(sx*0.145, -0.055, 0.155); blush.rotation.y = sx*0.42; dollHead.add(blush);
   }
-  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.018, 0.012), M(0xb04a3a,{roughness:0.6}));
-  mouth.position.set(0, -0.08, 0.195); dollHead.add(mouth);
+  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.02, 0.012), M(0xb04a3a,{roughness:0.6}));
+  mouth.position.set(0, -0.095, 0.205); dollHead.add(mouth);
   // bangs fringe across the front hairline (strong front cue from above)
   const bangs = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.07, 0.08), hairM);
   bangs.position.set(0, 0.13, 0.15); bangs.rotation.x = 0.35; dollHead.add(bangs);
@@ -549,7 +555,7 @@ function tick(){
   const target = greenLight ? 0 : 1;
   headTurn += (target - headTurn) * Math.min(1, dt*5);
   dollHead.rotation.y = (1 - headTurn) * Math.PI;
-  dollHead.rotation.x = -0.3 * headTurn + 0.12 * (1 - headTurn);
+  dollHead.rotation.x = -0.5 * headTurn + 0.15 * (1 - headTurn);
   eyeM.emissiveIntensity = headTurn * 0.9;
 
   // runners creep on green, freeze on red
