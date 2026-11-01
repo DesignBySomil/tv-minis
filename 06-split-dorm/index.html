@@ -73,6 +73,7 @@ renderer.toneMappingExposure = 1.1;
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x241c2c);
 scene.fog = new THREE.FogExp2(0x14101c, 0.004);
 
 const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.1, 220);
@@ -221,14 +222,14 @@ let moonMesh, starPts;
 {
   const bandCols = [0x9fb8d8, 0xc9d4de, 0xe6ddc8];
   for (let i=0;i<3;i++){
-    const b = new THREE.Mesh(new THREE.PlaneGeometry(10, 2.2), new THREE.MeshBasicMaterial({color:bandCols[i], fog:false}));
-    b.position.set(0, 3.6 - i*2.2, WALL_Z-3.4);
+    const b = new THREE.Mesh(new THREE.PlaneGeometry(2.7, 1.06), new THREE.MeshBasicMaterial({color:bandCols[i], fog:false}));
+    b.position.set(0, 3.14 - i*1.05, WALL_Z-0.6);
     scene.add(b); skyBands.push(b);
   }
   moonMesh = new THREE.Mesh(new THREE.CircleGeometry(0.5, 24), new THREE.MeshBasicMaterial({color:0xf2ead0, fog:false, transparent:true, opacity:0}));
-  moonMesh.position.set(-2.2, 3.4, WALL_Z-3.35); scene.add(moonMesh);
+  moonMesh.position.set(-0.62, 2.78, WALL_Z-0.55); scene.add(moonMesh);
   const sg = new THREE.BufferGeometry(); const sp=[];
-  for (let i=0;i<60;i++) sp.push(rand(-4.8,4.8), rand(1.2,5.2), WALL_Z-3.3);
+  for (let i=0;i<60;i++) sp.push(rand(-1.2,1.2), rand(0.7,3.5), WALL_Z-0.5);
   sg.setAttribute('position', new THREE.Float32BufferAttribute(sp,3));
   starPts = new THREE.Points(sg, new THREE.PointsMaterial({color:0xd8e2f8, size:0.05, transparent:true, opacity:0, fog:false}));
   scene.add(starPts);
@@ -251,12 +252,13 @@ const typeGroup = new THREE.Group();
     const bar = cyl(0.022,0.022,0.62,blackMetal,6); bar.position.set(-3.42+i*0.36, 0.85, -2.35); bed.add(bar);
   }
   const headRail = cyl(0.03,0.03,1.68,blackMetal,8); headRail.rotation.z=Math.PI/2; headRail.position.set(-2.7,1.16,-2.35); bed.add(headRail);
-  const mattress = rbox(1.68, 0.22, 1.28, 0.05, M(0xd8d4ce,{roughness:0.95})); mattress.position.set(-2.7, 0.66, -1.7); bed.add(mattress);
+  const mattress = rbox(1.68, 0.22, 1.28, 0.05, M(0xb8b4ae,{roughness:0.95})); mattress.position.set(-2.7, 0.66, -1.7); bed.add(mattress);
   // black-and-white striped blanket, draped
-  for (let i=0;i<6;i++){
-    const st = box(1.7, 0.05, 0.21, M(i%2? 0x1c1a1e : 0xe4e0d8,{roughness:0.95}));
-    st.position.set(-2.7, 0.79+Math.sin(i*0.8)*0.008, -1.52+i*0.205); st.rotation.x = 0.02; bed.add(st);
+  for (let i=0;i<10;i++){
+    const st = box(1.7, 0.05, 0.125, M(i%2? 0x1c1a1e : 0xd8d4cc,{roughness:0.95}));
+    st.position.set(-2.7, 0.79+Math.sin(i*0.8)*0.008, -1.45+i*0.128); st.rotation.x = 0.02; bed.add(st);
   }
+  const throwP = rbox(0.4,0.12,0.28,0.05, M(0x3a363c,{roughness:0.95})); throwP.position.set(-3.0,0.83,-2.05); throwP.rotation.y=-0.15; bed.add(throwP);
   const pillow = rbox(0.7,0.14,0.42,0.05, M(0xf0ece4,{roughness:0.95})); pillow.position.set(-2.7,0.82,-2.12); pillow.rotation.y=0.04; bed.add(pillow);
   scene.add(bed);
 
@@ -463,10 +465,10 @@ let fairyLight;
 }
 
 /* ---------- lights ---------- */
-const hemi = new THREE.HemisphereLight(0xcfd8e8, 0x4a3a48, 0.75);
+const hemi = new THREE.HemisphereLight(0xcfd8e8, 0x4a3a48, 1.25);
 scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff0d8, 1.6); // day: warm daylight through window
-sun.position.set(2.5, 6, -6);
+sun.position.set(4.5, 7, 5.5);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 sun.shadow.camera.left = -6; sun.shadow.camera.right = 6;
@@ -500,14 +502,14 @@ scene.add(new THREE.Points(dustGeo, dustMat));
 /* ---------- states: window light + mood ---------- */
 const STATES = [
   { name:'day',
-    sky:[0x9fb8d8, 0xc9d4de, 0xe6ddc8], hemi:[0xcfd8e8, 0x4a3a48, 0.75], sunC:0xfff0d8, sunI:1.6, moonI:0,
-    fillI:0.35, exp:1.1, stars:0, moon:0, fairy:0.5, lamp:0.55, candle:0.0, glass:0.7, dust:0.35 },
+    sky:[0x9fb8d8, 0xc9d4de, 0xe6ddc8], hemi:[0xcfd8e8, 0x4a3a48, 1.25], sunC:0xfff0d8, sunI:1.5, moonI:0,
+    fillI:0.45, exp:1.16, stars:0, moon:0, fairy:0.5, lamp:0.55, candle:0.0, glass:0.7, dust:0.35 },
   { name:'dusk',
-    sky:[0x8a6a9a, 0xd88a6a, 0xf2b878], hemi:[0xd8b49a, 0x463040, 0.6], sunC:0xffb060, sunI:1.0, moonI:0.1,
-    fillI:0.32, exp:1.08, stars:0.2, moon:0.25, fairy:0.9, lamp:0.8, candle:0.5, glass:0.9, dust:0.42 },
+    sky:[0x8a6a9a, 0xd88a6a, 0xf2b878], hemi:[0xd8b49a, 0x463040, 0.95], sunC:0xffb060, sunI:1.0, moonI:0.1,
+    fillI:0.4, exp:1.12, stars:0.2, moon:0.25, fairy:0.9, lamp:0.8, candle:0.5, glass:0.9, dust:0.42 },
   { name:'night',
-    sky:[0x141c30, 0x1d2842, 0x27354e], hemi:[0x4a5878, 0x241c28, 0.5], sunC:0x8898d8, sunI:0.0, moonI:0.9,
-    fillI:0.3, exp:1.05, stars:1, moon:1, fairy:1.5, lamp:1.0, candle:1.4, glass:1.4, dust:0.5 },
+    sky:[0x141c30, 0x1d2842, 0x27354e], hemi:[0x4a5878, 0x241c28, 0.66], sunC:0x8898d8, sunI:0.0, moonI:0.9,
+    fillI:0.38, exp:1.1, stars:1, moon:1, fairy:1.5, lamp:1.0, candle:1.4, glass:1.4, dust:0.5 },
 ];
 let stateIdx = 0;
 let blend = { t:1, from:STATES[0], to:STATES[0] };
