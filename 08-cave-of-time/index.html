@@ -142,7 +142,18 @@ function sph(r,mat,w=10,h=8){ const m=new THREE.Mesh(new THREE.SphereGeometry(r,
    ============================================================ */
 
 const ROCK = [0x6a5540, 0x5e4a38, 0x74594a, 0x544236];
-function rock(r, mat){ const m = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), mat); m.castShadow=true; m.receiveShadow=true; return m; }
+function rock(r, mat){
+  const g = new THREE.IcosahedronGeometry(r, Math.random()<0.35?1:0);
+  const pos = g.attributes.position, seen = new Map();
+  for(let i=0;i<pos.count;i++){
+    const key = pos.getX(i).toFixed(3)+','+pos.getY(i).toFixed(3)+','+pos.getZ(i).toFixed(3);
+    if(!seen.has(key)) seen.set(key, [rand(0.8,1.22), rand(0.75,1.25), rand(0.8,1.22)]);
+    const o = seen.get(key);
+    pos.setXYZ(i, pos.getX(i)*o[0], pos.getY(i)*o[1], pos.getZ(i)*o[2]);
+  }
+  g.computeVertexNormals();
+  const m = new THREE.Mesh(g, mat); m.castShadow=true; m.receiveShadow=true; return m;
+}
 
 /* ---------- cutaway base: rock strata ---------- */
 const s1 = box(8.4, 0.4, 8.4, M(0x3a2f24)); s1.position.y = -0.2; scene.add(s1);
@@ -163,7 +174,7 @@ function rockRow(x0,z0,x1,z1,n,rMin,rMax,y0,yStep,rows){
       const t = n>1 ? i/(n-1) : 0.5;
       const m = rock(rand(rMin,rMax), M(ROCK[(Math.random()*ROCK.length)|0]));
       m.position.set(x0+(x1-x0)*t+rand(-0.2,0.2), y0+r*yStep+rand(-0.12,0.12), z0+(z1-z0)*t+rand(-0.2,0.2));
-      m.scale.y *= 0.78; m.rotation.set(rand(0,3),rand(0,3),rand(0,3));
+      m.scale.set(m.scale.x*rand(0.85,1.15), m.scale.y*rand(0.6,0.95), m.scale.z*rand(0.85,1.15)); m.rotation.set(rand(0,3),rand(0,3),rand(0,3));
       rocks.add(m);
     }
   }
