@@ -714,11 +714,12 @@ const clock = new THREE.Clock();
 let elapsed = 0;
 function tick(){
   requestAnimationFrame(tick);
-  const dt = Math.min(clock.getDelta(), 0.05);
+  const rawDt = clock.getDelta();
+  const dt = Math.min(rawDt, 0.05);
   elapsed += dt;
 
   if (blend.t < 1){
-    blend.t = Math.min(1, blend.t + dt/1.6);
+    blend.t = Math.min(1, blend.t + rawDt/1.6);
     // proper lerp from snapshot:
     const s = (function(){
       const p = blend.from, n = blend.to, t = blend.t;
