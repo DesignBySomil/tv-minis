@@ -110,7 +110,7 @@ function frameForViewport(){
   camera.aspect = aspect;
   camera.updateProjectionMatrix();
   const dir = camera.position.clone().sub(controls.target);
-  if (aspect < 0.8) dir.set(0.42, 0.72, 0.55);
+  if (aspect < 0.8) dir.set(0.45, 0.42, 0.66);
   else dir.set(0.5, 0.5, 0.7);
   dir.normalize();
   let lo = 4, hi = 60;
@@ -233,7 +233,7 @@ function softDot(color){
 const portalMat = new THREE.PointsMaterial({size:0.07, map:softDot('rgba(120,255,230,1)'), transparent:true, opacity:0.9, depthWrite:false, blending:THREE.AdditiveBlending, color:0x9ff5e6});
 const portalPts = new THREE.Points(portalGeo, portalMat); portalPts.position.set(0,1.2,-2.96); scene.add(portalPts);
 let portalBoost = 0;
-const portalLight = new THREE.PointLight(0x35e0c8, 0.5, 7, 1.8); portalLight.position.set(0,1.35,-2.4); scene.add(portalLight);
+const portalLight = new THREE.PointLight(0x35e0c8, 1.1, 9, 1.6); portalLight.position.set(0,1.35,-2.4); scene.add(portalLight);
 
 /* ---------- lantern on a boulder (left) ---------- */
 const lanternBoulder = rock(0.5, M(0x3a2e24)); lanternBoulder.position.set(-1.9, 0.35, 1.3); lanternBoulder.scale.y=0.75; scene.add(lanternBoulder);
@@ -242,7 +242,7 @@ const lBase = cyl(0.11, 0.13, 0.05, M(0x2a2a2c, {metalness:0.6, roughness:0.4}))
 const lGlass = cyl(0.085, 0.1, 0.16, new THREE.MeshStandardMaterial({color:0xffc070, emissive:0xffa030, emissiveIntensity:1.6, transparent:true, opacity:0.85})); lGlass.position.y=0.13; lantern.add(lGlass);
 const lTop = cyl(0.05, 0.11, 0.06, M(0x2a2a2c, {metalness:0.6, roughness:0.4})); lTop.position.y=0.24; lantern.add(lTop);
 const lHandle = new THREE.Mesh(new THREE.TorusGeometry(0.07,0.012,6,16,Math.PI), M(0x2a2a2c,{metalness:0.6,roughness:0.4})); lHandle.position.y=0.27; lantern.add(lHandle);
-const lanternLight = new THREE.PointLight(0xffa040, 2.0, 9, 1.7); lanternLight.position.set(-1.9, 1.1, 1.3); scene.add(lanternLight);
+const lanternLight = new THREE.PointLight(0xffa040, 2.4, 10, 1.6); lanternLight.position.set(-1.9, 1.1, 1.3); scene.add(lanternLight);
 let lanternFlare = 0;
 const lanternProxy = new THREE.Mesh(new THREE.BoxGeometry(0.8,1.0,0.8), new THREE.MeshBasicMaterial({visible:false}));
 lanternProxy.position.set(-1.9, 0.85, 1.3); scene.add(lanternProxy);
@@ -289,8 +289,8 @@ const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({size:0.035, map
 scene.add(dust);
 
 /* ---------- lighting rig + era states ---------- */
-const hemi = new THREE.HemisphereLight(0x8a6a4a, 0x241a12, 0.3); scene.add(hemi);
-const dir = new THREE.DirectionalLight(0xffe0b0, 0.35);
+const hemi = new THREE.HemisphereLight(0x9a7a56, 0x332619, 0.55); scene.add(hemi);
+const dir = new THREE.DirectionalLight(0xffe0b0, 0.5);
 dir.position.set(3, 6, 4); dir.castShadow = true;
 dir.shadow.mapSize.set(1024,1024);
 dir.shadow.camera.left=-6; dir.shadow.camera.right=6; dir.shadow.camera.top=6; dir.shadow.camera.bottom=-6;
