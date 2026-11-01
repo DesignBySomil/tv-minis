@@ -349,10 +349,10 @@ for (const [sx,sz,sr] of [[-2.9,-0.4,0.34],[-2.45,-0.75,0.28]]){
   const hd = box(0.2,0.04,0.05,steelDark); hd.position.set(3.3,0.62,-1.6); scene.add(hd);
 }
 // wall clock on back wall
+const clockHands = [];
 {
   const ck = cyl(0.26,0.26,0.06,M(0xe8e2d2,{roughness:0.8}),20); ck.rotation.x=Math.PI/2; ck.position.set(4.02,1.5,WALL_Z+0.14); scene.add(ck);
   const rim = new THREE.Mesh(new THREE.TorusGeometry(0.26,0.03,8,24),steelDark); rim.position.set(4.02,1.5,WALL_Z+0.15); scene.add(rim);
-  const clockHands = [];
   const h1p = new THREE.Group(); h1p.position.set(4.02,1.5,WALL_Z+0.18); scene.add(h1p);
   const h1 = box(0.02,0.13,0.02,steelDark); h1.position.set(0,0.06,0); h1p.add(h1); clockHands.push(h1p);
   const h2p = new THREE.Group(); h2p.position.set(4.02,1.5,WALL_Z+0.19); scene.add(h2p);
@@ -542,8 +542,6 @@ renderer.domElement.addEventListener('pointerup', e=>{
   if (Math.hypot(e.clientX-downPos[0], e.clientY-downPos[1]) > 8) return;
   ptr.set((e.clientX/innerWidth)*2-1, -(e.clientY/innerHeight)*2+1);
   ray.setFromCamera(ptr, camera);
-  window.__tapLog = window.__tapLog||[];
-  window.__tapLog.push([+ptr.x.toFixed(2), +ptr.y.toFixed(2), ray.intersectObject(vaultProxy,false).length, ray.intersectObject(pressProxy,false).length, ray.intersectObject(clockProxy,false).length, ray.intersectObject(cashProxy,false).length]);
   if (ray.intersectObject(vaultProxy,false).length){ tapVault(); return; }
   if (ray.intersectObject(pressProxy,false).length){ tapPress(); return; }
   if (ray.intersectObject(clockProxy,false).length){ cycleState(); clockSpin = 0; return; }
