@@ -143,8 +143,21 @@ function sph(r,mat,w=10,h=8){ const m=new THREE.Mesh(new THREE.SphereGeometry(r,
 
 const ROCK = [0x6a5540, 0x5e4a38, 0x74594a, 0x544236];
 function rock(r, mat){
-  // welded + smooth-shaded tumbled stone: per-unique-vertex jitter, indexed
-  // geometry, vertex normals -> rounded lumps instead of faceted shards
+  if (r > 0.55){
+    // large crag: non-indexed icosahedron -> flat face normals read as
+    // carved angular rock; moderate jitter for craggy variety
+    const g = new THREE.IcosahedronGeometry(r, 1);
+    const pos = g.attributes.position, seen = new Map();
+    for(let i=0;i<pos.count;i++){
+      const key = pos.getX(i).toFixed(3)+','+pos.getY(i).toFixed(3)+','+pos.getZ(i).toFixed(3);
+      if(!seen.has(key)) seen.set(key, [rand(0.85,1.18), rand(0.8,1.2), rand(0.85,1.18)]);
+      const o = seen.get(key);
+      pos.setXYZ(i, pos.getX(i)*o[0], pos.getY(i)*o[1], pos.getZ(i)*o[2]);
+    }
+    g.computeVertexNormals();
+    const m = new THREE.Mesh(g, mat); m.castShadow=true; m.receiveShadow=true; return m;
+  }
+  // small stone: welded + smooth-shaded tumbled pebble
   const src = new THREE.IcosahedronGeometry(r, r>0.45?1:0);
   const sp = src.attributes.position;
   const uniq = [], idx = [], seen = new Map();
@@ -189,11 +202,11 @@ function rockRow(x0,z0,x1,z1,n,rMin,rMax,y0,yStep,rows){
     }
   }
 }
-rockRow(-3.35,-2.8, -2.95,-2.8, 2, 0.55, 0.9, 0.5, 0.85, 4);   // left of tunnel 1
-rockRow(2.95,-2.8, 3.35,-2.8, 2, 0.55, 0.9, 0.5, 0.85, 4);     // right of tunnel 3
-rockRow(-2.7,-2.8, 2.7,-2.8, 5, 0.5, 0.8, 2.7, 0.85, 2);       // lintel band above arches
-rockRow(-2.8,-3.3, -2.8,3.3, 6, 0.55, 0.9, 0.5, 0.85, 4);
-rockRow(2.9,0.2, 2.9,3.3, 3, 0.4, 0.65, 0.3, 0.55, 2);
+rockRow(-3.35,-2.8, -2.95,-2.8, 2, 0.8, 1.05, 0.55, 0.55, 5);   // left of tunnel 1
+rockRow(2.95,-2.8, 3.35,-2.8, 2, 0.8, 1.05, 0.55, 0.55, 5);     // right of tunnel 3
+rockRow(-2.7,-2.8, 2.7,-2.8, 5, 0.7, 0.95, 2.55, 0.55, 3);      // lintel band above arches
+rockRow(-2.8,-3.3, -2.8,3.3, 6, 0.8, 1.05, 0.55, 0.55, 5);
+rockRow(2.9,0.2, 2.9,3.3, 3, 0.55, 0.75, 0.35, 0.5, 3);
 
 /* scattered floor stones + stalagmites */
 for (let i=0;i<14;i++){
