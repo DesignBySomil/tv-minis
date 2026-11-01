@@ -195,6 +195,10 @@ const windowGroup = new THREE.Group();
   const ret = box(WALL_T, WALL_H, 6.6, wallML); ret.position.set(-4.0, WALL_H/2, 0.35); scene.add(ret);
   const retBase = box(WALL_T+0.07, 0.16, 6.6, wainsM); retBase.position.set(-4.0, 0.08, 0.35); scene.add(retBase);
   const retRail = box(WALL_T+0.05, 0.09, 6.6, wainsM); retRail.position.set(-4.0, 1.06, 0.35); scene.add(retRail);
+  // dark cap rails along wall tops (kills lit top-face sliver in portrait framing)
+  const capM = M(0x2c2230,{roughness:0.85});
+  const capB = box(8.3, 0.1, WALL_T+0.12, capM); capB.position.set(0, WALL_H+0.03, WALL_Z); scene.add(capB);
+  const capL = box(WALL_T+0.12, 0.1, 6.75, capM); capL.position.set(-4.0, WALL_H+0.03, 0.35); scene.add(capL);
 
   // circular window: ring frame, half-split panes
   const ring = new THREE.Mesh(new THREE.TorusGeometry(WIN_R+0.06, 0.09, 10, 40), M(0x1f1826,{roughness:0.6, metalness:0.25}));
