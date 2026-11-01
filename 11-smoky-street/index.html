@@ -75,7 +75,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.5;
+renderer.toneMappingExposure = 1.6;
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -162,12 +162,12 @@ const MAT = {
   bedDark:   new THREE.MeshStandardMaterial({ color:0x232021, roughness:0.95 }),
   pavement:  new THREE.MeshStandardMaterial({ color:0x42423f, roughness:0.85 }),
   puddle:    new THREE.MeshStandardMaterial({ color:0x141c28, roughness:0.12, metalness:0.55 }),
-  pubBrick:  new THREE.MeshStandardMaterial({ color:0x4e3a2c, roughness:0.9 }),
+  pubBrick:  new THREE.MeshStandardMaterial({ color:0x5c4636, roughness:0.9 }),
   pubTrim:   new THREE.MeshStandardMaterial({ color:0x2e2620, roughness:0.85 }),
   pubDoor:   new THREE.MeshStandardMaterial({ color:0x1e2b1e, roughness:0.7 }),
-  terrace1:  new THREE.MeshStandardMaterial({ color:0x3a3234, roughness:0.92 }),
-  terrace2:  new THREE.MeshStandardMaterial({ color:0x413830, roughness:0.92 }),
-  terrace3:  new THREE.MeshStandardMaterial({ color:0x372f31, roughness:0.92 }),
+  terrace1:  new THREE.MeshStandardMaterial({ color:0x463c3e, roughness:0.92 }),
+  terrace2:  new THREE.MeshStandardMaterial({ color:0x4d443a, roughness:0.92 }),
+  terrace3:  new THREE.MeshStandardMaterial({ color:0x433a3c, roughness:0.92 }),
   roofDark:  new THREE.MeshStandardMaterial({ color:0x1f1b19, roughness:0.95 }),
   chimBrick: new THREE.MeshStandardMaterial({ color:0x453227, roughness:0.92 }),
   chimDark:  new THREE.MeshStandardMaterial({ color:0x2b2019, roughness:0.95 }),
@@ -249,12 +249,12 @@ const knob = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), new THREE.Me
 knob.position.set(0.56, 0.62, 0.06); doorG.add(knob);
 box(0.8, 0.07, 0.3, MAT.pavement, -2.7, 0.035, -1.32, 0, scene);    // stone step
 /* figure in the doorway */
-const figG = new THREE.Group(); figG.position.set(-2.7, 0, -1.68); scene.add(figG);
+const figG = new THREE.Group(); figG.position.set(-2.7, 0, -1.54); scene.add(figG);
 const figBody = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 1.0), MAT.figure); figBody.position.y = 0.55; figG.add(figBody);
 const figHead = new THREE.Mesh(new THREE.CircleGeometry(0.11, 14), MAT.figure); figHead.position.y = 1.16; figG.add(figHead);
 const figCap = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.09), MAT.figure); figCap.position.y = 1.24; figG.add(figCap);
 /* hanging sign with painted pint */
-const signG = new THREE.Group(); signG.position.set(-1.32, 2.18, -1.48); scene.add(signG);
+const signG = new THREE.Group(); signG.position.set(-4.15, 2.18, -1.48); scene.add(signG);
 const sArm = cyl(0.025, 0.025, 0.6, MAT.ironDark, 0, 0, 0.3, 8, signG); sArm.rotation.x = Math.PI/2;
 cyl(0.02, 0.02, 0.34, MAT.ironDark, 0, -0.14, 0.52, 8, signG);
 const signBoardG = new THREE.Group(); signBoardG.position.set(0, -0.32, 0.52); signG.add(signBoardG);
@@ -296,6 +296,7 @@ for (const hd of houseDefs){
 }
 /* one faint warm upstairs window in house 2 */
 houseGlow[1].material = new THREE.MeshBasicMaterial({ color:0xb87a30 });
+houseGlow[0].material = new THREE.MeshBasicMaterial({ color:0x7a5426 });
 /* forge glow: house 3 ground floor window burns orange */
 const forgePane = glowWindow(3.4, 0.95, -1.56, 0.5, 0.7, terrace, new THREE.MeshBasicMaterial({ color:0xff7a22 }));
 
@@ -387,8 +388,8 @@ const wire = new THREE.Mesh(new THREE.TubeGeometry(wireCurve, 16, 0.012, 5), MAT
 wire.raycast = ()=>{}; scene.add(wire);
 
 /* ---------- lighting ---------- */
-const hemi = new THREE.HemisphereLight(0x33405a, 0x0e0c0a, 0.6); scene.add(hemi);
-const moon = new THREE.DirectionalLight(0x93a7cc, 0.55);
+const hemi = new THREE.HemisphereLight(0x33405a, 0x0e0c0a, 0.85); scene.add(hemi);
+const moon = new THREE.DirectionalLight(0x93a7cc, 0.8);
 moon.position.set(-4, 7, 3); moon.castShadow = true;
 moon.shadow.mapSize.set(1024,1024);
 moon.shadow.camera.left=-8; moon.shadow.camera.right=8;
