@@ -194,22 +194,22 @@ const skyBands = [];
 {
   const cols = [0x9fb8d8, 0xc9d4de, 0xe6ddc8];
   for (let i=0;i<3;i++){
-    const b = new THREE.Mesh(new THREE.PlaneGeometry(11, 1.5), new THREE.MeshBasicMaterial({color:cols[i]}));
-    b.position.set(0, 1.6 + i*1.2, WALL_Z - 0.15);
+    const b = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 1.1), new THREE.MeshBasicMaterial({color:cols[i]}));
+    b.position.set(2.0, 0.9 + i*1.0, WALL_Z - 0.15);
     scene.add(b); skyBands.push(b);
   }
 }
 // stars + moon for night
 const starPts = (()=>{
   const g = new THREE.BufferGeometry(); const n=90; const pos=new Float32Array(n*3);
-  for (let i=0;i<n;i++){ pos[i*3]=rand(-5,5); pos[i*3+1]=rand(1.4,4.4); pos[i*3+2]=WALL_Z-0.14; }
+  for (let i=0;i<n;i++){ pos[i*3]=rand(-0.3,4.3); pos[i*3+1]=rand(1.2,3.4); pos[i*3+2]=WALL_Z-0.14; }
   g.setAttribute('position', new THREE.BufferAttribute(pos,3));
   const m = new THREE.PointsMaterial({color:0xd8e2f8, size:0.035, transparent:true, opacity:0});
   const p = new THREE.Points(g,m); scene.add(p); return p;
 })();
 const moonMesh = (()=>{
   const m = new THREE.Mesh(new THREE.CircleGeometry(0.34, 24), new THREE.MeshBasicMaterial({color:0xe8ecf4, transparent:true, opacity:0}));
-  m.position.set(2.6, 3.4, WALL_Z-0.13); scene.add(m); return m;
+  m.position.set(3.3, 2.75, WALL_Z-0.13); scene.add(m); return m;
 })();
 
 /* ---------- THE VAULT DOOR (tap target 1) ---------- */
@@ -367,11 +367,11 @@ for (const [sx,sz,sr] of [[-2.9,-0.4,0.34],[-2.45,-0.75,0.28]]){
 /* ---------- pendant lamps ---------- */
 const lampLights = [], lampShades = [];
 for (const [lx,lz] of [[-1.2,-0.8],[1.6,0.3],[0.2,1.9]]){
-  const cord = cyl(0.015,0.015,1.5,steelDark,6); cord.castShadow=false; cord.position.set(lx,4.2,lz); scene.add(cord);
+  const cord = cyl(0.015,0.015,0.42,steelDark,6); cord.castShadow=false; cord.position.set(lx,3.32,lz); scene.add(cord);
   const shade = cyl(0.09,0.3,0.24,M(0x2e4a3c,{roughness:0.5, metalness:0.3, emissive:0xffca66, emissiveIntensity:0.2}),16);
-  shade.position.set(lx,3.4,lz); scene.add(shade); lampShades.push(shade);
-  const bulb = sph(0.06,new THREE.MeshBasicMaterial({color:0xffd888}),8,6); bulb.position.set(lx,3.3,lz); scene.add(bulb);
-  const li = new THREE.PointLight(0xffc877, 0.9, 7, 1.7); li.position.set(lx,3.25,lz); scene.add(li); lampLights.push(li);
+  shade.position.set(lx,3.0,lz); scene.add(shade); lampShades.push(shade);
+  const bulb = sph(0.06,new THREE.MeshBasicMaterial({color:0xffd888}),8,6); bulb.position.set(lx,2.9,lz); scene.add(bulb);
+  const li = new THREE.PointLight(0xffc877, 0.9, 7, 1.7); li.position.set(lx,2.85,lz); scene.add(li); lampLights.push(li);
 }
 
 /* ---------- loose bills: floor scatter + burst flock ---------- */
