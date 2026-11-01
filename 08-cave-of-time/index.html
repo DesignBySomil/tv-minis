@@ -68,7 +68,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.45;
+renderer.toneMappingExposure = 1.65;
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -141,18 +141,18 @@ function sph(r,mat,w=10,h=8){ const m=new THREE.Mesh(new THREE.SphereGeometry(r,
    1921 (torch-warm) / 1986 (cold flashlight) / 2052 (teal portal).
    ============================================================ */
 
-const ROCK = [0x4a3a2b, 0x42342a, 0x52402e, 0x3a2e24];
+const ROCK = [0x6a5540, 0x5e4a38, 0x74594a, 0x544236];
 function rock(r, mat){ const m = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), mat); m.castShadow=true; m.receiveShadow=true; return m; }
 
 /* ---------- cutaway base: rock strata ---------- */
 const s1 = box(8.4, 0.4, 8.4, M(0x3a2f24)); s1.position.y = -0.2; scene.add(s1);
 const s2 = box(8.9, 0.35, 8.9, M(0x302620)); s2.position.y = -0.58; scene.add(s2);
 const s3 = box(9.5, 0.5, 9.5, M(0x261d17)); s3.position.y = -1.0; scene.add(s3);
-const floor = box(7.6, 0.14, 7.6, M(0x463728)); floor.position.y = 0.07; scene.add(floor);
+const floor = box(7.6, 0.14, 7.6, M(0x5c4834)); floor.position.y = 0.07; scene.add(floor);
 
 /* ---------- cave walls ---------- */
-const wallBack = box(7.6, 4.2, 0.3, M(0x241c14)); wallBack.position.set(0, 2.1, -3.25); scene.add(wallBack);
-const wallLeft = box(0.3, 4.2, 7.6, M(0x241c14)); wallLeft.position.set(-3.25, 2.1, 0); scene.add(wallLeft);
+const wallBack = box(7.6, 4.2, 0.3, M(0x38291c)); wallBack.position.set(0, 2.1, -3.25); scene.add(wallBack);
+const wallLeft = box(0.3, 4.2, 7.6, M(0x38291c)); wallLeft.position.set(-3.25, 2.1, 0); scene.add(wallLeft);
 const capB = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.06, 0.32), new THREE.MeshBasicMaterial({color:0x120d09})); capB.position.set(0,4.23,-3.25); scene.add(capB);
 const capL = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.06, 7.6), new THREE.MeshBasicMaterial({color:0x120d09})); capL.position.set(-3.25,4.23,0); scene.add(capL);
 
@@ -195,7 +195,7 @@ for (let i=0;i<3;i++){
   const tx = tunnelXs[i];
   const dark = new THREE.Mesh(new THREE.CircleGeometry(0.78, 20), new THREE.MeshBasicMaterial({color:0x060403}));
   dark.position.set(tx, 1.05, -3.06); scene.add(dark);
-  const glow = new THREE.Mesh(new THREE.CircleGeometry(0.6, 20), new THREE.MeshBasicMaterial({color:0xff8040, transparent:true, opacity:0.12}));
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(0.6, 20), new THREE.MeshBasicMaterial({color:0xff8040, transparent:true, opacity:0.3}));
   glow.position.set(tx, 1.05, -3.05); scene.add(glow); tunnelGlows.push(glow);
   for (const sx of [-0.88, 0.88]){
     const b = rock(rand(0.5,0.62), M(ROCK[(Math.random()*4)|0]));
@@ -295,12 +295,12 @@ dir.shadow.camera.left=-6; dir.shadow.camera.right=6; dir.shadow.camera.top=6; d
 scene.add(dir);
 
 const ERAS = [
-  { name:'1921', lantern:3.2, flash:0.0,  portal:0.5,  hemi:0.85, hemiSky:0x8a5a30, dir:0.75, dirColor:0xffc080, glow:0xff8040, fog:0x0c0805 },
-  { name:'1986', lantern:1.1, flash:3.0,  portal:0.7,  hemi:0.95, hemiSky:0x5a6a8a, dir:0.9,  dirColor:0xc0d0f0, glow:0x88aaff, fog:0x080810 },
-  { name:'2052', lantern:0.8, flash:0.6,  portal:2.6,  hemi:0.85, hemiSky:0x3a8a7a, dir:0.6,  dirColor:0x80e0d0, glow:0x35e0c8, fog:0x05100c },
+  { name:'1921', lantern:3.2, flash:0.0,  portal:0.5,  hemi:1.8, hemiSky:0x8a5a30, dir:1.5, dirColor:0xffc080, glow:0xff8040, fog:0x0c0805 },
+  { name:'1986', lantern:1.1, flash:3.0,  portal:0.7,  hemi:1.9, hemiSky:0x5a6a8a, dir:1.6, dirColor:0xc0d0f0, glow:0x88aaff, fog:0x080810 },
+  { name:'2052', lantern:0.8, flash:0.6,  portal:2.6,  hemi:1.8, hemiSky:0x3a8a7a, dir:1.2, dirColor:0x80e0d0, glow:0x35e0c8, fog:0x05100c },
 ];
 let eraIdx = 1;             // start 1986
-const cur = { lantern:1.1, flash:3.0, portal:0.7, hemi:0.95, dir:0.9 };
+const cur = { lantern:1.1, flash:3.0, portal:0.7, hemi:1.9, dir:0.9 };
 const curCol = { hemiSky:new THREE.Color(0x5a6a8a), dir:new THREE.Color(0xc0d0f0), glow:new THREE.Color(0x88aaff), fog:new THREE.Color(0x080810) };
 const tgtCol = { hemiSky:new THREE.Color(), dir:new THREE.Color(), glow:new THREE.Color(), fog:new THREE.Color() };
 
