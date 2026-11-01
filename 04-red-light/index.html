@@ -230,6 +230,7 @@ let sigRed, sigGreen;
 /* ---------- the doll (original geometry) ---------- */
 const doll = new THREE.Group();
 const dollHead = new THREE.Group();
+let eyeM = null; // assigned inside the doll build block; used by tick()
 {
   const skin = M(0xf2dcc8, {roughness:0.7});
   const dressM = M(0xe8853f, {roughness:0.85});
@@ -267,7 +268,7 @@ const dollHead = new THREE.Group();
     tie.position.set(sx*0.2, 0.02, -0.01); dollHead.add(tie);
   }
   // eyes + mouth on +z face (large, readable from above)
-  const eyeM = new THREE.MeshStandardMaterial({ color:0x1a1210, roughness:0.25, emissive:0xff2a2a, emissiveIntensity:0 });
+  eyeM = new THREE.MeshStandardMaterial({ color:0x1a1210, roughness:0.25, emissive:0xff2a2a, emissiveIntensity:0 });
   const dollEyes = [];
   for (const sx of [-1,1]){
     const eye = new THREE.Mesh(new THREE.SphereGeometry(0.042, 10, 8), eyeM);
