@@ -116,7 +116,7 @@ function frameForViewport(){
   camera.aspect = aspect;
   camera.updateProjectionMatrix();
   const dir = camera.position.clone().sub(controls.target);
-  if (aspect < 0.8) dir.set(0.38, 0.55, 0.74);
+  if (aspect < 0.8) dir.set(0.26, 0.33, 0.91);
   else dir.set(0.45, 0.4, 0.8);
   dir.normalize();
   let lo = 4, hi = 70;
@@ -286,9 +286,9 @@ key.shadow.camera.top=7; key.shadow.camera.bottom=-7;
 key.shadow.bias = -0.0004;
 scene.add(key);
 const redL = new THREE.PointLight(0xff2a1e, 0, 7, 1.6);
-redL.position.set(-4.2, 1.9, -0.2); scene.add(redL);
+redL.position.set(-3.2, 1.9, -0.2); scene.add(redL);
 const redR = new THREE.PointLight(0xff2a1e, 0, 7, 1.6);
-redR.position.set(4.2, 1.9, -0.2); scene.add(redR);
+redR.position.set(3.2, 1.9, -0.2); scene.add(redR);
 
 /* ---------- states ---------- */
 let lightsOn = 1, lightsBlend = 1;
@@ -332,9 +332,13 @@ let t = 0;
 const cPanelOn = new THREE.Color(0xf6fbf2);
 const cPanelOff = new THREE.Color(0x1d2320);
 const cWallHi = new THREE.Color(0xdfe4da);
-const cWallLo = new THREE.Color(0x3c4440);
+const cWallLo = new THREE.Color(0x4a2c26);
 const cLowHi = new THREE.Color(0xb9c4b2);
-const cLowLo = new THREE.Color(0x2c332f);
+const cLowLo = new THREE.Color(0x3a2420);
+const cCarpHi = new THREE.Color(0x7fa88c);
+const cCarpLo = new THREE.Color(0x5c3a30);
+const cCarpDkHi = new THREE.Color(0x6e967c);
+const cCarpDkLo = new THREE.Color(0x4e322a);
 const tmpC3 = new THREE.Color();
 
 function tick(){
@@ -351,10 +355,12 @@ function tick(){
   for (const pl of panelLights) pl.intensity = lightsBlend * 0.85 * hum;
   hemi.intensity = 0.22 + lightsBlend * 0.63;
   key.intensity = 0.18 + lightsBlend * 0.92;
-  redL.intensity = (1 - lightsBlend) * 1.5;
-  redR.intensity = (1 - lightsBlend) * 1.5;
+  redL.intensity = (1 - lightsBlend) * 2.8;
+  redR.intensity = (1 - lightsBlend) * 2.8;
   MAT.wall.color.copy(tmpC3.copy(cWallLo).lerp(cWallHi, lightsBlend));
   MAT.wallLow.color.copy(tmpC3.copy(cLowLo).lerp(cLowHi, lightsBlend));
+  MAT.carpet.color.copy(tmpC3.copy(cCarpLo).lerp(cCarpHi, lightsBlend));
+  MAT.carpetDk.color.copy(tmpC3.copy(cCarpDkLo).lerp(cCarpDkHi, lightsBlend));
 
   /* door A slides into its pocket */
   doorA.leaf.position.x = -doorBlend * 0.68;
