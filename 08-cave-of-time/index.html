@@ -110,8 +110,8 @@ function frameForViewport(){
   camera.aspect = aspect;
   camera.updateProjectionMatrix();
   const dir = camera.position.clone().sub(controls.target);
-  if (aspect < 0.8) dir.set(0.45, 0.42, 0.66);
-  else dir.set(0.5, 0.5, 0.7);
+  if (aspect < 0.8){ dir.set(0.45, 0.42, 0.66); SAFE.x = 0.965; SAFE.yTop = 0.88; SAFE.yBottom = 0.83; }
+  else { dir.set(0.5, 0.5, 0.7); SAFE.x = 0.93; SAFE.yTop = 0.85; SAFE.yBottom = 0.8; }
   dir.normalize();
   let lo = 4, hi = 60;
   for (let i=0;i<28;i++){
