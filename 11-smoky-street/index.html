@@ -131,8 +131,8 @@ function frameForViewport(){
   camera.aspect = aspect;
   camera.updateProjectionMatrix();
   const dir = camera.position.clone().sub(controls.target);
-  if (aspect < 0.8){ dir.set(0.26, 0.33, 0.90); FIT_CORNERS = CORNERS_PORTRAIT; }
-  else { dir.set(0.56, 0.42, 0.7); FIT_CORNERS = CORNERS_FULL; }
+  if (aspect < 0.8){ dir.set(0.26, 0.33, 0.90); FIT_CORNERS = CORNERS_PORTRAIT; SAFE.x = 0.965; SAFE.yTop = 0.88; SAFE.yBottom = 0.83; }
+  else { dir.set(0.56, 0.42, 0.7); FIT_CORNERS = CORNERS_FULL; SAFE.x = 0.93; SAFE.yTop = 0.85; SAFE.yBottom = 0.8; }
   dir.normalize();
   let lo = 4, hi = 70;
   for (let i=0;i<28;i++){
