@@ -303,10 +303,10 @@ monitor(deskD, 0, -0.18, true);  mug(deskD, 0.5, 0.05, MAT.mugWhite); papers(des
 const jelloG = new THREE.Group();
 jelloG.position.set(2.05, DESK_H+0.03, 1.45);
 base.add(jelloG);
-const jello = rbox(0.46, 0.28, 0.4, 0.07, MAT.jello, 0, 0.14, 0, 0, jelloG);
+const jello = rbox(0.62, 0.38, 0.54, 0.09, MAT.jello, 0, 0.19, 0, 0, jelloG);
 /* stapler suspended inside */
-box(0.18, 0.035, 0.06, MAT.stapler, 0, 0.11, 0, 0.15, jelloG);
-const stapTop = box(0.18, 0.025, 0.05, MAT.stapler, 0, 0.15, 0.01, 0.15, jelloG);
+box(0.24, 0.05, 0.08, MAT.stapler, 0, 0.15, 0, 0.15, jelloG);
+const stapTop = box(0.24, 0.035, 0.07, MAT.stapler, 0, 0.2, 0.01, 0.15, jelloG);
 stapTop.rotation.z = 0.1;
 
 /* ---------- desk lamps (night glow) ---------- */
@@ -426,7 +426,7 @@ setPill();
 /* ---------- tap handling ---------- */
 const ray = new THREE.Raycaster();
 const ptr = new THREE.Vector2();
-const jelloProxy = new THREE.Mesh(new THREE.BoxGeometry(0.8,0.7,0.8), new THREE.MeshBasicMaterial({visible:false}));
+const jelloProxy = new THREE.Mesh(new THREE.BoxGeometry(1.0,0.85,1.0), new THREE.MeshBasicMaterial({visible:false}));
 jelloProxy.position.set(2.05, DESK_H+0.18, 1.45); scene.add(jelloProxy);
 const blindsProxy = new THREE.Mesh(new THREE.BoxGeometry(6.4,2.0,0.8), new THREE.MeshBasicMaterial({visible:false}));
 blindsProxy.position.set(0, WIN_Y, -2.85); scene.add(blindsProxy);
@@ -507,11 +507,11 @@ function tick(){
     const sq = Math.sin(wobbleT*9) * 0.55 * decay;
     const sy = Math.max(0.42, 1 - sq);
     jello.scale.set(1+sq*0.8, sy, 1+sq*0.8);
-    jello.position.y = 0.11*sy;
+    jello.position.y = 0.15*sy;
     stapTop.rotation.z = 0.1 + Math.sin(wobbleT*8+0.6) * 0.5 * decay;
     jelloG.rotation.z = Math.sin(wobbleT*9+0.5) * 0.22 * decay;
   } else {
-    jello.scale.set(1,1,1); jello.position.y = 0.11;
+    jello.scale.set(1,1,1); jello.position.y = 0.15;
     stapTop.rotation.z = 0.1; jelloG.rotation.z = 0;
   }
 
