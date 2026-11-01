@@ -256,9 +256,9 @@ const dollHead = new THREE.Group();
     hand.position.set(sx*0.35, 0.88, 0.02); doll.add(hand);
   }
   // head group (rotates)
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.21, 18, 14), skin);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.23, 18, 14), skin);
   head.castShadow = true; dollHead.add(head);
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.225, 18, 14, 0, Math.PI*2, 0, Math.PI*0.62), hairM);
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.245, 18, 14, 0, Math.PI*2, 0, Math.PI*0.62), hairM);
   hair.position.y = 0.015; dollHead.add(hair);
   for (const sx of [-1,1]){ // pigtails
     const tail = new THREE.Mesh(new THREE.SphereGeometry(0.085, 10, 8), hairM);
@@ -266,13 +266,23 @@ const dollHead = new THREE.Group();
     const tie = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), M(0xe8853f,{roughness:0.7}));
     tie.position.set(sx*0.2, 0.02, -0.01); dollHead.add(tie);
   }
-  // eyes + mouth on +z face
+  // eyes + mouth on +z face (large, readable from above)
+  const eyeM = new THREE.MeshStandardMaterial({ color:0x1a1210, roughness:0.25, emissive:0xff2a2a, emissiveIntensity:0 });
+  const dollEyes = [];
   for (const sx of [-1,1]){
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 8), M(0x1a1210,{roughness:0.3}));
-    eye.position.set(sx*0.075, 0.02, 0.19); dollHead.add(eye);
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.042, 10, 8), eyeM);
+    eye.position.set(sx*0.082, 0.03, 0.185); dollHead.add(eye); dollEyes.push(eye);
+    const lash = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.012, 0.02), M(0x2a1a14,{roughness:0.7}));
+    lash.position.set(sx*0.082, 0.075, 0.185); lash.rotation.z = sx*-0.15; dollHead.add(lash);
+    const blush = new THREE.Mesh(new THREE.CircleGeometry(0.032, 10),
+      new THREE.MeshStandardMaterial({ color:0xf0a08a, roughness:0.9 }));
+    blush.position.set(sx*0.13, -0.045, 0.165); blush.rotation.y = sx*0.35; dollHead.add(blush);
   }
-  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.014, 0.01), M(0xb04a3a,{roughness:0.6}));
-  mouth.position.set(0, -0.075, 0.2); dollHead.add(mouth);
+  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.018, 0.012), M(0xb04a3a,{roughness:0.6}));
+  mouth.position.set(0, -0.08, 0.195); dollHead.add(mouth);
+  // bangs fringe across the front hairline (strong front cue from above)
+  const bangs = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.07, 0.08), hairM);
+  bangs.position.set(0, 0.13, 0.15); bangs.rotation.x = 0.35; dollHead.add(bangs);
   dollHead.position.y = 1.5;
   doll.add(dollHead);
   doll.position.set(0, 0, -3.35);
@@ -534,10 +544,12 @@ function tick(){
     applyState(mixStates(blend.from, blend.to, blend.t));
   }
 
-  // doll head eases toward its pose
+  // doll head eases toward its pose: green = turned away, red = watching (tilted up)
   const target = greenLight ? 0 : 1;
   headTurn += (target - headTurn) * Math.min(1, dt*5);
-  dollHead.rotation.y = headTurn * Math.PI;
+  dollHead.rotation.y = (1 - headTurn) * Math.PI;
+  dollHead.rotation.x = -0.3 * headTurn + 0.12 * (1 - headTurn);
+  eyeM.emissiveIntensity = headTurn * 0.9;
 
   // runners creep on green, freeze on red
   for (const p of players){
