@@ -248,8 +248,10 @@ box(0.5, 0.42, 0.02, MAT.pubTrim, 0.31, 0.82, 0.045, 0, doorG);     // upper pan
 const knob = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), new THREE.MeshStandardMaterial({ color:0xc8a040, roughness:0.35, metalness:0.8 }));
 knob.position.set(0.56, 0.62, 0.06); doorG.add(knob);
 box(0.8, 0.07, 0.3, MAT.pavement, -2.7, 0.035, -1.32, 0, scene);    // stone step
+const doorGlow = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 1.16), new THREE.MeshBasicMaterial({ color:0xffb545 }));
+doorGlow.position.set(-2.7, 0.66, -1.49); scene.add(doorGlow);
 /* figure in the doorway */
-const figG = new THREE.Group(); figG.position.set(-2.7, 0, -1.54); scene.add(figG);
+const figG = new THREE.Group(); figG.position.set(-2.7, 0, -1.485); scene.add(figG);
 const figBody = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 1.0), MAT.figure); figBody.position.y = 0.55; figG.add(figBody);
 const figHead = new THREE.Mesh(new THREE.CircleGeometry(0.11, 14), MAT.figure); figHead.position.y = 1.16; figG.add(figHead);
 const figCap = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.09), MAT.figure); figCap.position.y = 1.24; figG.add(figCap);
