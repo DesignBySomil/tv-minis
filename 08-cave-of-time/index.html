@@ -169,8 +169,6 @@ function rockRow(x0,z0,x1,z1,n,rMin,rMax,y0,yStep,rows){
   }
 }
 rockRow(-3.35,-2.8, -2.95,-2.8, 2, 0.55, 0.9, 0.5, 0.85, 4);   // left of tunnel 1
-rockRow(-1.15,-2.8, -0.9,-2.8, 2, 0.4, 0.6, 0.5, 0.85, 3);     // between tunnel 1 and portal
-rockRow(0.9,-2.8, 1.15,-2.8, 2, 0.4, 0.6, 0.5, 0.85, 3);       // between portal and tunnel 3
 rockRow(2.95,-2.8, 3.35,-2.8, 2, 0.55, 0.9, 0.5, 0.85, 4);     // right of tunnel 3
 rockRow(-2.7,-2.8, 2.7,-2.8, 5, 0.5, 0.8, 2.7, 0.85, 2);       // lintel band above arches
 rockRow(-2.8,-3.3, -2.8,3.3, 6, 0.55, 0.9, 0.5, 0.85, 4);
@@ -195,32 +193,34 @@ const tunnelPulse = [0,0,0];
 const tunnelXs = [-2.05, 0, 2.05];
 for (let i=0;i<3;i++){
   const tx = tunnelXs[i];
-  const dark = new THREE.Mesh(new THREE.CircleGeometry(0.85, 20), new THREE.MeshBasicMaterial({color:0x060403}));
-  dark.position.set(tx, 1.05, -3.06); scene.add(dark);
-  const glow = new THREE.Mesh(new THREE.CircleGeometry(0.6, 20), new THREE.MeshBasicMaterial({color:0xff8040, transparent:true, opacity:0.3}));
-  glow.position.set(tx, 1.05, -3.05); scene.add(glow); tunnelGlows.push(glow);
-  for (const sx of [-0.88, 0.88]){
-    const b = rock(rand(0.5,0.62), M(ROCK[(Math.random()*4)|0]));
-    b.position.set(tx+sx, 0.85, -2.78); b.scale.y=1.4; b.rotation.set(rand(0,3),rand(0,3),0); scene.add(b);
+  const dark = new THREE.Mesh(new THREE.CircleGeometry(1.0, 20), new THREE.MeshBasicMaterial({color:0x060403}));
+  dark.position.set(tx, 1.2, -3.06); scene.add(dark);
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(0.8, 20), new THREE.MeshBasicMaterial({color:0xff8040, transparent:true, opacity:0.3}));
+  glow.position.set(tx, 1.2, -3.05); scene.add(glow); tunnelGlows.push(glow);
+  for (const sx of [-0.95, 0.95]){
+    const pillar = box(0.34, 2.1, 0.5, M(0x8a7050));
+    pillar.position.set(tx+sx, 1.1, -2.78); pillar.rotation.y = rand(-0.05,0.05); scene.add(pillar);
+    const cap = box(0.42, 0.16, 0.58, M(0x6e5840));
+    cap.position.set(tx+sx, 2.2, -2.78); scene.add(cap);
   }
-  const lintel = rock(0.72, M(ROCK[(Math.random()*4)|0]));
-  lintel.position.set(tx, 2.0, -2.78); lintel.scale.set(1.7,0.6,1.0); lintel.rotation.z=rand(-0.08,0.08); scene.add(lintel);
-  const proxy = new THREE.Mesh(new THREE.BoxGeometry(1.7, 2.2, 0.6), new THREE.MeshBasicMaterial({visible:false}));
-  proxy.position.set(tx, 1.05, -2.7); proxy.userData.tunnel = i; scene.add(proxy);
+  const lintel = box(2.35, 0.36, 0.62, M(0x7a6248));
+  lintel.position.set(tx, 2.42, -2.78); lintel.rotation.z = rand(-0.02,0.02); scene.add(lintel);
+  const proxy = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.5, 0.6), new THREE.MeshBasicMaterial({visible:false}));
+  proxy.position.set(tx, 1.2, -2.7); proxy.userData.tunnel = i; scene.add(proxy);
   tunnelProxies.push(proxy);
 }
 
 /* ---------- portal in the center tunnel ---------- */
-const portalRing = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.045, 10, 40), new THREE.MeshBasicMaterial({color:0x35e0c8, transparent:true, opacity:0.85}));
-portalRing.position.set(0, 1.05, -3.0); scene.add(portalRing);
-const portalCore = new THREE.Mesh(new THREE.CircleGeometry(0.46, 24), new THREE.MeshBasicMaterial({color:0x0d3a34, transparent:true, opacity:0.6}));
-portalCore.position.set(0, 1.05, -3.02); scene.add(portalCore);
+const portalRing = new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.05, 10, 40), new THREE.MeshBasicMaterial({color:0x35e0c8, transparent:true, opacity:0.85}));
+portalRing.position.set(0, 1.2, -2.98); scene.add(portalRing);
+const portalCore = new THREE.Mesh(new THREE.CircleGeometry(0.54, 24), new THREE.MeshBasicMaterial({color:0x0d3a34, transparent:true, opacity:0.6}));
+portalCore.position.set(0, 1.2, -3.0); scene.add(portalCore);
 const PORTAL_N = 90;
 const portalGeo = new THREE.BufferGeometry();
 const portalPos = new Float32Array(PORTAL_N*3);
 const portalAng = new Float32Array(PORTAL_N);
 const portalRad = new Float32Array(PORTAL_N);
-for (let i=0;i<PORTAL_N;i++){ portalAng[i]=rand(0,Math.PI*2); portalRad[i]=rand(0.08,0.46); }
+for (let i=0;i<PORTAL_N;i++){ portalAng[i]=rand(0,Math.PI*2); portalRad[i]=rand(0.08,0.54); }
 portalGeo.setAttribute('position', new THREE.BufferAttribute(portalPos, 3));
 function softDot(color){
   const c = document.createElement('canvas'); c.width=c.height=64;
@@ -231,9 +231,9 @@ function softDot(color){
   const t = new THREE.CanvasTexture(c); return t;
 }
 const portalMat = new THREE.PointsMaterial({size:0.07, map:softDot('rgba(120,255,230,1)'), transparent:true, opacity:0.9, depthWrite:false, blending:THREE.AdditiveBlending, color:0x9ff5e6});
-const portalPts = new THREE.Points(portalGeo, portalMat); portalPts.position.set(0,1.05,-2.98); scene.add(portalPts);
+const portalPts = new THREE.Points(portalGeo, portalMat); portalPts.position.set(0,1.2,-2.96); scene.add(portalPts);
 let portalBoost = 0;
-const portalLight = new THREE.PointLight(0x35e0c8, 0.5, 7, 1.8); portalLight.position.set(0,1.2,-2.4); scene.add(portalLight);
+const portalLight = new THREE.PointLight(0x35e0c8, 0.5, 7, 1.8); portalLight.position.set(0,1.35,-2.4); scene.add(portalLight);
 
 /* ---------- lantern on a boulder (left) ---------- */
 const lanternBoulder = rock(0.5, M(0x3a2e24)); lanternBoulder.position.set(-1.9, 0.35, 1.3); lanternBoulder.scale.y=0.75; scene.add(lanternBoulder);
@@ -262,7 +262,7 @@ const flashLens = new THREE.Mesh(new THREE.CircleGeometry(0.075,14), new THREE.M
 flashLens.position.set(0,1.05,1.42); flashLens.rotation.x=-0.5; scene.add(flashLens);
 const flashLight = new THREE.SpotLight(0x88aaff, 0.0, 12, 0.5, 0.5, 1.5);
 flashLight.position.set(1.9, 1.05, 1.42);
-flashLight.target.position.set(0, 1.05, -3.0);
+flashLight.target.position.set(0, 1.2, -3.0);
 scene.add(flashLight); scene.add(flashLight.target);
 
 /* ---------- crate + rope + papers ---------- */
