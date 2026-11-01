@@ -176,11 +176,11 @@ const MAT = {
   pavement:  new THREE.MeshStandardMaterial({ color:0x42423f, roughness:0.85 }),
   puddle:    new THREE.MeshStandardMaterial({ color:0x141c28, roughness:0.12, metalness:0.55 }),
   pubBrick:  new THREE.MeshStandardMaterial({ color:0x7a6048, roughness:0.9 }),
-  pubTrim:   new THREE.MeshStandardMaterial({ color:0x443a30, roughness:0.85 }),
+  pubTrim:   new THREE.MeshStandardMaterial({ color:0x7d7263, roughness:0.85 }),
   pubDoor:   new THREE.MeshStandardMaterial({ color:0x1e2b1e, roughness:0.7 }),
-  terrace1:  new THREE.MeshStandardMaterial({ color:0x675a5c, roughness:0.92 }),
-  terrace2:  new THREE.MeshStandardMaterial({ color:0x6f6151, roughness:0.92 }),
-  terrace3:  new THREE.MeshStandardMaterial({ color:0x635558, roughness:0.92 }),
+  terrace1:  new THREE.MeshStandardMaterial({ color:0x7c6e70, roughness:0.92 }),
+  terrace2:  new THREE.MeshStandardMaterial({ color:0x867662, roughness:0.92 }),
+  terrace3:  new THREE.MeshStandardMaterial({ color:0x7a6a6d, roughness:0.92 }),
   roofDark:  new THREE.MeshStandardMaterial({ color:0x504540, roughness:0.95 }),
   roofTile:  new THREE.MeshStandardMaterial({ color:0x9c6046, roughness:0.88 }),
   chimBrick: new THREE.MeshStandardMaterial({ color:0x63493a, roughness:0.92 }),
@@ -337,6 +337,14 @@ for (const hd of houseDefs){
   glowWindow(hd.x-0.35, 0.95, -1.56, 0.5, 0.7, terrace, MAT.darkWin);
   glowWindow(hd.x-0.35, 2.15, -1.56, 0.5, 0.7, terrace, MAT.darkWin);
   houseGlow.push(glowWindow(hd.x+0.35, 2.15, -1.56, 0.5, 0.7, terrace, MAT.darkWin));
+  /* facade dress-up: string course, door fanlight + lintel, chimney pots */
+  box(hd.w+0.06, 0.09, 0.06, MAT.pubTrim, hd.x, 1.56, -1.55, 0, terrace);            // string course
+  box(hd.w+0.08, 0.1, 0.1, MAT.pubTrim, hd.x, hd.h-0.06, -1.6, 0, terrace);          // eaves band
+  box(0.62, 0.09, 0.1, MAT.pubTrim, hd.x+0.3, 1.14, -1.55, 0, terrace);              // door lintel
+  const fan = new THREE.Mesh(new THREE.CircleGeometry(0.14, 12, 0, Math.PI), new THREE.MeshBasicMaterial({ color:0x3a2c1c }));
+  fan.position.set(hd.x+0.3, 1.1, -1.53); terrace.add(fan);                          // fanlight
+  cyl(0.07, 0.09, 0.34, MAT.chimBrick, hd.x-0.52, hd.h+1.12, -2.5, 8, terrace);      // pot 1
+  cyl(0.07, 0.09, 0.34, MAT.chimBrick, hd.x-0.28, hd.h+1.12, -2.5, 8, terrace);      // pot 2
 }
 /* one faint warm upstairs window in house 2 */
 houseGlow[1].material = new THREE.MeshBasicMaterial({ color:0xb87a30 });
@@ -442,6 +450,8 @@ moon.shadow.bias = -0.0004;
 scene.add(moon);
 const fill = new THREE.DirectionalLight(0x66779e, 0.9);
 fill.position.set(6, 4, 10); scene.add(fill);
+const facadeFill = new THREE.DirectionalLight(0x9aa4c0, 0.6);
+facadeFill.position.set(0.5, 3.5, 14); scene.add(facadeFill);
 const lampLight = new THREE.PointLight(0xffb45a, 1.7, 8, 1.8);
 lampLight.position.set(1.8, 2.2, 1.6); scene.add(lampLight);
 const doorLight = new THREE.PointLight(0xffa845, 0.4, 4.5, 1.6);
