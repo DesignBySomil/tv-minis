@@ -327,6 +327,8 @@ const redL = new THREE.PointLight(0xff2a1e, 0, 7, 1.6);
 redL.position.set(-3.2, 1.9, -0.2); scene.add(redL);
 const redR = new THREE.PointLight(0xff2a1e, 0, 7, 1.6);
 redR.position.set(3.2, 1.9, -0.2); scene.add(redR);
+const redLow = new THREE.PointLight(0xff4030, 0, 6, 1.4);
+redLow.position.set(1.8, 0.7, 1.5); scene.add(redLow);
 const beaconMat = new THREE.MeshStandardMaterial({ color:0x3a0a08, emissive:0xff2a1e, emissiveIntensity:0 });
 const redWashMats = [];
 for (const bx of [-3.2, 3.2]){
@@ -386,14 +388,15 @@ const clock = new THREE.Clock();
 let t = 0;
 const cPanelOn = new THREE.Color(0xf6fbf2);
 const cPanelOff = new THREE.Color(0x1d2320);
+const cSeatHi = new THREE.Color(0x2c3a34), cSeatLo = new THREE.Color(0x6b4a40);
 const cWallHi = new THREE.Color(0xdfe4da);
-const cWallLo = new THREE.Color(0x4a2c26);
+const cWallLo = new THREE.Color(0x7c463a);
 const cLowHi = new THREE.Color(0xb9c4b2);
-const cLowLo = new THREE.Color(0x3a2420);
+const cLowLo = new THREE.Color(0x6d3e33);
 const cCarpHi = new THREE.Color(0x7fa88c);
-const cCarpLo = new THREE.Color(0x5c3a30);
+const cCarpLo = new THREE.Color(0x7d4c3c);
 const cCarpDkHi = new THREE.Color(0x6e967c);
-const cCarpDkLo = new THREE.Color(0x4e322a);
+const cCarpDkLo = new THREE.Color(0x6e4236);
 const tmpC3 = new THREE.Color();
 
 function tick(){
@@ -412,9 +415,11 @@ function tick(){
   key.intensity = 0.18 + lightsBlend * 0.92;
   redL.intensity = (1 - lightsBlend) * 3.8;
   redR.intensity = (1 - lightsBlend) * 3.8;
+  redLow.intensity = (1 - lightsBlend) * 2.4;
   beaconMat.emissiveIntensity = (1 - lightsBlend) * 2.2;
   for (const wm of redWashMats) wm.opacity = (1 - lightsBlend) * 0.28;
   signMat.emissiveIntensity = 0.5 + (1 - lightsBlend) * 1.4;
+  MAT.chairSeat.color.copy(tmpC3.copy(cSeatHi).lerp(cSeatLo, 1 - lightsBlend));
   MAT.wall.color.copy(tmpC3.copy(cWallLo).lerp(cWallHi, lightsBlend));
   MAT.wallLow.color.copy(tmpC3.copy(cLowLo).lerp(cLowHi, lightsBlend));
   MAT.carpet.color.copy(tmpC3.copy(cCarpLo).lerp(cCarpHi, lightsBlend));
