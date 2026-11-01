@@ -281,17 +281,23 @@ function monitor(g, x, z, on){
 function keyboard(g, x, z){
   const kb = box(0.4, 0.025, 0.14, MAT.plasticG, x, DESK_H+0.045, z, 0, g);
   kb.rotation.x = -0.06;
+  box(0.36, 0.012, 0.1, MAT.plasticB, x, DESK_H+0.055, z, 0, g);
 }
 function mug(g, x, z, mat){
   cyl(0.045, 0.04, 0.1, mat, x, DESK_H+0.08, z, 10, g);
+  const h = box(0.015, 0.05, 0.05, mat, x+0.055, DESK_H+0.08, z, 0, g);
 }
 function phone(g, x, z){
   box(0.16, 0.04, 0.22, MAT.plasticB, x, DESK_H+0.05, z, 0.3, g);
   rbox(0.05, 0.03, 0.18, 0.01, MAT.plasticB, x, DESK_H+0.085, z, 0.3, g);
 }
+const noteMat = new THREE.MeshStandardMaterial({ color:0xe8d44a, roughness:0.9 });
 function papers(g, x, z, ry){
   box(0.24, 0.015, 0.32, MAT.paper, x, DESK_H+0.04, z, ry, g);
   box(0.22, 0.015, 0.3, MAT.paper, x+0.02, DESK_H+0.055, z+0.01, ry+0.2, g);
+  const pen = cyl(0.008, 0.008, 0.14, MAT.stapler, x-0.06, DESK_H+0.07, z+0.04, 6, g);
+  pen.rotation.z = Math.PI/2; pen.rotation.y = ry+0.5;
+  box(0.05, 0.004, 0.05, noteMat, x+0.05, DESK_H+0.065, z-0.03, ry-0.3, g);
 }
 monitor(deskA, 0, -0.18, true);  keyboard(deskA, 0, 0.12); mug(deskA, -0.5, 0.1, MAT.mugRed); phone(deskA, 0.5, -0.1);
 monitor(deskB, 0, -0.18, true);  papers(deskB, -0.4, 0.05, 0.15); keyboard(deskB, 0.1, 0.12);
