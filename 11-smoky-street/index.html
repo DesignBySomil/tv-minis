@@ -179,7 +179,7 @@ const MAT = {
   terrace1:  new THREE.MeshStandardMaterial({ color:0x675a5c, roughness:0.92 }),
   terrace2:  new THREE.MeshStandardMaterial({ color:0x6f6151, roughness:0.92 }),
   terrace3:  new THREE.MeshStandardMaterial({ color:0x635558, roughness:0.92 }),
-  roofDark:  new THREE.MeshStandardMaterial({ color:0x322c29, roughness:0.95 }),
+  roofDark:  new THREE.MeshStandardMaterial({ color:0x504540, roughness:0.95 }),
   chimBrick: new THREE.MeshStandardMaterial({ color:0x63493a, roughness:0.92 }),
   chimDark:  new THREE.MeshStandardMaterial({ color:0x2b2019, roughness:0.95 }),
   lampPost:  new THREE.MeshStandardMaterial({ color:0x16181c, roughness:0.6, metalness:0.4 }),
@@ -326,11 +326,11 @@ for (let i=0;i<7;i++){
   scene.add(sm); smokeSprites.push(sm);
 }
 /* sparks pool */
-const SPARKS = 46;
+const SPARKS = 70;
 const sparkGeo = new THREE.BufferGeometry();
 const sparkPos = new Float32Array(SPARKS*3);
 sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
-const sparkMat = new THREE.PointsMaterial({ color:0xffa030, size:0.09, transparent:true, opacity:0, sizeAttenuation:true, depthWrite:false });
+const sparkMat = new THREE.PointsMaterial({ color:0xffc25a, size:0.18, transparent:true, opacity:0, sizeAttenuation:true, depthWrite:false });
 const sparkPts = new THREE.Points(sparkGeo, sparkMat); scene.add(sparkPts);
 const sparkVel = [];
 for (let i=0;i<SPARKS;i++){
@@ -401,8 +401,8 @@ const wire = new THREE.Mesh(new THREE.TubeGeometry(wireCurve, 16, 0.012, 5), MAT
 wire.raycast = ()=>{}; scene.add(wire);
 
 /* ---------- lighting ---------- */
-const hemi = new THREE.HemisphereLight(0x526488, 0x1c1814, 1.55); scene.add(hemi);
-const moon = new THREE.DirectionalLight(0x93a7cc, 0.95);
+const hemi = new THREE.HemisphereLight(0x5a6c92, 0x2b2521, 1.75); scene.add(hemi);
+const moon = new THREE.DirectionalLight(0x9db1d6, 1.15);
 moon.position.set(-4, 7, 3); moon.castShadow = true;
 moon.shadow.mapSize.set(1024,1024);
 moon.shadow.camera.left=-8; moon.shadow.camera.right=8;
@@ -527,8 +527,8 @@ function tick(){
       pos[i*3+2] = sparkOrigin.z + v.z*life;
     }
     sparkGeo.attributes.position.needsUpdate = true;
-    sparkMat.opacity = Math.max(0, 1 - sparkT/1.5);
-    emberLight.intensity = Math.max(0, 2.4 * (1 - sparkT/0.9));
+    sparkMat.opacity = Math.max(0, 1 - sparkT/1.8);
+    emberLight.intensity = Math.max(0, 3.2 * (1 - sparkT/0.9));
   } else {
     sparkMat.opacity = 0;
     emberLight.intensity = 0;
