@@ -143,14 +143,24 @@ function sph(r,mat,w=10,h=8){ const m=new THREE.Mesh(new THREE.SphereGeometry(r,
 
 const ROCK = [0x6a5540, 0x5e4a38, 0x74594a, 0x544236];
 function rock(r, mat){
-  const g = new THREE.IcosahedronGeometry(r, Math.random()<0.35?1:0);
-  const pos = g.attributes.position, seen = new Map();
-  for(let i=0;i<pos.count;i++){
-    const key = pos.getX(i).toFixed(3)+','+pos.getY(i).toFixed(3)+','+pos.getZ(i).toFixed(3);
-    if(!seen.has(key)) seen.set(key, [rand(0.8,1.22), rand(0.75,1.25), rand(0.8,1.22)]);
-    const o = seen.get(key);
-    pos.setXYZ(i, pos.getX(i)*o[0], pos.getY(i)*o[1], pos.getZ(i)*o[2]);
+  // welded + smooth-shaded tumbled stone: per-unique-vertex jitter, indexed
+  // geometry, vertex normals -> rounded lumps instead of faceted shards
+  const src = new THREE.IcosahedronGeometry(r, r>0.45?1:0);
+  const sp = src.attributes.position;
+  const uniq = [], idx = [], seen = new Map();
+  for(let i=0;i<sp.count;i++){
+    const key = sp.getX(i).toFixed(3)+','+sp.getY(i).toFixed(3)+','+sp.getZ(i).toFixed(3);
+    let ui = seen.get(key);
+    if(ui === undefined){
+      ui = uniq.length/3;
+      seen.set(key, ui);
+      uniq.push(sp.getX(i)*rand(0.88,1.14), sp.getY(i)*rand(0.85,1.15), sp.getZ(i)*rand(0.88,1.14));
+    }
+    idx.push(ui);
   }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(uniq, 3));
+  g.setIndex(idx);
   g.computeVertexNormals();
   const m = new THREE.Mesh(g, mat); m.castShadow=true; m.receiveShadow=true; return m;
 }
