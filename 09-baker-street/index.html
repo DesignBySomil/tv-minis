@@ -424,7 +424,7 @@ const pins = [];
 for (let i=0;i<4;i++) pins.push(sph(0.02, pinMat, -3.7+i*0.2, 2.1+((i*37)%20)/50, -2.8, base, 6,5));
 
 /* ---------- deduction clues (hidden until magnifier tapped) ---------- */
-const clueMat = new THREE.MeshBasicMaterial({ color:0x7affc9, transparent:true, opacity:0 });
+const clueMat = new THREE.MeshBasicMaterial({ color:0x2ee88f, transparent:true, opacity:0 });
 const clues = [];
 /* footprint trail from window to rug */
 for (let i=0;i<5;i++){
@@ -575,7 +575,7 @@ function tick(){
   candleFlame.scale.set(1, 1+Math.sin(t*17)*0.25, 1);
 
   /* deduction clues */
-  clueMat.opacity = deduceBlend * (0.55 + Math.sin(t*3.2)*0.3);
+  clueMat.opacity = deduceBlend * (0.8 + Math.sin(t*3.2)*0.2);
   for (const c of clues) c.visible = deduceBlend > 0.02;
   pipeRing.rotation.z = t*0.8;
 
