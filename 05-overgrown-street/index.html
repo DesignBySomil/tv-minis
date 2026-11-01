@@ -648,16 +648,15 @@ const STATES = [
   { name:'day', top:0x8fb4c4, mid:0xcfd8c8, bottom:0xe8e0c0, fog:0xd8d8c8, fogD:0.006,
     hemi:[0xe0ecd8, 0x6a6248, 0.95], sunC:0xffeed0, sunI:2.4, sunPos:[5,8,4],
     fillI:0.4, fillC:0x9ab8a8, exp:1.12, stars:0, lamp:0, glow:0, flies:0, dust:0.3 },
-  { name:'dusk', top:0x4a3a5e, mid:0xc07058, bottom:0xe89858, fog:0x9a6a50, fogD:0.009,
+  { name:'dusk', top:0xa093af, mid:0xd9b6a4, bottom:0xf1cfab, fog:0x9a6a50, fogD:0.009,
     hemi:[0xffd0a0, 0x5a4632, 0.72], sunC:0xff9850, sunI:1.7, sunPos:[6,3.5,2],
     fillI:0.3, fillC:0x8a7ab0, exp:1.09, stars:0.15, lamp:0.5, glow:0.5, flies:0.3, dust:0.42 },
   { name:'night', top:0x425678, mid:0x4f6385, bottom:0x5c7193, fog:0x080d14, fogD:0.012,
-    hemi:[0x36405e, 0x20241c, 0.8], sunC:0x8898d8, sunI:0.7, sunPos:[-6,8,-4],
-    fillI:0.5, fillC:0x4a5490, exp:1.12, stars:1, lamp:1, glow:1, flies:1, dust:0.5 },
+    hemi:[0x36405e, 0x20241c, 0.9], sunC:0x8898d8, sunI:0.85, sunPos:[-6,8,-4],
+    fillI:0.55, fillC:0x4a5490, exp:1.15, stars:1, lamp:1, glow:1, flies:1, dust:0.5 },
 ];
 let stateIdx = 0;
 let blend = { t:1, from:STATES[0], to:STATES[0] };
-window.__dbg=()=>JSON.stringify({idx:stateIdx,bt:Math.round(blend.t*100)/100,top:skyUniforms.topColor.value.getHexString(),mid:skyUniforms.midColor.value.getHexString(),bot:skyUniforms.bottomColor.value.getHexString(),fog:scene.fog.color.getHexString(),fogD:scene.fog.density,exp:renderer.toneMappingExposure,skyVis:sky.visible});
 function applyState(s){
   skyUniforms.topColor.value.set(s.top);
   skyUniforms.midColor.value.set(s.mid);
@@ -692,7 +691,7 @@ function mixStates(p, n, t){
 function cycleState(){
   const from = blend.t >= 1 ? STATES[stateIdx] : mixStates(blend.from, blend.to, blend.t);
   stateIdx = (stateIdx+1) % STATES.length;
-  blend = { t:0, from, to:STATES[stateIdx] }; window.__skyIdx=stateIdx;
+  blend = { t:0, from, to:STATES[stateIdx] };
 }
 
 /* ---------- headlights toggle ---------- */
@@ -723,7 +722,6 @@ renderer.domElement.addEventListener('pointerup', e=>{
   if (carHit.length){ toggleHeadlights(); return; }
   const wallHit = ray.intersectObjects([wallGroup], true);
   if (wallHit.length){ startleBirds(); return; }
-  (window.__tapLog=window.__tapLog||[]).push([Math.round(e.clientX),Math.round(e.clientY),carHit.length?'car':wallHit.length?'wall':'sky']);
   const skyHit = ray.intersectObject(sky);
   if (skyHit.length) cycleState();
 });
@@ -738,11 +736,12 @@ let elapsed = 0;
 let lampFlicker = 0;
 function tick(){
   requestAnimationFrame(tick);
-  const dt = Math.min(clock.getDelta(), 0.05);
+  const rawDt = clock.getDelta();
+  const dt = Math.min(rawDt, 0.05);
   elapsed += dt;
 
   if (blend.t < 1){
-    blend.t = Math.min(1, blend.t + dt/1.6);
+    blend.t = Math.min(1, blend.t + rawDt/1.6);
     applyState(mixStates(blend.from, blend.to, blend.t));
   }
 
