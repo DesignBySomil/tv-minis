@@ -41,7 +41,7 @@
 <div id="vignette"></div>
 <div id="grain"></div>
 <div id="title"><h1>The Mint</h1><p>a tiny scene inspired by Money Heist</p></div>
-<div id="hint">tap the vault &nbsp;&middot;&nbsp; tap the press &nbsp;&middot;&nbsp; tap the cash</div>
+<div id="hint">tap the vault &nbsp;&middot;&nbsp; tap the press &nbsp;&middot;&nbsp; tap the clock &nbsp;&middot;&nbsp; tap the cash</div>
 <div id="loader"><div class="t">Crafting miniature</div><div class="bar"><i></i></div></div>
 <script type="importmap">
 {"imports":{
@@ -350,10 +350,13 @@ for (const [sx,sz,sr] of [[-2.9,-0.4,0.34],[-2.45,-0.75,0.28]]){
 }
 // wall clock on back wall
 {
-  const ck = cyl(0.26,0.26,0.06,M(0xe8e2d2,{roughness:0.8}),20); ck.rotation.x=Math.PI/2; ck.position.set(3.6,2.1,WALL_Z+0.14); scene.add(ck);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.26,0.03,8,24),steelDark); rim.position.set(3.6,2.1,WALL_Z+0.15); scene.add(rim);
-  const h1 = box(0.02,0.14,0.02,steelDark); h1.position.set(3.6,2.15,WALL_Z+0.18); scene.add(h1);
-  const h2 = box(0.02,0.2,0.02,steelDark); h2.rotation.z=2.1; h2.position.set(3.63,2.1,WALL_Z+0.18); scene.add(h2);
+  const ck = cyl(0.26,0.26,0.06,M(0xe8e2d2,{roughness:0.8}),20); ck.rotation.x=Math.PI/2; ck.position.set(4.02,1.5,WALL_Z+0.14); scene.add(ck);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.26,0.03,8,24),steelDark); rim.position.set(4.02,1.5,WALL_Z+0.15); scene.add(rim);
+  const clockHands = [];
+  const h1p = new THREE.Group(); h1p.position.set(4.02,1.5,WALL_Z+0.18); scene.add(h1p);
+  const h1 = box(0.02,0.13,0.02,steelDark); h1.position.set(0,0.06,0); h1p.add(h1); clockHands.push(h1p);
+  const h2p = new THREE.Group(); h2p.position.set(4.02,1.5,WALL_Z+0.19); scene.add(h2p);
+  const h2 = box(0.02,0.19,0.02,steelDark); h2.position.set(0,0.09,0); h2p.add(h2); h2p.rotation.z=2.1; clockHands.push(h2p);
 }
 // pipes along back wall right
 {
@@ -364,9 +367,26 @@ for (const [sx,sz,sr] of [[-2.9,-0.4,0.34],[-2.45,-0.75,0.28]]){
   const v = cyl(0.09,0.09,0.06,steelDark,10); v.rotation.x=Math.PI/2; v.position.set(1.0,1.78,WALL_Z+0.2); scene.add(v);
 }
 
+/* ---------- foreground dolly with cash ---------- */
+{
+  const dollyM = M(0x8a3a2e,{roughness:0.55, metalness:0.3});
+  const dg = new THREE.Group(); dg.position.set(0.55,0.28,2.3); dg.rotation.y = -0.5; scene.add(dg);
+  const back = box(0.09,1.05,0.5,dollyM); back.position.set(-0.22,0.55,0); back.rotation.z=0.28; dg.add(back);
+  const toe = box(0.5,0.05,0.5,dollyM); toe.position.set(0.1,0.06,0); dg.add(toe);
+  for (const wz of [-0.24,0.24]){
+    const wh = cyl(0.11,0.11,0.06,steelDark,14); wh.rotation.x=Math.PI/2; wh.position.set(-0.28,0.11,wz); dg.add(wh);
+  }
+  const grip = box(0.05,0.05,0.44,dollyM); grip.position.set(-0.37,1.1,0); dg.add(grip);
+  const noteM = M(0x9db38a,{roughness:0.9}), bandM = M(0xd8cfb8,{roughness:0.85});
+  for (let i=0;i<2;i++){
+    const br = box(0.34,0.14,0.5,noteM); br.position.set(0.1,0.16+i*0.15,0); br.rotation.y=rand(-0.06,0.06); dg.add(br);
+    const band = box(0.35,0.145,0.12,bandM); band.position.copy(br.position); band.castShadow=false; dg.add(band);
+  }
+}
+
 /* ---------- pendant lamps ---------- */
 const lampLights = [], lampShades = [];
-for (const [lx,lz] of [[-1.2,-0.8],[1.6,0.3],[0.2,1.9]]){
+for (const [lx,lz] of [[-1.2,-0.8],[0.9,-1.5],[0.2,1.9]]){
   const cord = cyl(0.015,0.015,0.42,steelDark,6); cord.castShadow=false; cord.position.set(lx,3.32,lz); scene.add(cord);
   const shade = cyl(0.09,0.3,0.24,M(0x2e4a3c,{roughness:0.5, metalness:0.3, emissive:0xffca66, emissiveIntensity:0.2}),16);
   shade.position.set(lx,3.0,lz); scene.add(shade); lampShades.push(shade);
@@ -418,8 +438,8 @@ const fill = new THREE.DirectionalLight(0xbfd0e8, 0.45); fill.position.set(-4,3,
 /* ---------- states: day / dusk / night through clerestory ---------- */
 const STATES = [
   { name:'day',
-    sky:[0x9fb8d8, 0xc9d4de, 0xe6ddc8], hemi:[0xcfd8e8, 0x4a4038, 1.5], sunC:0xfff0d8, sunI:1.8, moonI:0,
-    fillI:0.45, exp:1.2, stars:0, moon:0, lamp:0.55, dust:0.35 },
+    sky:[0x9fb8d8, 0xc9d4de, 0xe6ddc8], hemi:[0xcfd8e8, 0x4a4038, 1.8], sunC:0xfff0d8, sunI:2.0, moonI:0,
+    fillI:0.55, exp:1.26, stars:0, moon:0, lamp:0.55, dust:0.35 },
   { name:'dusk',
     sky:[0x8a6a7a, 0xd88a5a, 0xf2b06a], hemi:[0xd8b49a, 0x443838, 1.1], sunC:0xffa860, sunI:1.15, moonI:0.1,
     fillI:0.42, exp:1.15, stars:0.2, moon:0.25, lamp:0.85, dust:0.42 },
@@ -507,6 +527,8 @@ function hitProxy(w,h,d,x,y,z,parent){
 const vaultProxy = hitProxy(2.4,2.4,0.7,VAULT_X,VAULT_Y,WALL_Z+0.3);
 const pressProxy = hitProxy(2.7,2.1,2.2,1.7,1.2,-0.5);
 const cashProxy = hitProxy(2.3,1.6,1.6,-1.2,0.9,1.35);
+const clockProxy = hitProxy(0.8,0.8,0.6,4.02,1.5,WALL_Z+0.25);
+let clockSpin = -1;
 let downAt = 0, downPos = [0,0];
 renderer.domElement.addEventListener('pointerdown', e=>{
   downAt = performance.now(); downPos = [e.clientX, e.clientY];
@@ -522,6 +544,7 @@ renderer.domElement.addEventListener('pointerup', e=>{
   ray.setFromCamera(ptr, camera);
   if (ray.intersectObject(vaultProxy,false).length){ tapVault(); return; }
   if (ray.intersectObject(pressProxy,false).length){ tapPress(); return; }
+  if (ray.intersectObject(clockProxy,false).length){ cycleState(); clockSpin = 0; return; }
   if (ray.intersectObject(cashProxy,false).length){ tapCash(); return; }
 });
 
@@ -564,6 +587,15 @@ function tick(){
     for (const d of pressDrums) d.rotation.x += dt*4;
     pressSheetOff = (pressSheetOff + dt*0.45) % 0.28;
     pressSheets.children.forEach((g,i)=>{ g.position.z = 0.17 + i*0.28 + pressSheetOff; });
+  }
+
+  // clock hands spin on time change
+  if (clockSpin >= 0){
+    clockSpin += dt;
+    const k = Math.min(clockSpin/1.2, 1);
+    clockHands[0].rotation.z += dt*4*Math.PI*(1-k*0.5);
+    clockHands[1].rotation.z += dt*2*Math.PI*(1-k*0.5);
+    if (k>=1) clockSpin = -1;
   }
 
   // cash top-brick flip
