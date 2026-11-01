@@ -178,9 +178,9 @@ const MAT = {
   pubBrick:  new THREE.MeshStandardMaterial({ color:0x7a6048, roughness:0.9 }),
   pubTrim:   new THREE.MeshStandardMaterial({ color:0x7d7263, roughness:0.85 }),
   pubDoor:   new THREE.MeshStandardMaterial({ color:0x1e2b1e, roughness:0.7 }),
-  terrace1:  new THREE.MeshStandardMaterial({ color:0x7c6e70, roughness:0.92 }),
-  terrace2:  new THREE.MeshStandardMaterial({ color:0x867662, roughness:0.92 }),
-  terrace3:  new THREE.MeshStandardMaterial({ color:0x7a6a6d, roughness:0.92 }),
+  terrace1:  new THREE.MeshStandardMaterial({ color:0x726467, roughness:0.92 }),
+  terrace2:  new THREE.MeshStandardMaterial({ color:0x7d6e5a, roughness:0.92 }),
+  terrace3:  new THREE.MeshStandardMaterial({ color:0x6f6063, roughness:0.92 }),
   roofDark:  new THREE.MeshStandardMaterial({ color:0x504540, roughness:0.95 }),
   roofTile:  new THREE.MeshStandardMaterial({ color:0x9c6046, roughness:0.88 }),
   chimBrick: new THREE.MeshStandardMaterial({ color:0x63493a, roughness:0.92 }),
@@ -450,7 +450,7 @@ moon.shadow.bias = -0.0004;
 scene.add(moon);
 const fill = new THREE.DirectionalLight(0x66779e, 0.9);
 fill.position.set(6, 4, 10); scene.add(fill);
-const facadeFill = new THREE.DirectionalLight(0x9aa4c0, 0.6);
+const facadeFill = new THREE.DirectionalLight(0x8d87a8, 0.32);
 facadeFill.position.set(0.5, 3.5, 14); scene.add(facadeFill);
 const lampLight = new THREE.PointLight(0xffb45a, 1.7, 8, 1.8);
 lampLight.position.set(1.8, 2.2, 1.6); scene.add(lampLight);
