@@ -542,6 +542,8 @@ renderer.domElement.addEventListener('pointerup', e=>{
   if (Math.hypot(e.clientX-downPos[0], e.clientY-downPos[1]) > 8) return;
   ptr.set((e.clientX/innerWidth)*2-1, -(e.clientY/innerHeight)*2+1);
   ray.setFromCamera(ptr, camera);
+  window.__tapLog = window.__tapLog||[];
+  window.__tapLog.push([+ptr.x.toFixed(2), +ptr.y.toFixed(2), ray.intersectObject(vaultProxy,false).length, ray.intersectObject(pressProxy,false).length, ray.intersectObject(clockProxy,false).length, ray.intersectObject(cashProxy,false).length]);
   if (ray.intersectObject(vaultProxy,false).length){ tapVault(); return; }
   if (ray.intersectObject(pressProxy,false).length){ tapPress(); return; }
   if (ray.intersectObject(clockProxy,false).length){ cycleState(); clockSpin = 0; return; }
