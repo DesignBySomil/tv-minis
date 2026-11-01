@@ -605,6 +605,7 @@ renderer.domElement.addEventListener('pointerup', e=>{
   if (ray.intersectObjects([windowGroup], true).length){ cycleState(); return; }
 });
 
+window.__dbg = {scene, camera, THREE, renderer};
 /* ---------- resize / loop ---------- */
 addEventListener('resize', ()=>{
   renderer.setSize(innerWidth, innerHeight);
