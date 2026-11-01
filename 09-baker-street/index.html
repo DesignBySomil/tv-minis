@@ -515,15 +515,22 @@ windowLight.position.set(-8, 4.5, 2.5); windowLight.target.position.set(1.5, 0.6
 scene.add(windowLight); scene.add(windowLight.target);
 const lampLight = new THREE.PointLight(0xffc46a, 1.4, 6, 1.6);
 lampLight.position.set(-5.6, 1.45, WIN_Z-0.9); scene.add(lampLight);
-const shelfLight = new THREE.PointLight(0xffd9a0, 0.7, 5.5, 1.8);
+const shelfLight = new THREE.PointLight(0xffd9a0, 1.05, 5.5, 1.8);
 shelfLight.position.set(2.2, 2.3, -0.9); scene.add(shelfLight);
 /* candle on the desk: visible night source for the right side */
 const candleG = new THREE.Group(); candleG.position.set(0.62, 0.82, 0.12); deskG.add(candleG);
-cyl(0.035,0.045,0.16, MAT.paper, 0, 0.08, 0, 8, candleG);
+cyl(0.06,0.075,0.03, MAT.brass, 0, 0.015, 0, 10, candleG);
+cyl(0.04,0.05,0.24, MAT.paper, 0, 0.15, 0, 8, candleG);
 const candleFlameMat = new THREE.MeshBasicMaterial({ color:0xffc46a, transparent:true, opacity:0.95 });
-sph(0.035, candleFlameMat, 0, 0.19, 0, candleG, 8, 6);
-const candleLight = new THREE.PointLight(0xffb85a, 0.9, 4.5, 1.6);
-candleLight.position.set(0, 0.24, 0); candleG.add(candleLight);
+const cFlameO = new THREE.Mesh(new THREE.ConeGeometry(0.045,0.17,8), candleFlameMat); cFlameO.position.set(0,0.35,0); candleG.add(cFlameO);
+const candleCoreMat = new THREE.MeshBasicMaterial({ color:0xfff3d0, transparent:true, opacity:0.95 });
+const cFlameI = new THREE.Mesh(new THREE.ConeGeometry(0.02,0.08,6), candleCoreMat); cFlameI.position.set(0,0.325,0); candleG.add(cFlameI);
+const glowCan = document.createElement('canvas'); glowCan.width=glowCan.height=64;
+{ const gg=glowCan.getContext('2d'); const gr=gg.createRadialGradient(32,32,2,32,32,30); gr.addColorStop(0,'rgba(255,214,140,0.9)'); gr.addColorStop(0.4,'rgba(255,180,90,0.35)'); gr.addColorStop(1,'rgba(255,170,80,0)'); gg.fillStyle=gr; gg.fillRect(0,0,64,64); }
+const candleGlowMat = new THREE.SpriteMaterial({ map:new THREE.CanvasTexture(glowCan), transparent:true, opacity:0, depthWrite:false });
+const candleGlow = new THREE.Sprite(candleGlowMat); candleGlow.scale.set(0.6,0.6,1); candleGlow.position.set(0,0.36,0); candleG.add(candleGlow);
+const candleLight = new THREE.PointLight(0xffb85a, 1.5, 6, 1.6);
+candleLight.position.set(0, 0.34, 0); candleG.add(candleLight);
 const fillLight = new THREE.DirectionalLight(0xffe8c8, 0.42);
 fillLight.position.set(5, 7, 6); scene.add(fillLight);
 
@@ -613,8 +620,11 @@ function tick(){
   lampGlowMat.opacity = (1-dayBlend) * (0.85 + Math.sin(t*7.3)*0.1);
   lampHaloMat.opacity = (1-dayBlend) * (0.13 + Math.sin(t*7.3)*0.03);
   lampGlow.visible = dayBlend < 0.85; lampHalo.visible = lampGlow.visible;
-  candleLight.intensity = (1-dayBlend) * (0.9 + Math.sin(t*9.1)*0.12);
+  candleLight.intensity = (1-dayBlend) * (1.5 + Math.sin(t*9.1)*0.18);
   candleFlameMat.opacity = (1-dayBlend) * (0.9 + Math.sin(t*9.1)*0.08);
+  candleCoreMat.opacity = candleFlameMat.opacity;
+  candleGlowMat.opacity = (1-dayBlend) * (0.55 + Math.sin(t*9.1)*0.08);
+  cFlameO.scale.set(1, 1+Math.sin(t*15)*0.2, 1); cFlameI.scale.copy(cFlameO.scale);
   for (let i=0;i<fogPlanes.length;i++){
     fogPlanes[i].material.opacity = 0.12 - dayBlend*0.07;
     fogPlanes[i].position.z = WIN_Z + 0.2 + Math.sin(t*0.4+i*2.1)*0.3;
