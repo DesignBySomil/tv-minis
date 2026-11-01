@@ -97,6 +97,7 @@ for (const b of FIT_BOXES)
       for (const z of [b.min.z, b.max.z])
         FIT_CORNERS.push(new THREE.Vector3(x, y, z));
 const SAFE = { x: 0.88, yTop: 0.8, yBottom: 0.74 };
+const SAFE_LANDSCAPE = { x: 0.88, yTop: 0.8, yBottom: 0.74 };
 function allCornersFit(){
   const p = new THREE.Vector3();
   for (const c of FIT_CORNERS){
@@ -110,8 +111,8 @@ function frameForViewport(){
   camera.aspect = aspect;
   camera.updateProjectionMatrix();
   const dir = camera.position.clone().sub(controls.target);
-  if (aspect < 0.8) dir.set(0.5, 0.85, 0.55);
-  else dir.set(0.58, 0.5, 0.62);
+  if (aspect < 0.8){ dir.set(0.5, 0.74, 0.55); SAFE.x = 0.94; SAFE.yTop = 0.85; SAFE.yBottom = 0.78; }
+  else { dir.set(0.58, 0.5, 0.62); SAFE.x = SAFE_LANDSCAPE.x; SAFE.yTop = SAFE_LANDSCAPE.yTop; SAFE.yBottom = SAFE_LANDSCAPE.yBottom; }
   dir.normalize();
   let lo = 5, hi = 60;
   for (let i=0;i<28;i++){
