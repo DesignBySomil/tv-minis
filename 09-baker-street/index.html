@@ -198,7 +198,11 @@ for (const sx of [-1,1]) for (const sz of [-1,1])
 /* ---------- walls (cutaway: back + left) ---------- */
 const WALL_H = 3.4;
 box(9.0, WALL_H, 0.35, MAT.wallPaper, 0, WALL_H/2-0.0, -3.05, 0, base);           // back wall
-box(0.35, WALL_H, 7.6, MAT.wallPaper, -4.3, WALL_H/2, 0.4, 0, base);               // left wall
+/* left wall, four pieces around a REAL window aperture (z -0.35..1.55, y 0.7..2.8) */
+box(0.35, 0.7, 7.6, MAT.wallPaper, -4.3, 0.35, 0.4, 0, base);                        // below window
+box(0.35, 0.6, 7.6, MAT.wallPaper, -4.3, 3.1, 0.4, 0, base);                         // above window
+box(0.35, 2.1, 2.65, MAT.wallPaper, -4.3, 1.75, 2.875, 0, base);                     // front of window
+box(0.35, 2.1, 3.05, MAT.wallPaper, -4.3, 1.75, -1.875, 0, base);                    // back of window
 /* wall caps (unlit dark, kill slivers) */
 const capMat = new THREE.MeshBasicMaterial({ color:0x241a12 });
 const c1 = new THREE.Mesh(new THREE.BoxGeometry(9.05,0.1,0.4), capMat); c1.position.set(0, WALL_H+0.02, -3.05); base.add(c1);
@@ -259,12 +263,15 @@ candleFlame.position.set(FP_X+0.75, 1.93, FP_Z); base.add(candleFlame);
 
 /* ---------- window (left wall) with London outside ---------- */
 const WIN_X = -4.28, WIN_Z = 0.6, WIN_W = 1.9, WIN_H = 2.1, WIN_Y = 1.75;
-/* window hole frame */
-box(0.5, WIN_H+0.3, WIN_W+0.3, MAT.woodDark, WIN_X, WIN_Y, WIN_Z, 0, base);
+/* window trim: four rails around a REAL opening (no center slab) */
+box(0.5, 0.15, WIN_W+0.3, MAT.woodDark, WIN_X, 2.875, WIN_Z, 0, base);   // top rail
+box(0.5, 0.15, WIN_W+0.3, MAT.woodDark, WIN_X, 0.625, WIN_Z, 0, base);   // bottom rail
+box(0.5, WIN_H+0.3, 0.15, MAT.woodDark, WIN_X, WIN_Y, -0.425, 0, base);  // back jamb
+box(0.5, WIN_H+0.3, 0.15, MAT.woodDark, WIN_X, WIN_Y, 1.625, 0, base);   // front jamb
 /* glass pane (translucent, shows outside) */
-const paneMat = new THREE.MeshBasicMaterial({ color:0x4a627a, transparent:true, opacity:0.5 });
+const paneMat = new THREE.MeshBasicMaterial({ color:0x7f9cbd, transparent:true, opacity:0.42 });
 const pane = new THREE.Mesh(new THREE.BoxGeometry(0.06, WIN_H, WIN_W), paneMat);
-pane.position.set(WIN_X-0.02, WIN_Y, WIN_Z); base.add(pane);
+pane.position.set(WIN_X-0.16, WIN_Y, WIN_Z); base.add(pane);
 /* mullions */
 box(0.1, WIN_H, 0.07, MAT.woodDark, WIN_X+0.05, WIN_Y, WIN_Z, 0, base);
 box(0.1, 0.07, WIN_W, MAT.woodDark, WIN_X+0.05, WIN_Y, WIN_Z, 0, base);
@@ -276,11 +283,29 @@ box(0.1, 0.06, WIN_W, MAT.woodDark, WIN_X+0.05, WIN_Y+WIN_H/2, WIN_Z, 0, base);
 box(0.56, 0.1, WIN_W+0.4, MAT.marble, WIN_X+0.03, WIN_Y-WIN_H/2-0.08, WIN_Z, 0, base);
 /* curtains */
 for (const s of [-1,1]){
-  const cur = rbox(0.24, WIN_H+0.5, 0.5, 0.08, MAT.curtain, WIN_X+0.35, WIN_Y+0.05, WIN_Z+s*(WIN_W/2+0.32), 0, base);
-  cur.rotation.x = s*0.06;
+  const cur = rbox(0.24, WIN_H+0.5, 0.42, 0.08, MAT.curtain, WIN_X+0.35, WIN_Y+0.05, WIN_Z+s*(WIN_W/2+0.46), 0, base);
+  cur.rotation.x = s*0.16;
 }
 /* outside world group (behind left wall) */
 const outside = new THREE.Group(); base.add(outside);
+/* layered foggy-night backdrop (flat painted layers, miniature style) */
+const bdG = new THREE.Group(); outside.add(bdG);
+const bdSkyMat = new THREE.MeshBasicMaterial({ color:0x22334a });
+box(0.05, 1.3, 3.2, bdSkyMat, -5.1, 1.85, WIN_Z, 0, bdG);   // night sky band
+const bdFogMat = new THREE.MeshBasicMaterial({ color:0x47607c });
+box(0.05, 0.9, 3.2, bdFogMat, -5.08, 0.75, WIN_Z, 0, bdG);  // fog band
+const bdGlowMat = new THREE.MeshBasicMaterial({ color:0x7d92a8 });
+box(0.05, 0.3, 3.2, bdGlowMat, -5.06, 0.15, WIN_Z, 0, bdG); // pale street glow
+/* moon */
+const moonMat = new THREE.MeshBasicMaterial({ color:0xe4ecf6, transparent:true });
+const moon = new THREE.Mesh(new THREE.CircleGeometry(0.2, 20), moonMat);
+moon.position.set(-5.04, 1.95, WIN_Z-0.35); moon.rotation.y = Math.PI/2; bdG.add(moon);
+const moonHalo = new THREE.Mesh(new THREE.CircleGeometry(0.38, 20), new THREE.MeshBasicMaterial({ color:0xb9cadd, transparent:true, opacity:0.25, depthWrite:false }));
+moonHalo.position.set(-5.05, 1.95, WIN_Z-0.35); moonHalo.rotation.y = Math.PI/2; bdG.add(moonHalo);
+/* distant rooftop silhouettes against the fog band */
+for (const [rz, rw, rh] of [[-0.95,0.7,0.36],[0.15,0.9,0.48],[1.0,0.6,0.3]]){
+  box(0.06, rh, rw, new THREE.MeshBasicMaterial({ color:0x18222e }), -5.02, 0.3+rh/2, WIN_Z+rz, 0, bdG);
+}
 /* street facade silhouette */
 const facMat = new THREE.MeshStandardMaterial({ color:0x232a33, roughness:0.95 });
 const facadeG = new THREE.Group(); outside.add(facadeG);
@@ -294,21 +319,27 @@ for (let r=0;r<3;r++) for (let cix=0;cix<2;cix++){
 /* street ground */
 box(3.4, 0.1, 4.0, new THREE.MeshStandardMaterial({color:0x1c2026, roughness:1}), -5.9, -0.55, WIN_Z+0.2, 0, outside);
 /* gas lamp */
-const lampPost = cyl(0.05,0.07,2.2, MAT.iron, -5.6, 0.45, WIN_Z-0.9, 8, outside);
-cyl(0.02,0.16,0.1, MAT.iron, -5.6, 1.58, WIN_Z-0.9, 8, outside);
+const lampPost = cyl(0.05,0.07,2.2, MAT.iron, -4.8, 0.45, WIN_Z-0.9, 8, outside);
+cyl(0.02,0.16,0.1, MAT.iron, -4.8, 1.58, WIN_Z-0.9, 8, outside);
 const lampGlowMat = new THREE.MeshBasicMaterial({ color:0xffc46a, transparent:true, opacity:0.95 });
-const lampGlow = sph(0.14, lampGlowMat, -5.6, 1.42, WIN_Z-0.9, outside, 10,8);
+const lampGlow = sph(0.14, lampGlowMat, -4.8, 1.42, WIN_Z-0.9, outside, 10,8);
 const lampHaloMat = new THREE.MeshBasicMaterial({ color:0xffc46a, transparent:true, opacity:0.14, depthWrite:false });
-const lampHalo = sph(0.42, lampHaloMat, -5.6, 1.42, WIN_Z-0.9, outside, 10,8);
+const lampHalo = sph(0.42, lampHaloMat, -4.8, 1.42, WIN_Z-0.9, outside, 10,8);
 /* fog planes outside window */
 const fogMat = new THREE.MeshBasicMaterial({ color:0x8fa3b8, transparent:true, opacity:0.12, depthWrite:false });
 const fogPlanes = [];
 for (let i=0;i<3;i++){
   const fp = new THREE.Mesh(new THREE.PlaneGeometry(3.6,2.0), fogMat.clone());
-  fp.position.set(-5.4-i*0.7, 0.85, WIN_Z+0.2);
+  fp.position.set(-4.85-i*0.12, 1.0, WIN_Z+0.2);
   fp.rotation.y = Math.PI/2;
   outside.add(fp); fogPlanes.push(fp);
 }
+
+/* cool moonlight spill from the window onto the floor */
+const winSpill = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.0),
+  new THREE.MeshBasicMaterial({ color:0x8fb0d8, transparent:true, opacity:0.14, depthWrite:false, blending:THREE.AdditiveBlending }));
+winSpill.rotation.x = -Math.PI/2; winSpill.rotation.z = 0.25;
+winSpill.position.set(WIN_X+1.5, 0.045, WIN_Z+0.2); base.add(winSpill);
 
 /* ---------- wingback armchairs x2 ---------- */
 function armchair(x, z, ry, mat){
@@ -374,6 +405,24 @@ for (let s=0;s<4;s++){
 /* stack of books + magnifier box on top */
 box(0.4,0.07,0.3, new THREE.MeshStandardMaterial({color:0x6d2430,roughness:0.85}), 3.1, 2.66, -2.3, 0.2, base);
 box(0.36,0.06,0.28, new THREE.MeshStandardMaterial({color:0x3d4a38,roughness:0.85}), 3.12, 2.73, -2.32, 0.35, base);
+
+/* leaning books, a bust and paper rolls on the bookshelf */
+for (const [lx, ls, lr] of [[0.52,1,0.28],[0.62,1,0.34],[0.7,1,0.22],[-0.55,2,-0.3],[-0.65,2,-0.24]]){
+  const lbh = 0.34+((lx*100|0)%10)*0.01;
+  const lbm = new THREE.MeshStandardMaterial({ color: bookTones[(Math.abs(lx*97)|0)%bookTones.length], roughness:0.85 });
+  const lb = box(0.07, lbh, 0.3, lbm, lx, 0.38+ls*0.62+lbh/2-0.03, 0.03, 0, shelfG);
+  lb.rotation.z = lr;
+}
+/* small bust on top of the bookcase */
+const bustM = new THREE.MeshStandardMaterial({ color:0xcfc8bc, roughness:0.6 });
+box(0.22, 0.06, 0.22, bustM, 3.62, 2.69, -2.42, -0.12, base);
+cyl(0.05, 0.07, 0.1, bustM, 3.62, 2.77, -2.42, 10, base);
+sph(0.09, bustM, 3.62, 2.88, -0.0-2.42, base, 12, 10);
+/* rolled case papers tied with string, shelf 3 */
+const rollM = new THREE.MeshStandardMaterial({ color:0xd8c9a8, roughness:0.85 });
+const roll = cyl(0.05, 0.05, 0.5, rollM, 0.25, 0.38+2*0.62+0.06, 0.03, 10, shelfG);
+roll.rotation.z = Math.PI/2; roll.rotation.y = 0.15;
+box(0.03, 0.11, 0.11, new THREE.MeshStandardMaterial({color:0x6d2430,roughness:0.8}), 0.25, 0.38+2*0.62+0.06, 0.03, 0, shelfG);
 
 /* ---------- desk corner (right front): chemistry-ish clutter ---------- */
 const deskG = new THREE.Group(); deskG.position.set(3.0, 0, 1.6); deskG.rotation.y = -0.9; base.add(deskG);
@@ -521,6 +570,9 @@ const daySky = new THREE.Color(0x2e3138);
 const nightFog = new THREE.Color(0x120e0a);
 const dayFog = new THREE.Color(0x24262c);
 const nightWin = new THREE.Color(0x7a90b8);
+const cN1 = new THREE.Color(0x22334a), cD1 = new THREE.Color(0x9fc4e8);
+const cN2 = new THREE.Color(0x47607c), cD2 = new THREE.Color(0xc8d8e8);
+const cN3 = new THREE.Color(0x7d92a8), cD3 = new THREE.Color(0xeef3f6);
 const dayWin = new THREE.Color(0xb8c0c8);
 const nightHemiSky = new THREE.Color(0x8a7a5a);
 const dayHemiSky = new THREE.Color(0x9aa2ac);
@@ -542,6 +594,12 @@ function tick(){
   scene.fog.color.copy(nightFog).lerp(dayFog, dayBlend);
   windowLight.color.copy(nightWin).lerp(dayWin, dayBlend);
   windowLight.intensity = 1.0 + dayBlend*1.4;
+  /* window backdrop follows day/night */
+  bdSkyMat.color.copy(tmpC.copy(cN1).lerp(cD1, dayBlend));
+  bdFogMat.color.copy(tmpC.copy(cN2).lerp(cD2, dayBlend));
+  bdGlowMat.color.copy(tmpC.copy(cN3).lerp(cD3, dayBlend));
+  moonMat.opacity = 1 - dayBlend;
+  moonHalo.material.opacity = 0.25 * (1 - dayBlend);
   hemi.color.copy(nightHemiSky).lerp(dayHemiSky, dayBlend);
   hemi.intensity = 0.95 + dayBlend*0.3;
   lampLight.intensity = (1-dayBlend) * (1.3 + Math.sin(t*7.3)*0.12 + Math.sin(t*13.7)*0.06);
