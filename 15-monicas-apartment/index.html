@@ -222,7 +222,7 @@
         <span class="header-title">Monica's apartment</span>
         <span class="header-subtitle">inspired by FRIENDS</span>
       </div>
-      <div class="header-hint">Tap the purple door #20 or gold peephole frame (&amp; explore 4 more!)</div>
+      <div class="header-hint">Tap door #20 or the gold peephole frame</div>
     </div>
     <button class="reset-btn" id="reset-btn" type="button">Reset</button>
   </header>
@@ -2058,7 +2058,7 @@
     sceneBox.getBoundingSphere(sceneSphere);
 
     // Classic sitcom cutaway direction: front-left-elevated so kitchen, bay window, couch & purple door are all prominent
-    const cutawayDir = new THREE.Vector3(-0.34, 0.50, 0.80).normalize();
+    const cutawayDir = new THREE.Vector3(-0.17, 0.76, 0.66).normalize();
 
     function frameCameraToViewport() {
       const vw = window.innerWidth;
@@ -2068,15 +2068,15 @@
       camera.aspect = aspect;
 
       // Adjust FOV slightly for tall portrait vs landscape so vertical space is filled richly
-      camera.fov = aspect < 0.75 ? 46 : 32;
+      camera.fov = aspect < 0.75 ? 44 : 32;
       camera.updateProjectionMatrix();
 
       const vFovRad = THREE.MathUtils.degToRad(camera.fov);
       const hFovRad = 2 * Math.atan(Math.tan(vFovRad / 2) * aspect);
 
       // Reserve safe margin for header pill at top and footer credit at bottom
-      const safeHorizFraction = aspect < 0.75 ? 1.06 : 0.84;
-      const safeVertFraction = aspect < 0.75 ? 0.72 : 0.78;
+      const safeHorizFraction = aspect < 0.75 ? 0.95 : 0.84;
+      const safeVertFraction = aspect < 0.75 ? 0.78 : 0.78;
 
       // Projected horizontal & vertical extents of the angled cutaway box
       const effectiveRadiusH = sceneSphere.radius * 0.91;
@@ -2084,19 +2084,18 @@
 
       const distH = effectiveRadiusH / (Math.tan(hFovRad / 2) * safeHorizFraction);
       const distV = effectiveRadiusV / (Math.tan(vFovRad / 2) * safeVertFraction);
-      const distance = Math.max(distH, distV) * (aspect < 0.75 ? 0.74 : 1.0);
+      const distance = Math.max(distH, distV) * (aspect < 0.75 ? 1.0 : 1.0);
 
       // Upward target offset on narrow screens so the diorama sits centered between header & footer
-      const targetYOffset = aspect < 0.75 ? 0.10 : 0.12;
+      const targetYOffset = aspect < 0.75 ? 0.05 : 0.12;
       const target = new THREE.Vector3(
-        sceneSphere.center.x + 0.15,
+        sceneSphere.center.x + 0.30,
         sceneSphere.center.y + targetYOffset,
         sceneSphere.center.z
       );
 
       controls.target.copy(target);
       camera.position.copy(target).addScaledVector(cutawayDir, distance);
-      if (aspect < 0.75) camera.position.x -= sceneSphere.radius * 0.58;
       controls.minDistance = distance * 0.55;
       controls.maxDistance = distance * 1.45;
       controls.update();
