@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>A garage universe — inspired by Young Sheldon</title>
+  <style>
+    :root {
+      --bg-top: #18131d;
+      --bg-mid: #271d28;
+      --bg-bot: #120e14;
+      --gold: #ffcf87;
+      --amber: #ff9c45;
+      --cream: #f8efe2;
+      --muted: rgba(248, 239, 226, 0.72);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 42%, var(--bg-mid) 0%, var(--bg-top) 58%, var(--bg-bot) 100%);
+      font-family: "Georgia", "Palatino Linotype", "Book Antiqua", serif;
+      color: var(--cream);
+    }
+    #canvas-wrap {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      outline: none;
+    }
+    .hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: clamp(10px, 2.2vh, 20px) 14px clamp(10px, 2vh, 18px);
+      z-index: 10;
+    }
+    .header-box {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85), 0 0 24px rgba(18, 12, 16, 0.9);
+      max-width: 94vw;
+    }
+    .title {
+      font-size: clamp(1.18rem, 3.2vw, 1.68rem);
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--cream);
+      line-height: 1.12;
+    }
+    .subtitle {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: clamp(0.68rem, 1.8vw, 0.82rem);
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      opacity: 0.92;
+      margin-top: 1px;
+    }
+    .hint-pill {
+      margin-top: 5px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: clamp(0.66rem, 1.75vw, 0.78rem);
+      letter-spacing: 0.05em;
+      color: var(--cream);
+      background: rgba(24, 18, 24, 0.68);
+      border: 1px solid rgba(255, 207, 135, 0.34);
+      padding: 4px 12px;
+      border-radius: 999px;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+      transition: border-color 0.25s ease, transform 0.25s ease;
+    }
+    .hint-pill.active-pulse {
+      border-color: rgba(120, 240, 255, 0.85);
+      transform: scale(1.03);
+    }
+    .footer {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: clamp(0.66rem, 1.6vw, 0.76rem);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+      padding: 3px 10px;
+      background: rgba(16, 12, 18, 0.45);
+      border-radius: 999px;
+    }
+    #fallback {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #1a141d;
+      color: var(--cream);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      z-index: 100;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    #fallback-inner {
+      max-width: 380px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 207, 135, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-wrap"></div>
+
+  <div class="hud">
+    <div class="header-box">
+      <h1 class="title">A garage universe</h1>
+      <div class="subtitle">inspired by Young Sheldon</div>
+      <div class="hint-pill" id="hint-pill">tap the train · tap the potato clock</div>
+    </div>
+    <div class="footer">A tiny world</div>
+  </div>
+
+  <div id="fallback">
+    <div id="fallback-inner">
+      <h2 style="margin-bottom:8px;color:#ffcf87;">WebGL Required</h2>
+      <p style="font-size:0.9rem;line-height:1.45;opacity:0.88;">
+        Could not initialize the 3D miniature renderer. Please ensure hardware acceleration and WebGL are enabled in your browser.
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // Deterministic PRNG: mulberry32(20261102)
+    function mulberry32(a) {
+      return function() {
+        let t = (a += 0x6D2B79F5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    const rand = mulberry32(20261102);
+    const randRange = (min, max) => min + rand() * (max - min);
+
+    const container = document.getElementById('canvas-wrap');
+    const fallbackEl = document.getElementById('fallback');
+    const hintPill = document.getElementById('hint-pill');
+
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    } catch (err) {
+      fallbackEl.style.display = 'flex';
+      throw err;
+    }
+
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.5, 120);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.065;
+    controls.enablePan = false;
+    controls.minAzimuthAngle = -0.38;
+    controls.maxAzimuthAngle = 0.52;
+    controls.minPolarAngle = 0.92;
+    controls.maxPolarAngle = 1.32;
+
+    // Master diorama root
+    const world = new THREE.Group();
+    scene.add(world);
+
+    // Shared Geometry Cache
+    const geoBox = new THREE.BoxGeometry(1, 1, 1);
+    const geoCyl = new THREE.CylinderGeometry(1, 1, 1, 18);
+    const geoCylLow = new THREE.CylinderGeometry(1, 1, 1, 10);
+    const geoSphere = new THREE.SphereGeometry(1, 16, 14);
+    const geoCone = new THREE.ConeGeometry(1, 1, 12);
+    const geoTorus = new THREE.TorusGeometry(1, 0.16, 10, 24);
+
+    // Helper for quick meshes
+    function makeMesh(geo, mat, sx = 1, sy = 1, sz = 1, px = 0, py = 0, pz = 0, rx = 0, ry = 0, rz = 0, cast = true, receive = true) {
+      const m = new THREE.Mesh(geo, mat);
+      m.scale.set(sx, sy, sz);
+      m.position.set(px, py, pz);
+      if (rx || ry || rz) m.rotation.set(rx, ry, rz);
+      m.castShadow = cast;
+      m.receiveShadow = receive;
+      return m;
+    }
+
+    // Procedural Canvas Textures (100% deterministic, zero external assets)
+    function createWoodPlankTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#8b5a36';
+      ctx.fillRect(0, 0, 256, 256);
+      for (let i = 0; i < 180; i++) {
+        const y = Math.floor(rand() * 256);
+        const h = 1 + Math.floor(rand() * 3);
+        const shade = Math.floor(randRange(-18, 18));
+        ctx.fillStyle = `rgb(${139 + shade}, ${90 + Math.floor(shade * 0.7)}, ${54 + Math.floor(shade * 0.5)})`;
+        ctx.fillRect(0, y, 256, h);
+      }
+      ctx.fillStyle = 'rgba(45, 24, 10, 0.32)';
+      for (let p = 0; p < 256; p += 32) {
+        ctx.fillRect(0, p, 256, 2);
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createConcreteFloorTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#534f54';
+      ctx.fillRect(0, 0, 256, 256);
+      for (let i = 0; i < 900; i++) {
+        const x = Math.floor(rand() * 256);
+        const y = Math.floor(rand() * 256);
+        const r = 1 + Math.floor(rand() * 3);
+        const v = Math.floor(randRange(68, 98));
+        ctx.fillStyle = `rgba(${v},${v - 2},${v + 2},0.35)`;
+        ctx.fillRect(x, y, r, r);
+      }
+      // Subtle garage expansion joints
+      ctx.strokeStyle = 'rgba(35,32,36,0.45)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(128, 0); ctx.lineTo(128, 256);
+      ctx.moveTo(0, 128); ctx.lineTo(256, 128);
+      ctx.stroke();
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createPegboardTexture() {
+      const c = document.createElement('canvas');
+      c.width = 128;
+      c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#6e4c32';
+      ctx.fillRect(0, 0, 128, 128);
+      ctx.fillStyle = '#26180e';
+      for (let y = 8; y < 128; y += 16) {
+        for (let x = 8; x < 128; x += 16) {
+          ctx.beginPath();
+          ctx.arc(x, y, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(3, 2);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    // Dynamic Canvas for Digital Potato Clock ("12:00")
+    const clockCanvas = document.createElement('canvas');
+    clockCanvas.width = 256;
+    clockCanvas.height = 128;
+    const clockCtx = clockCanvas.getContext('2d');
+    const clockTex = new THREE.CanvasTexture(clockCanvas);
+    clockTex.colorSpace = THREE.SRGBColorSpace;
+
+    function updateClockCanvas(intensity, timeSec) {
+      clockCtx.fillStyle = '#091410';
+      clockCtx.fillRect(0, 0, 256, 128);
+      clockCtx.strokeStyle = '#1f3b30';
+      clockCtx.lineWidth = 6;
+      clockCtx.strokeRect(6, 6, 244, 116);
+
+      const blinkColon = Math.sin(timeSec * 6.0) > -0.25 || intensity > 0.2;
+      const textAlpha = 0.35 + 0.65 * intensity;
+      if (intensity > 0.08) {
+        clockCtx.shadowColor = '#3cffb5';
+        clockCtx.shadowBlur = 18 * intensity;
+      } else {
+        clockCtx.shadowBlur = 0;
+      }
+      clockCtx.font = 'bold 78px "Courier New", monospace';
+      clockCtx.textAlign = 'center';
+      clockCtx.textBaseline = 'middle';
+      clockCtx.fillStyle = intensity > 0.1
+        ? `rgba(110, 255, 195, ${textAlpha})`
+        : `rgba(52, 145, 102, 0.55)`;
+      clockCtx.fillText(blinkColon ? '12:00' : '12 00', 128, 66);
+      clockTex.needsUpdate = true;
+    }
+    updateClockCanvas(0, 0);
+
+    // Dynamic Canvas for Old-Style TV playing a blue/white 'science show' visual
+    const tvCanvas = document.createElement('canvas');
+    tvCanvas.width = 128;
+    tvCanvas.height = 96;
+    const tvCtx = tvCanvas.getContext('2d');
+    const tvTex = new THREE.CanvasTexture(tvCanvas);
+    tvTex.colorSpace = THREE.SRGBColorSpace;
+
+    function updateTVCanvas(timeSec, boost) {
+      const g = tvCtx.createRadialGradient(64, 48, 6, 64, 48, 70);
+      if (boost > 0.05) {
+        g.addColorStop(0, '#ffffff');
+        g.addColorStop(0.45, '#59e8ff');
+        g.addColorStop(1, '#0c2b5e');
+      } else {
+        g.addColorStop(0, '#c8f0ff');
+        g.addColorStop(0.55, '#2b6cb0');
+        g.addColorStop(1, '#0a192f');
+      }
+      tvCtx.fillStyle = g;
+      tvCtx.fillRect(0, 0, 128, 96);
+
+      // Orbiting atom rings / sine wave science show graphics
+      tvCtx.save();
+      tvCtx.translate(64, 48);
+      const ringCount = 3;
+      const speed = 1.4 + boost * 3.5;
+      for (let i = 0; i < ringCount; i++) {
+        tvCtx.save();
+        tvCtx.rotate((i * Math.PI) / 3 + timeSec * speed * (i % 2 === 0 ? 1 : -1));
+        tvCtx.strokeStyle = boost > 0.1 ? 'rgba(255,255,255,0.92)' : 'rgba(195,238,255,0.75)';
+        tvCtx.lineWidth = 2 + boost * 1.4;
+        tvCtx.beginPath();
+        tvCtx.ellipse(0, 0, 34, 11, 0, 0, Math.PI * 2);
+        tvCtx.stroke();
+
+        const ex = Math.cos(timeSec * 3.2 + i * 2) * 34;
+        const ey = Math.sin(timeSec * 3.2 + i * 2) * 11;
+        tvCtx.fillStyle = '#ffffff';
+        tvCtx.beginPath();
+        tvCtx.arc(ex, ey, 3.2 + boost * 1.5, 0, Math.PI * 2);
+        tvCtx.fill();
+        tvCtx.restore();
+      }
+      tvCtx.restore();
+
+      // CRT scanlines
+      tvCtx.fillStyle = 'rgba(4, 12, 24, 0.24)';
+      for (let y = 0; y < 96; y += 4) {
+        tvCtx.fillRect(0, y, 128, 1.5);
+      }
+      tvTex.needsUpdate = true;
+    }
+    updateTVCanvas(0, 0);
+
+    // Materials Palette
+    const woodTex = createWoodPlankTexture();
+    const floorTex = createConcreteFloorTexture();
+    const pegTex = createPegboardTexture();
+
+    const mats = {
+      plinthDark: new THREE.MeshStandardMaterial({ color: 0x261d24, roughness: 0.85, metalness: 0.08 }),
+      plinthTrim: new THREE.MeshStandardMaterial({ color: 0x4a3525, roughness: 0.65, metalness: 0.1 }),
+      concrete: new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.88, metalness: 0.05 }),
+      wallIn: new THREE.MeshStandardMaterial({ color: 0xd8c3a5, roughness: 0.85 }),
+      wallSiding: new THREE.MeshStandardMaterial({ color: 0xc9b497, roughness: 0.82 }),
+      studWood: new THREE.MeshStandardMaterial({ map: woodTex, color: 0xb57c4a, roughness: 0.78 }),
+      darkWood: new THREE.MeshStandardMaterial({ map: woodTex, color: 0x6e4226, roughness: 0.72 }),
+      tableTrim: new THREE.MeshStandardMaterial({ map: woodTex, color: 0x8c522b, roughness: 0.65 }),
+      pegboard: new THREE.MeshStandardMaterial({ map: pegTex, roughness: 0.82 }),
+      roofShingle: new THREE.MeshStandardMaterial({ color: 0x483c42, roughness: 0.9 }),
+      rollerDoor: new THREE.MeshStandardMaterial({ color: 0xe6dccf, roughness: 0.6, metalness: 0.15 }),
+      steel: new THREE.MeshStandardMaterial({ color: 0xaab4be, roughness: 0.32, metalness: 0.78 }),
+      darkIron: new THREE.MeshStandardMaterial({ color: 0x282b30, roughness: 0.45, metalness: 0.65 }),
+      brass: new THREE.MeshStandardMaterial({ color: 0xe5b54f, roughness: 0.3, metalness: 0.8 }),
+      copper: new THREE.MeshStandardMaterial({ color: 0xd97538, roughness: 0.35, metalness: 0.72 }),
+      grassMain: new THREE.MeshStandardMaterial({ color: 0x639a46, roughness: 0.88 }),
+      grassRich: new THREE.MeshStandardMaterial({ color: 0x4c7e36, roughness: 0.86 }),
+      earthDirt: new THREE.MeshStandardMaterial({ color: 0x8d6946, roughness: 0.92 }),
+      ballast: new THREE.MeshStandardMaterial({ color: 0x69656c, roughness: 0.92 }),
+      rock: new THREE.MeshStandardMaterial({ color: 0x7b757d, roughness: 0.88 }),
+      brickPorch: new THREE.MeshStandardMaterial({ color: 0x9e4736, roughness: 0.82 }),
+      locoRed: new THREE.MeshStandardMaterial({ color: 0xc83228, roughness: 0.38, metalness: 0.25 }),
+      locoBlack: new THREE.MeshStandardMaterial({ color: 0x202226, roughness: 0.42, metalness: 0.55 }),
+      carBlue: new THREE.MeshStandardMaterial({ color: 0x2a669f, roughness: 0.42, metalness: 0.2 }),
+      carYellow: new THREE.MeshStandardMaterial({ color: 0xe09f32, roughness: 0.45, metalness: 0.15 }),
+      creamTrim: new THREE.MeshStandardMaterial({ color: 0xf4ead5, roughness: 0.55 }),
+      potatoSkin: new THREE.MeshStandardMaterial({ color: 0xb68652, roughness: 0.88, metalness: 0.02 }),
+      cardboard: new THREE.MeshStandardMaterial({ color: 0xc2925e, roughness: 0.86 }),
+      cardboardTape: new THREE.MeshStandardMaterial({ color: 0xd8b584, roughness: 0.65 }),
+      laundryBlue: new THREE.MeshStandardMaterial({ color: 0x4889b5, roughness: 0.55 }),
+      bikeRed: new THREE.MeshStandardMaterial({ color: 0xd12929, roughness: 0.3, metalness: 0.45 }),
+      tireRubber: new THREE.MeshStandardMaterial({ color: 0x1e1e22, roughness: 0.85 }),
+      tieNavy: new THREE.MeshStandardMaterial({ color: 0x1f325c, roughness: 0.6 }),
+      tieRedStripe: new THREE.MeshStandardMaterial({ color: 0xb8292f, roughness: 0.55 }),
+      footballLeather: new THREE.MeshStandardMaterial({ color: 0x7d3c1d, roughness: 0.65 }),
+      glassJar: new THREE.MeshStandardMaterial({ color: 0xcceeff, transparent: true, opacity: 0.5, roughness: 0.15 }),
+      lampBulb: new THREE.MeshStandardMaterial({ color: 0xfff3d1, emissive: 0xffaa33, emissiveIntensity: 2.2 }),
+      experimentBulb: new THREE.MeshStandardMaterial({ color: 0xe0ffff, emissive: 0x3cffd0, emissiveIntensity: 0.25, roughness: 0.2 }),
+      wireBlue: new THREE.MeshStandardMaterial({ color: 0x2986cc, emissive: 0x00d8ff, emissiveIntensity: 0.08, roughness: 0.4 }),
+      wireGreen: new THREE.MeshStandardMaterial({ color: 0x2ca85a, emissive: 0x3cff96, emissiveIntensity: 0.08, roughness: 0.4 }),
+      clockScreen: new THREE.MeshBasicMaterial({ map: clockTex }),
+      tvScreen: new THREE.MeshBasicMaterial({ map: tvTex }),
+      crossingLightRed: new THREE.MeshStandardMaterial({ color: 0x551111, emissive: 0xff1e1e, emissiveIntensity: 0.15 }),
+      crossingLightRedB: new THREE.MeshStandardMaterial({ color: 0x551111, emissive: 0xff1e1e, emissiveIntensity: 0.15 }),
+      stationWindow: new THREE.MeshStandardMaterial({ color: 0xffeba8, emissive: 0xffae38, emissiveIntensity: 0.85 })
+    };
+
+    // ==========================================
+    // 1. DIORAMA PLINTH, FLOOR & TEXAS PORCH WING
+    // ==========================================
+    const baseGroup = new THREE.Group();
+    world.add(baseGroup);
+
+    // Sculptural dark tiered plinth
+    baseGroup.add(makeMesh(geoBox, mats.plinthDark, 15.2, 0.9, 11.4, 0.3, -0.55, 0.2, 0, 0, 0, false, true));
+    baseGroup.add(makeMesh(geoBox, mats.plinthTrim, 15.5, 0.22, 11.7, 0.3, -0.95, 0.2, 0, 0, 0, false, true));
+
+    // Main garage concrete slab
+    baseGroup.add(makeMesh(geoBox, mats.concrete, 11.6, 0.32, 10.6, -1.3, 0.0, 0.1, 0, 0, 0, false, true));
+    // Driveway concrete apron at front-right
+    baseGroup.add(makeMesh(geoBox, mats.concrete, 3.4, 0.28, 5.2, 5.2, -0.02, 2.7, 0, 0, 0, false, true));
+
+    // East Texas grassy yard strip & warm family porch wing on right (+X)
+    const yardGroup = new THREE.Group();
+    yardGroup.position.set(5.45, 0.02, -2.1);
+    baseGroup.add(yardGroup);
+
+    yardGroup.add(makeMesh(geoBox, mats.grassMain, 3.7, 0.32, 6.2, 0, 0, 0, 0, 0, 0, false, true));
+    // Stepping stones
+    for (let i = 0; i < 3; i++) {
+      yardGroup.add(makeMesh(geoCylLow, mats.rock, 0.42, 0.08, 0.36, -0.2 + i * 0.35, 0.18, 1.3 + i * 0.65, 0, i * 0.5, 0, false, true));
+    }
+
+    // Porch brick steps, wood deck, white column, warm porch lantern & house window
+    yardGroup.add(makeMesh(geoBox, mats.brickPorch, 2.5, 0.45, 2.8, -0.45, 0.36, -1.45));
+    yardGroup.add(makeMesh(geoBox, mats.brickPorch, 1.4, 0.24, 0.65, -0.35, 0.24, 0.25));
+    yardGroup.add(makeMesh(geoBox, mats.studWood, 2.6, 0.12, 2.9, -0.45, 0.62, -1.45));
+    // White porch column & railing
+    yardGroup.add(makeMesh(geoBox, mats.creamTrim, 0.22, 3.5, 0.22, 0.62, 2.4, -0.18));
+    yardGroup.add(makeMesh(geoBox, mats.creamTrim, 0.14, 0.9, 2.5, 0.62, 1.1, -1.45));
+    for (let b = 0; b < 5; b++) {
+      yardGroup.add(makeMesh(geoBox, mats.creamTrim, 0.08, 0.8, 0.08, 0.62, 1.05, -0.55 - b * 0.42));
+    }
+    // Slanted porch roof overhang
+    yardGroup.add(makeMesh(geoBox, mats.roofShingle, 2.9, 0.18, 3.2, -0.35, 4.25, -1.45, 0.12, 0, -0.18));
+    // Warm porch wall & glowing house window
+    yardGroup.add(makeMesh(geoBox, mats.wallSiding, 2.3, 3.6, 0.25, -0.5, 2.4, -2.75));
+    yardGroup.add(makeMesh(geoBox, mats.creamTrim, 1.1, 1.3, 0.3, -0.35, 2.55, -2.72));
+    yardGroup.add(makeMesh(geoBox, mats.stationWindow, 0.9, 1.1, 0.32, -0.35, 2.55, -2.71, 0, 0, 0, false, false));
+    // Window muntins
+    yardGroup.add(makeMesh(geoBox, mats.creamTrim, 0.94, 0.06, 0.35, -0.35, 2.55, -2.7));
+    yardGroup.add(makeMesh(geoBox, mats.creamTrim, 0.06, 1.14, 0.35, -0.35, 2.55, -2.7));
+
+    // Small shrub bushes along porch
+    for (let s = 0; s < 4; s++) {
+      const bx = 0.95 + (s % 2) * 0.35;
+      const bz = -2.1 + s * 0.85;
+      yardGroup.add(makeMesh(geoSphere, mats.grassRich, 0.42, 0.36, 0.42, bx, 0.38, bz));
+    }
+
+    // ==========================================
+    // 2. LAYERED CUTAWAY GARAGE ARCHITECTURE
+    // ==========================================
+    const garageGroup = new THREE.Group();
+    world.add(garageGroup);
+
+    // Back Wall (-Z = -4.9)
+    garageGroup.add(makeMesh(geoBox, mats.wallIn, 11.4, 5.8, 0.28, -1.3, 3.05, -4.95));
+    // Left Wall (-X = -6.9)
+    garageGroup.add(makeMesh(geoBox, mats.wallIn, 0.28, 5.8, 10.4, -6.95, 3.05, 0.1));
+    // Right Cutoff Wall divider between garage & porch (+X = 4.25, back section)
+    garageGroup.add(makeMesh(geoBox, mats.wallSiding, 0.28, 5.5, 4.4, 4.25, 2.9, -2.85));
+
+    // Exposed timber wall studs on back & left walls for authentic 1989 Texas garage craft
+    for (let sx = -6.2; sx <= 3.6; sx += 1.4) {
+      garageGroup.add(makeMesh(geoBox, mats.studWood, 0.12, 5.6, 0.14, sx, 3.0, -4.76));
+    }
+    for (let sz = -4.2; sz <= 4.4; sz += 1.4) {
+      garageGroup.add(makeMesh(geoBox, mats.studWood, 0.14, 5.6, 0.12, -6.76, 3.0, sz));
+    }
+    // Top plates
+    garageGroup.add(makeMesh(geoBox, mats.studWood, 11.5, 0.22, 0.36, -1.3, 5.95, -4.92));
+    garageGroup.add(makeMesh(geoBox, mats.studWood, 0.36, 0.22, 10.5, -6.92, 5.95, 0.1));
+
+    // Cutaway Gable Roof Rafters & Shingled Back Eave
+    const roofGroup = new THREE.Group();
+    garageGroup.add(roofGroup);
+    // Ridge beam running along X
+    roofGroup.add(makeMesh(geoBox, mats.darkWood, 11.6, 0.26, 0.18, -1.3, 7.15, -1.8));
+    // Back roof slope plank & shingles
+    roofGroup.add(makeMesh(geoBox, mats.studWood, 11.8, 0.14, 3.9, -1.3, 6.55, -3.55, 0.36, 0, 0));
+    roofGroup.add(makeMesh(geoBox, mats.roofShingle, 11.9, 0.12, 4.0, -1.3, 6.66, -3.58, 0.36, 0, 0));
+    // Cutaway exposed rafters on front slope so full interior remains open and airy
+    for (let rx = -6.6; rx <= 4.0; rx += 1.75) {
+      roofGroup.add(makeMesh(geoBox, mats.studWood, 0.12, 0.18, 4.6, rx, 6.52, 0.25, -0.28, 0, 0));
+      // Collar ties
+      roofGroup.add(makeMesh(geoBox, mats.studWood, 0.1, 0.14, 3.8, rx, 6.02, -1.4));
+    }
+
+    // Open Overhead Roller-Door Frame on Right/Front & Partially Rolled-Up Door Panels
+    // Front-right framing pier
+    garageGroup.add(makeMesh(geoBox, mats.wallSiding, 0.45, 5.2, 0.55, 4.25, 2.75, 4.9));
+    garageGroup.add(makeMesh(geoBox, mats.creamTrim, 0.5, 5.2, 0.18, 4.25, 2.75, 4.6));
+    // Overhead door header along right opening (+X = 4.25, Z = -0.6 to +4.8)
+    garageGroup.add(makeMesh(geoBox, mats.wallSiding, 0.38, 0.85, 5.6, 4.25, 5.15, 2.15));
+    // Metal roller tracks curving into garage ceiling
+    garageGroup.add(makeMesh(geoBox, mats.steel, 3.6, 0.09, 0.1, 2.4, 4.82, -0.45));
+    garageGroup.add(makeMesh(geoBox, mats.steel, 3.6, 0.09, 0.1, 2.4, 4.82, 4.55));
+    // Segmented overhead garage door panels suspended above open entrance
+    for (let p = 0; p < 4; p++) {
+      garageGroup.add(makeMesh(geoBox, mats.rollerDoor, 0.78, 0.11, 4.85, 1.05 + p * 0.84, 4.9 + (p === 3 ? -0.06 : 0), 2.05, 0, 0, p === 3 ? -0.18 : 0));
+    }
+
+    // ==========================================
+    // 3. GARAGE SET DRESSING & SHELDON DETAILS
+    // ==========================================
+    const propsGroup = new THREE.Group();
+    world.add(propsGroup);
+
+    // --- LEFT WALL: WOOD WORKBENCH, PEGBOARD, TASK LAMP & POTATO CLOCK EXPERIMENT ---
+    const benchGroup = new THREE.Group();
+    benchGroup.position.set(-5.7, 0.16, -0.8);
+    propsGroup.add(benchGroup);
+
+    // Workbench heavy wood top & 4 legs + lower shelf
+    benchGroup.add(makeMesh(geoBox, mats.studWood, 1.9, 0.18, 4.8, 0, 1.85, 0));
+    benchGroup.add(makeMesh(geoBox, mats.tableTrim, 1.96, 0.08, 4.86, 0, 1.78, 0));
+    benchGroup.add(makeMesh(geoBox, mats.darkWood, 1.65, 0.1, 4.5, 0, 0.62, 0));
+    const legOffsets = [[-0.8, -2.2], [0.8, -2.2], [-0.8, 2.2], [0.8, 2.2]];
+    for (const [lx, lz] of legOffsets) {
+      benchGroup.add(makeMesh(geoBox, mats.darkWood, 0.16, 1.8, 0.16, lx, 0.9, lz));
+    }
+
+    // Pegboard mounted on left wall above workbench
+    benchGroup.add(makeMesh(geoBox, mats.darkWood, 0.1, 2.05, 4.5, -1.05, 3.25, 0));
+    benchGroup.add(makeMesh(geoBox, mats.pegboard, 0.08, 1.9, 4.35, -1.01, 3.25, 0));
+
+    // Recognizable tool silhouettes on pegboard (wrench, hammer, handsaw, screwdrivers, square)
+    // 1. Handsaw
+    benchGroup.add(makeMesh(geoBox, mats.steel, 0.04, 0.24, 0.95, -0.94, 3.65, -1.35, 0.15, 0, 0));
+    benchGroup.add(makeMesh(geoBox, mats.locoRed, 0.06, 0.3, 0.24, -0.94, 3.72, -1.82));
+    // 2. Claw hammer
+    benchGroup.add(makeMesh(geoCylLow, mats.studWood, 0.04, 0.68, 0.04, -0.94, 3.35, -0.45));
+    benchGroup.add(makeMesh(geoBox, mats.darkIron, 0.08, 0.12, 0.34, -0.94, 3.68, -0.45));
+    // 3. Combination wrenches (3 sizes)
+    for (let w = 0; w < 3; w++) {
+      const wz = 0.15 + w * 0.28;
+      const wh = 0.58 - w * 0.08;
+      benchGroup.add(makeMesh(geoBox, mats.steel, 0.04, wh, 0.07, -0.94, 3.45, wz));
+      benchGroup.add(makeMesh(geoCylLow, mats.steel, 0.09, 0.04, 0.09, -0.94, 3.45 + wh * 0.5, wz, 0, 0, Math.PI * 0.5));
+    }
+    // 4. Carpenter's L-square & screwdrivers
+    benchGroup.add(makeMesh(geoBox, mats.brass, 0.04, 0.65, 0.08, -0.94, 3.4, 1.25));
+    benchGroup.add(makeMesh(geoBox, mats.brass, 0.04, 0.08, 0.48, -0.94, 3.7, 1.45));
+    benchGroup.add(makeMesh(geoCylLow, mats.carYellow, 0.05, 0.22, 0.05, -0.94, 2.85, 1.55));
+    benchGroup.add(makeMesh(geoCylLow, mats.steel, 0.02, 0.3, 0.02, -0.94, 2.6, 1.55));
+
+    // Tiny screw jars & red tool caddy on back of workbench
+    for (let j = 0; j < 3; j++) {
+      const jz = -1.85 + j * 0.36;
+      benchGroup.add(makeMesh(geoCyl, mats.glassJar, 0.12, 0.28, 0.12, -0.58, 2.08, jz));
+      benchGroup.add(makeMesh(geoCyl, mats.locoRed, 0.13, 0.06, 0.13, -0.58, 2.24, jz));
+      benchGroup.add(makeMesh(geoCyl, mats.brass, 0.09, 0.14, 0.09, -0.58, 2.02, jz));
+    }
+    // Articulated glowing task lamp on workbench
+    benchGroup.add(makeMesh(geoCyl, mats.darkIron, 0.24, 0.08, 0.24, -0.55, 1.98, -0.95));
+    benchGroup.add(makeMesh(geoCylLow, mats.steel, 0.04, 0.85, 0.04, -0.62, 2.38, -0.95, 0, 0, -0.22));
+    benchGroup.add(makeMesh(geoCylLow, mats.steel, 0.04, 0.72, 0.04, -0.35, 2.88, -0.78, 0.35, 0, -0.85));
+    benchGroup.add(makeMesh(geoCone, mats.carYellow, 0.26, 0.34, 0.26, -0.02, 2.94, -0.55, 0.3, 0, -0.45));
+    benchGroup.add(makeMesh(geoSphere, mats.lampBulb, 0.11, 0.11, 0.11, 0.02, 2.82, -0.5, 0, 0, 0, false, false));
+
+    // --- INTERACTION 2 TARGET: PROFESSOR PROTON POTATO CLOCK SCIENCE EXPERIMENT ---
+    const potatoGroup = new THREE.Group();
+    potatoGroup.position.set(0.12, 1.94, 0.55);
+    benchGroup.add(potatoGroup);
+
+    // Insulating science tray
+    potatoGroup.add(makeMesh(geoBox, mats.darkIron, 1.18, 0.06, 1.75, 0, 0.03, 0));
+
+    // Two procedural sculptural potatoes with electrodes
+    const pot1 = makeMesh(geoSphere, mats.potatoSkin, 0.34, 0.24, 0.44, -0.18, 0.24, -0.42, 0.08, 0.32, -0.05);
+    const pot2 = makeMesh(geoSphere, mats.potatoSkin, 0.32, 0.25, 0.42, -0.14, 0.24, 0.28, -0.06, -0.25, 0.08);
+    potatoGroup.add(pot1, pot2);
+
+    // Copper & zinc electrode strips inserted into each potato
+    potatoGroup.add(makeMesh(geoBox, mats.copper, 0.04, 0.26, 0.09, -0.22, 0.46, -0.52, 0, 0, 0.1));
+    potatoGroup.add(makeMesh(geoBox, mats.steel, 0.04, 0.26, 0.09, -0.12, 0.46, -0.28, 0, 0, -0.1));
+    potatoGroup.add(makeMesh(geoBox, mats.copper, 0.04, 0.26, 0.09, -0.18, 0.46, 0.15, 0, 0, 0.08));
+    potatoGroup.add(makeMesh(geoBox, mats.steel, 0.04, 0.26, 0.09, -0.08, 0.46, 0.40, 0, 0, -0.08));
+
+    // Digital LED clock housing ("12:00" display facing camera cleanly)
+    const clockBody = new THREE.Group();
+    clockBody.position.set(0.28, 0.26, -0.06);
+    clockBody.rotation.y = 1.18;
+    potatoGroup.add(clockBody);
+
+    clockBody.add(makeMesh(geoBox, mats.locoRed, 0.68, 0.42, 0.22, 0, 0, 0));
+    clockBody.add(makeMesh(geoBox, mats.clockScreen, 0.56, 0.28, 0.03, 0, 0.01, 0.11, 0, 0, 0, false, false));
+
+    // Secondary science indicator bulb on tray
+    potatoGroup.add(makeMesh(geoCyl, mats.brass, 0.11, 0.1, 0.11, 0.22, 0.11, 0.58));
+    const expBulbMesh = makeMesh(geoSphere, mats.experimentBulb, 0.14, 0.18, 0.14, 0.22, 0.25, 0.58, 0, 0, 0, false, false);
+    potatoGroup.add(expBulbMesh);
+
+    // Thick 3D tubular wire loops (readable even at 320px width!)
+    function createWireTube(points, mat) {
+      const curve = new THREE.CatmullRomCurve3(points);
+      const tubeGeo = new THREE.TubeGeometry(curve, 24, 0.036, 8, false);
+      const mesh = new THREE.Mesh(tubeGeo, mat);
+      mesh.castShadow = true;
+      return { mesh, curve };
+    }
+
+    const wire1 = createWireTube([
+      new THREE.Vector3(-0.22, 0.54, -0.52),
+      new THREE.Vector3(-0.32, 0.88, -0.45),
+      new THREE.Vector3(0.05, 0.78, -0.25),
+      new THREE.Vector3(0.22, 0.38, -0.14)
+    ], mats.wireBlue);
+
+    const wire2 = createWireTube([
+      new THREE.Vector3(-0.12, 0.54, -0.28),
+      new THREE.Vector3(-0.28, 0.76, -0.06),
+      new THREE.Vector3(-0.18, 0.54, 0.15)
+    ], mats.wireGreen);
+
+    const wire3 = createWireTube([
+      new THREE.Vector3(-0.08, 0.54, 0.40),
+      new THREE.Vector3(0.12, 0.85, 0.52),
+      new THREE.Vector3(0.22, 0.42, 0.58),
+      new THREE.Vector3(0.28, 0.35, 0.08)
+    ], mats.wireBlue);
+
+    potatoGroup.add(wire1.mesh, wire2.mesh, wire3.mesh);
+
+    // Animated circuit pulse beads traveling along the wires
+    const pulseBeads = [];
+    const beadMat = new THREE.MeshBasicMaterial({ color: 0x99ffff });
+    const curvesList = [wire1.curve, wire2.curve, wire3.curve];
+    for (let i = 0; i < 9; i++) {
+      const b = new THREE.Mesh(geoSphere, beadMat);
+      b.scale.setScalar(0.062);
+      b.visible = false;
+      potatoGroup.add(b);
+      pulseBeads.push({ mesh: b, curve: curvesList[i % 3], offset: (i / 9) });
+    }
+
+    // --- BACK WALL: SHELVING, OLD-STYLE TV ('SCIENCE SHOW'), BOOKS, STACKED BOXES & PAINT TINS ---
+    const backWallProps = new THREE.Group();
+    backWallProps.position.set(-1.3, 0.16, -4.25);
+    propsGroup.add(backWallProps);
+
+    // Tall utility shelf unit on back-left
+    const shelfX = -3.0;
+    for (const sx of [shelfX - 0.95, shelfX + 0.95]) {
+      for (const sz of [-0.4, 0.4]) {
+        backWallProps.add(makeMesh(geoBox, mats.darkIron, 0.08, 4.1, 0.08, sx, 2.05, sz));
+      }
+    }
+    for (let sy = 0.8; sy <= 3.9; sy += 1.0) {
+      backWallProps.add(makeMesh(geoBox, mats.studWood, 2.0, 0.1, 0.92, shelfX, sy, 0));
+    }
+
+    // Old-style CRT Television on middle shelf playing procedural blue/white 'science show'
+    const tvGroup = new THREE.Group();
+    tvGroup.position.set(shelfX + 0.05, 2.22, 0.04);
+    tvGroup.rotation.y = 0.18;
+    backWallProps.add(tvGroup);
+
+    tvGroup.add(makeMesh(geoBox, mats.darkWood, 1.18, 0.82, 0.78, 0, 0, 0));
+    tvGroup.add(makeMesh(geoBox, mats.locoBlack, 1.1, 0.74, 0.08, 0, 0, 0.37));
+    tvGroup.add(makeMesh(geoBox, mats.tvScreen, 0.82, 0.62, 0.04, -0.1, 0, 0.4, 0, 0, 0, false, false));
+    // TV rotary tuning dials
+    tvGroup.add(makeMesh(geoCylLow, mats.steel, 0.07, 0.06, 0.07, 0.4, 0.15, 0.41, Math.PI * 0.5, 0, 0));
+    tvGroup.add(makeMesh(geoCylLow, mats.steel, 0.07, 0.06, 0.07, 0.4, -0.05, 0.41, Math.PI * 0.5, 0, 0));
+    // Rabbit-ear antennas
+    tvGroup.add(makeMesh(geoCylLow, mats.steel, 0.015, 0.75, 0.015, -0.2, 0.68, 0.1, 0, 0, 0.45));
+    tvGroup.add(makeMesh(geoCylLow, mats.steel, 0.015, 0.75, 0.015, 0.2, 0.68, 0.1, 0, 0, -0.45));
+
+    // Row of colorful science & physics books on top shelf
+    const bookColors = [mats.locoRed, mats.carBlue, mats.carYellow, mats.grassRich, mats.tieNavy, mats.brickPorch];
+    for (let b = 0; b < 9; b++) {
+      const bh = 0.42 + (b % 3) * 0.07;
+      const bx = shelfX - 0.75 + b * 0.16;
+      const tilt = b === 8 ? -0.25 : 0;
+      backWallProps.add(makeMesh(geoBox, bookColors[b % bookColors.length], 0.13, bh, 0.48, bx + (b === 8 ? 0.08 : 0), 3.85 + bh * 0.5, 0.05, 0, 0, tilt));
+    }
+
+    // Paint tins & stacked cardboard boxes on lower shelf and floor
+    for (let t = 0; t < 3; t++) {
+      const tx = shelfX - 0.55 + t * 0.42;
+      backWallProps.add(makeMesh(geoCyl, mats.steel, 0.17, 0.38, 0.17, tx, 1.04, 0.08));
+      backWallProps.add(makeMesh(geoCyl, t === 1 ? mats.carYellow : mats.locoRed, 0.175, 0.16, 0.175, tx, 1.04, 0.08));
+    }
+
+    // Stacked storage boxes & East Texas Coach George football nod (1 football + clipboard on crate)
+    const boxStackX = -0.35;
+    backWallProps.add(makeMesh(geoBox, mats.cardboard, 1.15, 0.85, 0.95, boxStackX, 0.42, 0.05, 0, 0.08, 0));
+    backWallProps.add(makeMesh(geoBox, mats.cardboardTape, 1.17, 0.06, 0.2, boxStackX, 0.83, 0.05, 0, 0.08, 0));
+    backWallProps.add(makeMesh(geoBox, mats.cardboard, 0.92, 0.72, 0.82, boxStackX + 0.08, 1.2, 0.02, 0, -0.12, 0));
+    // Pigskin football resting beside crate
+    const fb = makeMesh(geoSphere, mats.footballLeather, 0.28, 0.17, 0.17, boxStackX + 0.92, 0.18, 0.25, 0.2, 0.5, 0.15);
+    backWallProps.add(fb);
+
+    // --- BACK-RIGHT: RED BIKE LEANED AGAINST WALL & LAUNDRY BASKET ---
+    const bikeGroup = new THREE.Group();
+    bikeGroup.position.set(2.35, 0.16, -4.15);
+    bikeGroup.rotation.set(0.14, -0.15, 0);
+    propsGroup.add(bikeGroup);
+
+    // Two spoked wheels with rubber tires
+    for (const wx of [-0.72, 0.72]) {
+      bikeGroup.add(makeMesh(geoTorus, mats.tireRubber, 0.48, 0.48, 0.55, wx, 0.52, 0));
+      bikeGroup.add(makeMesh(geoTorus, mats.steel, 0.41, 0.41, 0.3, wx, 0.52, 0));
+      bikeGroup.add(makeMesh(geoCylLow, mats.steel, 0.05, 0.12, 0.05, wx, 0.52, 0, Math.PI * 0.5, 0, 0));
+    }
+    // Red tubular bike frame
+    bikeGroup.add(makeMesh(geoCylLow, mats.bikeRed, 0.04, 1.05, 0.04, -0.1, 0.92, 0, 0, 0, Math.PI * 0.48));
+    bikeGroup.add(makeMesh(geoCylLow, mats.bikeRed, 0.04, 1.05, 0.04, 0.18, 0.68, 0, 0, 0, -0.68));
+    bikeGroup.add(makeMesh(geoCylLow, mats.bikeRed, 0.04, 0.88, 0.04, -0.25, 0.82, 0, 0, 0, 0.2));
+    bikeGroup.add(makeMesh(geoCylLow, mats.bikeRed, 0.038, 0.85, 0.038, 0.62, 0.88, 0, 0, 0, 0.24));
+    // Chrome handlebars & banana/cruiser saddle
+    bikeGroup.add(makeMesh(geoCylLow, mats.steel, 0.03, 0.68, 0.03, 0.52, 1.38, 0, Math.PI * 0.5, 0, 0));
+    bikeGroup.add(makeMesh(geoBox, mats.locoBlack, 0.34, 0.1, 0.18, -0.34, 1.24, 0));
+
+    // Blue plastic laundry basket with folded towels near bike
+    const laundryGroup = new THREE.Group();
+    laundryGroup.position.set(3.55, 0.16, -2.55);
+    laundryGroup.rotation.y = -0.35;
+    propsGroup.add(laundryGroup);
+    laundryGroup.add(makeMesh(geoBox, mats.laundryBlue, 0.95, 0.55, 0.68, 0, 0.28, 0));
+    laundryGroup.add(makeMesh(geoBox, mats.creamTrim, 1.02, 0.07, 0.74, 0, 0.55, 0));
+    laundryGroup.add(makeMesh(geoBox, mats.creamTrim, 0.72, 0.16, 0.52, -0.04, 0.58, 0, 0.08, 0.1, 0));
+    laundryGroup.add(makeMesh(geoBox, mats.carYellow, 0.65, 0.14, 0.48, 0.05, 0.68, 0.02, -0.05, -0.12, 0));
+
+    // --- FRONT-RIGHT NEAR OPEN GARAGE DOOR: BRASS/WHITE TELESCOPE ON WOOD TRIPOD ---
+    const scopeGroup = new THREE.Group();
+    scopeGroup.position.set(3.35, 0.16, 2.55);
+    scopeGroup.rotation.y = -0.55;
+    propsGroup.add(scopeGroup);
+
+    // 3 wooden tripod legs
+    for (let l = 0; l < 3; l++) {
+      const ang = (l * Math.PI * 2) / 3 + 0.3;
+      const lx = Math.cos(ang) * 0.36;
+      const lz = Math.sin(ang) * 0.36;
+      scopeGroup.add(makeMesh(geoCylLow, mats.studWood, 0.04, 1.95, 0.04, lx, 0.92, lz, lz * 0.95, 0, -lx * 0.95));
+    }
+    scopeGroup.add(makeMesh(geoCyl, mats.darkIron, 0.14, 0.18, 0.14, 0, 1.82, 0));
+    // Tilted optical tube pointing toward open Texas evening sky
+    const tubePivot = new THREE.Group();
+    tubePivot.position.set(0, 1.98, 0);
+    tubePivot.rotation.set(-0.42, 0.65, 0);
+    scopeGroup.add(tubePivot);
+    tubePivot.add(makeMesh(geoCyl, mats.creamTrim, 0.12, 1.55, 0.12, 0, 0, 0, Math.PI * 0.5, 0, 0));
+    tubePivot.add(makeMesh(geoCyl, mats.brass, 0.135, 0.24, 0.135, 0, 0, 0.72, Math.PI * 0.5, 0, 0));
+    tubePivot.add(makeMesh(geoCyl, mats.locoBlack, 0.06, 0.25, 0.06, 0, 0.08, -0.82, Math.PI * 0.35, 0, 0));
+
+    // --- FOREGROUND STOOL WITH SHELDON'S BOW TIE & SCHOOLBOOKS ---
+    const stoolGroup = new THREE.Group();
+    stoolGroup.position.set(-2.95, 0.16, 3.25);
+    propsGroup.add(stoolGroup);
+
+    stoolGroup.add(makeMesh(geoCyl, mats.studWood, 0.56, 0.12, 0.56, 0, 1.18, 0));
+    for (let sl = 0; sl < 4; sl++) {
+      const a = (sl * Math.PI) / 2 + 0.4;
+      const sx = Math.cos(a) * 0.34;
+      const sz = Math.sin(a) * 0.34;
+      stoolGroup.add(makeMesh(geoCylLow, mats.darkWood, 0.048, 1.18, 0.048, sx, 0.58, sz, sz * 0.3, 0, -sx * 0.3));
+    }
+    // Two stacked hardcover schoolbooks
+    stoolGroup.add(makeMesh(geoBox, mats.carBlue, 0.56, 0.11, 0.42, -0.05, 1.29, 0.04, 0, 0.25, 0));
+    stoolGroup.add(makeMesh(geoBox, mats.creamTrim, 0.52, 0.09, 0.39, -0.05, 1.29, 0.04, 0, 0.25, 0));
+    stoolGroup.add(makeMesh(geoBox, mats.locoRed, 0.50, 0.10, 0.38, -0.02, 1.39, 0.02, 0, -0.15, 0));
+
+    // Signature little navy/red bow tie resting on top of the schoolbooks
+    const bowTie = new THREE.Group();
+    bowTie.position.set(0.06, 1.47, 0.06);
+    bowTie.rotation.y = 0.42;
+    stoolGroup.add(bowTie);
+    bowTie.add(makeMesh(geoCone, mats.tieNavy, 0.11, 0.18, 0.06, -0.09, 0, 0, 0, 0, -Math.PI * 0.5));
+    bowTie.add(makeMesh(geoCone, mats.tieNavy, 0.11, 0.18, 0.06, 0.09, 0, 0, 0, 0, Math.PI * 0.5));
+    bowTie.add(makeMesh(geoBox, mats.tieRedStripe, 0.07, 0.07, 0.07, 0, 0, 0));
+
+    // ==========================================
+    // 4. CENTERPIECE: WAIST-HIGH MODEL TRAIN TABLE
+    // ==========================================
+    const tableGroup = new THREE.Group();
+    tableGroup.position.set(-0.65, 0.16, 0.35);
+    world.add(tableGroup);
+
+    const TABLE_W = 6.7;
+    const TABLE_D = 4.65;
+    const TABLE_Y = 1.92;
+
+    // Sturdy wooden table legs with bevel trim & stretcher bars
+    const tLegs = [
+      [-TABLE_W * 0.46, -TABLE_D * 0.45],
+      [TABLE_W * 0.46, -TABLE_D * 0.45],
+      [-TABLE_W * 0.46, TABLE_D * 0.45],
+      [TABLE_W * 0.46, TABLE_D * 0.45]
+    ];
+    for (const [lx, lz] of tLegs) {
+      tableGroup.add(makeMesh(geoBox, mats.darkWood, 0.24, TABLE_Y, 0.24, lx, TABLE_Y * 0.5, lz));
+      tableGroup.add(makeMesh(geoBox, mats.brass, 0.27, 0.12, 0.27, lx, 0.06, lz));
+      // Corner gussets
+      tableGroup.add(makeMesh(geoBox, mats.studWood, 0.38, 0.22, 0.38, lx, TABLE_Y - 0.18, lz));
+    }
+    // Cross stretchers
+    tableGroup.add(makeMesh(geoBox, mats.darkWood, TABLE_W * 0.9, 0.12, 0.12, 0, 0.55, -TABLE_D * 0.45));
+    tableGroup.add(makeMesh(geoBox, mats.darkWood, TABLE_W * 0.9, 0.12, 0.12, 0, 0.55, TABLE_D * 0.45));
+    tableGroup.add(makeMesh(geoBox, mats.darkWood, 0.12, 0.12, TABLE_D * 0.9, -TABLE_W * 0.46, 0.55, 0));
+    tableGroup.add(makeMesh(geoBox, mats.darkWood, 0.12, 0.12, TABLE_D * 0.9, TABLE_W * 0.46, 0.55, 0));
+
+    // Framed wooden train table apron & green terrain felt top
+    tableGroup.add(makeMesh(geoBox, mats.tableTrim, TABLE_W + 0.24, 0.34, TABLE_D + 0.24, 0, TABLE_Y, 0));
+    tableGroup.add(makeMesh(geoBox, mats.studWood, TABLE_W + 0.32, 0.08, TABLE_D + 0.32, 0, TABLE_Y + 0.15, 0));
+    tableGroup.add(makeMesh(geoBox, mats.grassMain, TABLE_W, 0.16, TABLE_D, 0, TABLE_Y + 0.14, 0));
+
+    // Side control throttle box mounted on front-left table rim
+    tableGroup.add(makeMesh(geoBox, mats.locoBlack, 0.58, 0.22, 0.42, -2.15, TABLE_Y + 0.24, TABLE_D * 0.5 + 0.12));
+    tableGroup.add(makeMesh(geoCylLow, mats.locoRed, 0.11, 0.1, 0.11, -2.25, TABLE_Y + 0.38, TABLE_D * 0.5 + 0.12));
+    tableGroup.add(makeMesh(geoBox, mats.brass, 0.06, 0.18, 0.06, -2.0, TABLE_Y + 0.4, TABLE_D * 0.5 + 0.12, 0.35, 0, 0));
+
+    // --- OVAL METAL RAIL TRACK WITH WOODEN SLEEPERS ---
+    const SURFACE_Y = TABLE_Y + 0.22;
+    const TRACK_RX = 2.52;
+    const TRACK_RZ = 1.56;
+    const RAIL_GAUGE = 0.26;
+
+    // Closed oval Curve3 for accurate train pathing & rail generation
+    const trackSamples = 80;
+    const trackPoints = [];
+    for (let i = 0; i < trackSamples; i++) {
+      const theta = (i / trackSamples) * Math.PI * 2;
+      // Slight stadium-oval shaping for realistic straightaways + curves
+      const cosT = Math.cos(theta);
+      const sinT = Math.sin(theta);
+      const x = Math.sign(cosT) * Math.pow(Math.abs(cosT), 0.86) * TRACK_RX;
+      const z = Math.sign(sinT) * Math.pow(Math.abs(sinT), 0.88) * TRACK_RZ;
+      trackPoints.push(new THREE.Vector3(x, SURFACE_Y + 0.06, z));
+    }
+    const trackCurve = new THREE.CatmullRomCurve3(trackPoints, true, 'catmullrom', 0.5);
+
+    // Inner & outer steel rails + gravel ballast bed
+    const innerRailPts = [];
+    const outerRailPts = [];
+    const upVec = new THREE.Vector3(0, 1, 0);
+    for (let i = 0; i < 100; i++) {
+      const u = i / 100;
+      const pt = trackCurve.getPointAt(u);
+      const tan = trackCurve.getTangentAt(u).normalize();
+      const right = new THREE.Vector3().crossVectors(tan, upVec).normalize();
+      innerRailPts.push(pt.clone().addScaledVector(right, -RAIL_GAUGE * 0.5).add(new THREE.Vector3(0, 0.035, 0)));
+      outerRailPts.push(pt.clone().addScaledVector(right, RAIL_GAUGE * 0.5).add(new THREE.Vector3(0, 0.035, 0)));
+    }
+    const innerRailGeo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(innerRailPts, true), 120, 0.022, 6, true);
+    const outerRailGeo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(outerRailPts, true), 120, 0.022, 6, true);
+    const ballastGeo = new THREE.TubeGeometry(trackCurve, 100, 0.28, 6, true);
+
+    const ballastMesh = new THREE.Mesh(ballastGeo, mats.ballast);
+    ballastMesh.scale.set(1, 0.16, 1);
+    ballastMesh.position.y = SURFACE_Y * (1 - 0.16) - 0.01;
+    ballastMesh.receiveShadow = true;
+    tableGroup.add(ballastMesh);
+
+    const innerRailMesh = new THREE.Mesh(innerRailGeo, mats.steel);
+    const outerRailMesh = new THREE.Mesh(outerRailGeo, mats.steel);
+    innerRailMesh.castShadow = true;
+    outerRailMesh.castShadow = true;
+    tableGroup.add(innerRailMesh, outerRailMesh);
+
+    // Instanced wooden sleepers (72 ties around the oval)
+    const sleeperCount = 72;
+    const sleeperGeo = new THREE.BoxGeometry(0.44, 0.036, 0.09);
+    const sleeperInst = new THREE.InstancedMesh(sleeperGeo, mats.darkWood, sleeperCount);
+    sleeperInst.castShadow = true;
+    sleeperInst.receiveShadow = true;
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < sleeperCount; i++) {
+      const u = i / sleeperCount;
+      const pt = trackCurve.getPointAt(u);
+      const tan = trackCurve.getTangentAt(u).normalize();
+      dummy.position.set(pt.x, SURFACE_Y + 0.025, pt.z);
+      dummy.rotation.set(0, Math.atan2(tan.x, tan.z), 0);
+      dummy.updateMatrix();
+      sleeperInst.setMatrixAt(i, dummy.matrix);
+    }
+    tableGroup.add(sleeperInst);
+
+    // --- MINIATURE LANDSCAPE ON THE TRAIN TABLE ---
+    // 1. Rolling grass hills inside oval
+    tableGroup.add(makeMesh(geoSphere, mats.grassRich, 1.35, 0.22, 0.85, -0.55, SURFACE_Y - 0.04, -0.15));
+    tableGroup.add(makeMesh(geoSphere, mats.grassRich, 1.05, 0.18, 0.72, 0.75, SURFACE_Y - 0.04, 0.22));
+    // Dirt country road crossing the track
+    tableGroup.add(makeMesh(geoBox, mats.earthDirt, 0.52, 0.02, 4.3, 0.12, SURFACE_Y + 0.01, 0));
+    // Wooden plank grade crossings over the tracks
+    tableGroup.add(makeMesh(geoBox, mats.studWood, 0.54, 0.05, 0.36, 0.12, SURFACE_Y + 0.05, TRACK_RZ));
+    tableGroup.add(makeMesh(geoBox, mats.studWood, 0.54, 0.05, 0.36, 0.12, SURFACE_Y + 0.05, -TRACK_RZ));
+
+    // 2. Rocky Tunnel on Back-Left Curve (sculpted arch over the track so train passes smoothly through!)
+    const tunnelGroup = new THREE.Group();
+    tunnelGroup.position.set(-1.95, SURFACE_Y, -1.08);
+    tunnelGroup.rotation.y = 0.55;
+    tableGroup.add(tunnelGroup);
+
+    // Left & right rocky flanks (clear of track centerline)
+    tunnelGroup.add(makeMesh(geoSphere, mats.rock, 0.45, 0.65, 0.75, -0.56, 0.28, 0));
+    tunnelGroup.add(makeMesh(geoSphere, mats.rock, 0.45, 0.65, 0.75, 0.56, 0.28, 0));
+    tunnelGroup.add(makeMesh(geoSphere, mats.rock, 0.68, 0.36, 0.82, 0, 0.82, 0));
+    tunnelGroup.add(makeMesh(geoSphere, mats.grassRich, 0.58, 0.2, 0.68, 0, 1.02, 0));
+    // Stone portal arches at both ends
+    for (const tz of [-0.58, 0.58]) {
+      tunnelGroup.add(makeMesh(geoBox, mats.darkIron, 0.16, 0.68, 0.14, -0.38, 0.34, tz));
+      tunnelGroup.add(makeMesh(geoBox, mats.darkIron, 0.16, 0.68, 0.14, 0.38, 0.34, tz));
+      tunnelGroup.add(makeMesh(geoBox, mats.darkIron, 0.92, 0.18, 0.16, 0, 0.72, tz));
+    }
+
+    // 3. Small Train Station Depot inside Left Oval
+    const stationGroup = new THREE.Group();
+    stationGroup.position.set(-0.88, SURFACE_Y, 0.18);
+    tableGroup.add(stationGroup);
+
+    stationGroup.add(makeMesh(geoBox, mats.concrete, 1.25, 0.08, 0.78, 0, 0.04, 0));
+    stationGroup.add(makeMesh(geoBox, mats.creamTrim, 0.92, 0.52, 0.54, 0, 0.32, -0.05));
+    stationGroup.add(makeMesh(geoCone, mats.brickPorch, 0.76, 0.36, 0.76, 0, 0.74, -0.05, 0, Math.PI * 0.25, 0));
+    stationGroup.add(makeMesh(geoBox, mats.stationWindow, 0.2, 0.22, 0.58, -0.22, 0.34, -0.05, 0, 0, 0, false, false));
+    stationGroup.add(makeMesh(geoBox, mats.stationWindow, 0.2, 0.22, 0.58, 0.22, 0.34, -0.05, 0, 0, 0, false, false));
+
+    // 4. Classic Wooden Water Tower
+    const towerGroup = new THREE.Group();
+    towerGroup.position.set(1.42, SURFACE_Y, -0.45);
+    tableGroup.add(towerGroup);
+    for (const [tx, tz] of [[-0.14, -0.14], [0.14, -0.14], [-0.14, 0.14], [0.14, 0.14]]) {
+      towerGroup.add(makeMesh(geoCylLow, mats.darkWood, 0.03, 0.56, 0.03, tx, 0.28, tz));
+    }
+    towerGroup.add(makeMesh(geoCyl, mats.studWood, 0.26, 0.42, 0.26, 0, 0.72, 0));
+    towerGroup.add(makeMesh(geoCone, mats.roofShingle, 0.3, 0.22, 0.3, 0, 1.04, 0));
+    // Water spout
+    towerGroup.add(makeMesh(geoCylLow, mats.steel, 0.03, 0.32, 0.03, 0.24, 0.62, 0, 0, 0, -0.8));
+
+    // 5. Tiny Red Farm Barn & Silo inside Right Oval
+    const farmGroup = new THREE.Group();
+    farmGroup.position.set(0.88, SURFACE_Y, 0.38);
+    farmGroup.rotation.y = -0.25;
+    tableGroup.add(farmGroup);
+
+    farmGroup.add(makeMesh(geoBox, mats.locoRed, 0.72, 0.46, 0.54, 0, 0.23, 0));
+    farmGroup.add(makeMesh(geoCone, mats.roofShingle, 0.58, 0.34, 0.58, 0, 0.62, 0, 0, Math.PI * 0.25, 0));
+    // White barn X-door trim
+    farmGroup.add(makeMesh(geoBox, mats.creamTrim, 0.26, 0.3, 0.56, 0, 0.18, 0));
+    // Silver silo
+    farmGroup.add(makeMesh(geoCyl, mats.steel, 0.16, 0.68, 0.16, 0.48, 0.34, -0.1));
+    farmGroup.add(makeMesh(geoSphere, mats.steel, 0.16, 0.16, 0.16, 0.48, 0.68, -0.1));
+
+    // 6. Railroad Crossing Signs with Blinking Red Signal Lights
+    const crossingGroup = new THREE.Group();
+    crossingGroup.position.set(0.46, SURFACE_Y, TRACK_RZ - 0.34);
+    tableGroup.add(crossingGroup);
+
+    crossingGroup.add(makeMesh(geoCylLow, mats.steel, 0.028, 0.68, 0.028, 0, 0.34, 0));
+    // X-crossbuck boards
+    crossingGroup.add(makeMesh(geoBox, mats.creamTrim, 0.36, 0.06, 0.03, 0, 0.58, 0.02, 0, 0, 0.65));
+    crossingGroup.add(makeMesh(geoBox, mats.creamTrim, 0.36, 0.06, 0.03, 0, 0.58, 0.02, 0, 0, -0.65));
+    // Twin blinking red signal lamps
+    crossingGroup.add(makeMesh(geoBox, mats.locoBlack, 0.28, 0.05, 0.04, 0, 0.42, 0.02));
+    const signalLampA = makeMesh(geoSphere, mats.crossingLightRed, 0.055, 0.055, 0.055, -0.1, 0.42, 0.04, 0, 0, 0, false, false);
+    const signalLampB = makeMesh(geoSphere, mats.crossingLightRedB, 0.055, 0.055, 0.055, 0.1, 0.42, 0.04, 0, 0, 0, false, false);
+    crossingGroup.add(signalLampA, signalLampB);
+
+    // Miniature Pine & Deciduous Trees around the table corners
+    const treeCoords = [
+      [-2.85, -1.75, 1.1], [-2.95, 1.65, 0.95], [2.75, -1.65, 1.05],
+      [2.85, 1.55, 0.9], [-1.35, -0.45, 0.82], [0.55, -0.82, 0.88],
+      [-0.25, 0.82, 0.78], [1.85, 0.15, 0.85]
+    ];
+    for (const [tx, tz, sc] of treeCoords) {
+      const tg = new THREE.Group();
+      tg.position.set(tx, SURFACE_Y, tz);
+      tg.scale.setScalar(sc);
+      tg.add(makeMesh(geoCylLow, mats.darkWood, 0.045, 0.24, 0.045, 0, 0.12, 0));
+      tg.add(makeMesh(geoCone, mats.grassRich, 0.22, 0.38, 0.22, 0, 0.34, 0));
+      tg.add(makeMesh(geoCone, mats.grassMain, 0.17, 0.32, 0.17, 0, 0.54, 0));
+      tableGroup.add(tg);
+    }
+
+    // ==========================================
+    // 5. DETAILED LOCOMOTIVE + TWO CARRIAGES + STEAM
+    // ==========================================
+    const trainVehicles = [];
+    const trainWheels = [];
+
+    function makeWheelSet(parent, zPos, radius = 0.095) {
+      const axleGroup = new THREE.Group();
+      axleGroup.position.set(0, radius + 0.02, zPos);
+      parent.add(axleGroup);
+
+      // Axle rod
+      axleGroup.add(makeMesh(geoCylLow, mats.steel, 0.02, RAIL_GAUGE + 0.06, 0.02, 0, 0, 0, 0, 0, Math.PI * 0.5));
+      for (const side of [-1, 1]) {
+        const w = makeMesh(geoCylLow, mats.locoRed, radius, 0.032, radius, side * (RAIL_GAUGE * 0.5), 0, 0, 0, 0, Math.PI * 0.5);
+        // White spoke counterweight bar so rotation is visibly unmistakable
+        const spoke = makeMesh(geoBox, mats.brass, 0.042, radius * 1.65, 0.028, side * (RAIL_GAUGE * 0.5 + 0.01 * side), 0, 0);
+        axleGroup.add(w, spoke);
+      }
+      trainWheels.push({ group: axleGroup, radius });
+    }
+
+    // 1. Steam Locomotive
+    const locoGroup = new THREE.Group();
+    tableGroup.add(locoGroup);
+    // Red chassis running board
+    locoGroup.add(makeMesh(geoBox, mats.locoRed, 0.34, 0.07, 0.92, 0, 0.14, 0));
+    // Black cylindrical boiler & brass bands
+    locoGroup.add(makeMesh(geoCyl, mats.locoBlack, 0.145, 0.62, 0.145, 0, 0.31, 0.12, Math.PI * 0.5, 0, 0));
+    locoGroup.add(makeMesh(geoCyl, mats.brass, 0.15, 0.035, 0.15, 0, 0.31, 0.05, Math.PI * 0.5, 0, 0));
+    locoGroup.add(makeMesh(geoCyl, mats.brass, 0.15, 0.035, 0.15, 0, 0.31, 0.28, Math.PI * 0.5, 0, 0));
+    // Steam dome
+    locoGroup.add(makeMesh(geoSphere, mats.brass, 0.08, 0.09, 0.08, 0, 0.45, 0.14));
+    // Smokestack chimney at front (+Z)
+    locoGroup.add(makeMesh(geoCyl, mats.locoBlack, 0.055, 0.22, 0.045, 0, 0.49, 0.32));
+    locoGroup.add(makeMesh(geoCyl, mats.brass, 0.068, 0.04, 0.068, 0, 0.59, 0.32));
+    // Warm glowing brass headlamp
+    locoGroup.add(makeMesh(geoCylLow, mats.lampBulb, 0.048, 0.06, 0.048, 0, 0.34, 0.44, Math.PI * 0.5, 0, 0, false, false));
+    // Red Engineer Cab at rear (-Z)
+    locoGroup.add(makeMesh(geoBox, mats.locoRed, 0.34, 0.34, 0.32, 0, 0.34, -0.26));
+    locoGroup.add(makeMesh(geoBox, mats.locoBlack, 0.38, 0.05, 0.38, 0, 0.52, -0.26));
+    locoGroup.add(makeMesh(geoBox, mats.stationWindow, 0.36, 0.14, 0.16, 0, 0.38, -0.26, 0, 0, 0, false, false));
+    // Cowcatcher pilot at front
+    locoGroup.add(makeMesh(geoCone, mats.darkIron, 0.18, 0.2, 0.18, 0, 0.12, 0.48, Math.PI * 0.5, Math.PI * 0.25, 0));
+
+    makeWheelSet(locoGroup, -0.26, 0.105);
+    makeWheelSet(locoGroup, 0.04, 0.105);
+    makeWheelSet(locoGroup, 0.30, 0.078);
+    trainVehicles.push({ group: locoGroup, uOffset: 0.0 });
+
+    // 2. Blue Passenger Coach
+    const car1Group = new THREE.Group();
+    tableGroup.add(car1Group);
+    car1Group.add(makeMesh(geoBox, mats.darkIron, 0.31, 0.06, 0.76, 0, 0.13, 0));
+    car1Group.add(makeMesh(geoBox, mats.carBlue, 0.32, 0.28, 0.72, 0, 0.29, 0));
+    car1Group.add(makeMesh(geoBox, mats.creamTrim, 0.33, 0.04, 0.73, 0, 0.28, 0));
+    car1Group.add(makeMesh(geoBox, mats.stationWindow, 0.34, 0.1, 0.56, 0, 0.32, 0, 0, 0, 0, false, false));
+    car1Group.add(makeMesh(geoCyl, mats.locoBlack, 0.16, 0.74, 0.16, 0, 0.43, 0, Math.PI * 0.5, 0, 0));
+    makeWheelSet(car1Group, -0.22, 0.08);
+    makeWheelSet(car1Group, 0.22, 0.08);
+    trainVehicles.push({ group: car1Group, uOffset: -0.068 });
+
+    // 3. Yellow Caboose / Observation Car
+    const car2Group = new THREE.Group();
+    tableGroup.add(car2Group);
+    car2Group.add(makeMesh(geoBox, mats.darkIron, 0.31, 0.06, 0.68, 0, 0.13, 0));
+    car2Group.add(makeMesh(geoBox, mats.carYellow, 0.31, 0.26, 0.58, 0, 0.28, 0));
+    car2Group.add(makeMesh(geoBox, mats.locoRed, 0.22, 0.14, 0.26, 0, 0.46, 0));
+    car2Group.add(makeMesh(geoBox, mats.stationWindow, 0.33, 0.09, 0.38, 0, 0.3, 0, 0, 0, 0, false, false));
+    makeWheelSet(car2Group, -0.19, 0.08);
+    makeWheelSet(car2Group, 0.19, 0.08);
+    trainVehicles.push({ group: car2Group, uOffset: -0.132 });
+
+    // Light-gray steam puffs emitted from locomotive chimney (strictly bounded inside garage height)
+    const steamPuffs = [];
+    for (let i = 0; i < 18; i++) {
+      const pMat = new THREE.MeshStandardMaterial({
+        color: 0xeaeff5,
+        roughness: 0.9,
+        transparent: true,
+        opacity: 0.0,
+        depthWrite: false
+      });
+      const pMesh = new THREE.Mesh(geoSphere, pMat);
+      pMesh.visible = false;
+      tableGroup.add(pMesh);
+      steamPuffs.push({
+        mesh: pMesh,
+        mat: pMat,
+        active: false,
+        age: 0,
+        life: 1.2,
+        vx: 0,
+        vy: 0,
+        vz: 0
+      });
+    }
+
+    // ==========================================
+    // 6. WARM DUST MOTES IN GARAGE SUNLIGHT
+    // ==========================================
+    const moteCount = 36;
+    const moteGeo = new THREE.BufferGeometry();
+    const motePos = new Float32Array(moteCount * 3);
+    const moteSeeds = new Float32Array(moteCount * 3);
+    for (let i = 0; i < moteCount; i++) {
+      motePos[i * 3 + 0] = randRange(-5.2, 3.4);
+      motePos[i * 3 + 1] = randRange(1.2, 5.1);
+      motePos[i * 3 + 2] = randRange(-3.5, 3.2);
+      moteSeeds[i * 3 + 0] = randRange(0.4, 1.1);
+      moteSeeds[i * 3 + 1] = randRange(0, Math.PI * 2);
+      moteSeeds[i * 3 + 2] = motePos[i * 3 + 1];
+    }
+    moteGeo.setAttribute('position', new THREE.BufferAttribute(motePos, 3));
+    const moteMat = new THREE.PointsMaterial({
+      color: 0xffe4ad,
+      size: 0.09,
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false
+    });
+    const motes = new THREE.Points(moteGeo, moteMat);
+    world.add(motes);
+
+    // ==========================================
+    // 7. LIGHTING: LATE AFTERNOON TEXAS AMBER + COOL SHADE
+    // ==========================================
+    const hemiLight = new THREE.HemisphereLight(0xffdfba, 0x363b52, 1.15);
+    scene.add(hemiLight);
+
+    // Warm late-afternoon sun streaming through open garage door
+    const sunLight = new THREE.DirectionalLight(0xffb56b, 2.35);
+    sunLight.position.set(11.5, 11.0, 9.5);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 1024;
+    sunLight.shadow.mapSize.height = 1024;
+    sunLight.shadow.camera.near = 2;
+    sunLight.shadow.camera.far = 32;
+    const sc = 9.5;
+    sunLight.shadow.camera.left = -sc;
+    sunLight.shadow.camera.right = sc;
+    sunLight.shadow.camera.top = sc;
+    sunLight.shadow.camera.bottom = -sc;
+    sunLight.shadow.bias = -0.0006;
+    scene.add(sunLight);
+
+    // Warm overhead light directly above train table (brightens during speed-up lap!)
+    const tableLight = new THREE.PointLight(0xffbe66, 2.4, 11.5, 1.5);
+    tableLight.position.set(-0.65, 4.95, 0.35);
+    world.add(tableLight);
+
+    // Workbench task lamp light + potato experiment glow light
+    const benchLight = new THREE.PointLight(0xffcf77, 1.45, 6.5, 1.6);
+    benchLight.position.set(-5.3, 3.1, -1.1);
+    world.add(benchLight);
+
+    const potatoGlowLight = new THREE.PointLight(0x3cffd0, 0.0, 5.2, 1.5);
+    potatoGlowLight.position.set(-5.2, 2.6, -0.2);
+    world.add(potatoGlowLight);
+
+    // Subtle blue fill from the science TV
+    const tvLight = new THREE.PointLight(0x4cb8ff, 0.65, 4.5, 1.8);
+    tvLight.position.set(-4.1, 2.45, -3.5);
+    world.add(tvLight);
+
+    // ==========================================
+    // 8. GENEROUS INVISIBLE RAYCAST PROXIES (320px SAFE)
+    // ==========================================
+    const hitMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+    const interactiveProxies = [];
+
+    // Proxy 1: Entire train table & locomotive volume
+    const trainProxy = new THREE.Mesh(new THREE.BoxGeometry(7.3, 2.1, 5.2), hitMat);
+    trainProxy.position.set(-0.65, 2.55, 0.35);
+    trainProxy.userData.action = 'train';
+    world.add(trainProxy);
+    interactiveProxies.push(trainProxy);
+
+    // Extra moving proxy locked onto locomotive
+    const locoProxy = new THREE.Mesh(new THREE.SphereGeometry(0.95, 8, 8), hitMat);
+    locoProxy.userData.action = 'train';
+    locoGroup.add(locoProxy);
+    interactiveProxies.push(locoProxy);
+
+    // Proxy 2: Generous workbench potato clock volume
+    const potatoProxy = new THREE.Mesh(new THREE.BoxGeometry(2.7, 2.3, 2.9), hitMat);
+    potatoProxy.position.set(-5.35, 2.55, -0.25);
+    potatoProxy.userData.action = 'potato';
+    world.add(potatoProxy);
+    interactiveProxies.push(potatoProxy);
+
+    // ==========================================
+    // 9. ASPECT-AWARE FRAMING (616x562, 390x844, 320x700)
+    // ==========================================
+    const targetCenter = new THREE.Vector3(-0.45, 2.75, -0.15);
+
+    function updateCameraFraming() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const aspect = w / Math.max(h, 1);
+
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+      renderer.setSize(w, h);
+      camera.aspect = aspect;
+      camera.fov = aspect < 0.75 ? 41 : 34;
+      camera.updateProjectionMatrix();
+
+      // Reserve HUD safe areas: scene fits strictly between header box and footer
+      const headerRect = document.querySelector('.header-box').getBoundingClientRect();
+      const footerRect = document.querySelector('.footer').getBoundingClientRect();
+      const topSafePx = Math.max(headerRect.bottom + Math.max(14, h * 0.022), h * 0.13);
+      const bottomSafePx = Math.min(footerRect.top - Math.max(10, h * 0.018), h * 0.94);
+      const topMaxNDC = 1 - (topSafePx / h) * 2;
+      const bottomMinNDC = 1 - (bottomSafePx / h) * 2;
+      const targetCenterNDCY = (topMaxNDC + bottomMinNDC) * 0.5;
+      const usableHalfHeightNDC = Math.max(0.25, (topMaxNDC - bottomMinNDC) * 0.5);
+
+      // Projected-bounding-box fit over full diorama extents (plinth, roof, porch, workbench)
+      const ENVELOPE = [];
+      for (const sx of [-7.45, 8.05]) for (const sy of [-1.06, 7.42]) for (const sz of [-5.65, 6.05]) {
+        ENVELOPE.push(new THREE.Vector3(sx, sy, sz));
+      }
+
+      const viewDir = new THREE.Vector3(0.22, 0.44, 0.87).normalize();
+      const up = new THREE.Vector3(0, 1, 0);
+      const right = new THREE.Vector3().crossVectors(up, viewDir).normalize();
+      const camUp = new THREE.Vector3().crossVectors(viewDir, right).normalize();
+
+      const fovRad = THREE.MathUtils.degToRad(camera.fov);
+      const tanHalfFov = Math.tan(fovRad / 2);
+      const tanHalfHorizFov = tanHalfFov * aspect;
+      const widthFraction = aspect < 0.75 ? 0.93 : 0.90;
+
+      let targetY = 2.75;
+      let dist = 20.0;
+      for (let iter = 0; iter < 8; iter++) {
+        let maxTopY = -Infinity, minBotY = Infinity, distForWidth = 0, distForHeight = 0;
+        for (const p of ENVELOPE) {
+          const rx = p.x - (-0.45), ry = p.y - targetY, rz = p.z - (-0.15);
+          const cx = rx * right.x + ry * right.y + rz * right.z;
+          const cy = rx * camUp.x + ry * camUp.y + rz * camUp.z;
+          const cz = rx * viewDir.x + ry * viewDir.y + rz * viewDir.z;
+          distForWidth = Math.max(distForWidth, Math.abs(cx) / (tanHalfHorizFov * widthFraction) + cz);
+          if (cy > maxTopY) maxTopY = cy;
+          if (cy < minBotY) minBotY = cy;
+          distForHeight = Math.max(distForHeight, Math.abs(cy) / (tanHalfFov * usableHalfHeightNDC) + cz);
+        }
+        dist = Math.max(distForWidth, distForHeight);
+        const midCy = (maxTopY + minBotY) * 0.5;
+        targetY += (midCy - targetCenterNDCY * dist * tanHalfFov) * 0.82;
+      }
+
+      controls.target.set(-0.45, targetY, -0.15);
+      camera.position.copy(controls.target).addScaledVector(viewDir, dist);
+      controls.minDistance = dist * 0.7;
+      controls.maxDistance = dist * 1.35;
+      controls.update();
+    }
+
+    window.addEventListener('resize', updateCameraFraming);
+    updateCameraFraming();
+
+    // ==========================================
+    // 10. INTERACTION STATE & POINTER HANDLING
+    // ==========================================
+    let trainBoostStart = -999;
+    const TRAIN_BOOST_DURATION = 8.0; // seconds
+
+    let potatoBoostStart = -999;
+    const POTATO_BOOST_DURATION = 6.0; // seconds
+
+    let lastUserInteractionTime = 0;
+    let lastIdleAutoLapTime = 0;
+
+    function triggerHintFeedback() {
+      hintPill.classList.add('active-pulse');
+      setTimeout(() => hintPill.classList.remove('active-pulse'), 420);
+    }
+
+    function triggerTrainBoost(nowSec, isUser = true) {
+      trainBoostStart = nowSec;
+      if (isUser) {
+        lastUserInteractionTime = nowSec;
+        triggerHintFeedback();
+      }
+      // Immediate burst of 3 steam puffs
+      for (let i = 0; i < 3; i++) {
+        spawnSteamPuff(i * 0.08);
+      }
+    }
+
+    function triggerPotatoExperiment(nowSec) {
+      potatoBoostStart = nowSec;
+      lastUserInteractionTime = nowSec;
+      triggerHintFeedback();
+    }
+
+    function spawnSteamPuff(extraHeight = 0) {
+      for (const puff of steamPuffs) {
+        if (!puff.active) {
+          puff.active = true;
+          puff.age = 0;
+          puff.life = randRange(0.95, 1.35);
+          // Spawn at locomotive smokestack in tableGroup coordinates
+          const stackLocal = new THREE.Vector3(0, 0.62 + extraHeight, 0.32);
+          stackLocal.applyMatrix4(locoGroup.matrix);
+          // Subtract tableGroup transform to stay in tableGroup local space
+          puff.mesh.position.copy(locoGroup.position).add(new THREE.Vector3(0, 0.62 + extraHeight, 0));
+          puff.vx = randRange(-0.18, 0.18);
+          puff.vy = randRange(0.75, 1.05);
+          puff.vz = randRange(-0.18, 0.18);
+          puff.mesh.scale.setScalar(0.065);
+          puff.mat.opacity = 0.78;
+          puff.mesh.visible = true;
+          break;
+        }
+      }
+    }
+
+    // Raycaster distinguishing tap from orbit drag via pointer distance
+    const raycaster = new THREE.Raycaster();
+    const pointerDownPos = new THREE.Vector2();
+    const pointerUpPos = new THREE.Vector2();
+    let isPointerDown = false;
+
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      isPointerDown = true;
+      pointerDownPos.set(e.clientX, e.clientY);
+    });
+
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      if (!isPointerDown) return;
+      isPointerDown = false;
+      pointerUpPos.set(e.clientX, e.clientY);
+      const moveDist = pointerDownPos.distanceTo(pointerUpPos);
+      if (moveDist > 9) return; // Dragged orbit, not a tap
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      const ndc = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1
+      );
+      raycaster.setFromCamera(ndc, camera);
+      const hits = raycaster.intersectObjects(interactiveProxies, false);
+      const nowSec = performance.now() * 0.001;
+
+      if (hits.length > 0) {
+        // Prioritize potato if tapped on left workbench, otherwise train
+        const action = hits[0].object.userData.action;
+        if (action === 'potato') {
+          triggerPotatoExperiment(nowSec);
+        } else if (action === 'train') {
+          triggerTrainBoost(nowSec, true);
+        }
+      }
+    });
+
+    // Subtle pointer cursor hint on hover
+    renderer.domElement.addEventListener('pointermove', (e) => {
+      if (isPointerDown) return;
+      const rect = renderer.domElement.getBoundingClientRect();
+      const ndc = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1
+      );
+      raycaster.setFromCamera(ndc, camera);
+      const hits = raycaster.intersectObjects(interactiveProxies, false);
+      renderer.domElement.style.cursor = hits.length > 0 ? 'pointer' : 'grab';
+    });
+
+    // ==========================================
+    // 11. MAIN ANIMATION LOOP (performance.now)
+    // ==========================================
+    let prevTimeSec = performance.now() * 0.001;
+    let trainProgress = 0.12;
+    let wheelAngle = 0;
+    let puffAccumulator = 0;
+    let lastClockDraw = -1;
+    let lastTvDraw = -1;
+
+    function animate(nowMs) {
+      requestAnimationFrame(animate);
+
+      const nowSec = nowMs * 0.001;
+      const dt = Math.min(nowSec - prevTimeSec, 0.1);
+      prevTimeSec = nowSec;
+
+      // Idle auto-demo: boost a lap every 25 seconds if untouched
+      if (nowSec - lastUserInteractionTime > 25.0 && nowSec - lastIdleAutoLapTime > 25.0) {
+        lastIdleAutoLapTime = nowSec;
+        triggerTrainBoost(nowSec, false);
+      }
+
+      // --- 1. TRAIN SPEED-UP LAP & IDLE MOTION ---
+      const trainElapsed = nowSec - trainBoostStart;
+      let trainBoostFactor = 0;
+      if (trainElapsed >= 0 && trainElapsed < TRAIN_BOOST_DURATION) {
+        // Quick ramp up, smooth 8-second deceleration back to gentle idle
+        const norm = trainElapsed / TRAIN_BOOST_DURATION;
+        trainBoostFactor = norm < 0.12
+          ? norm / 0.12
+          : Math.pow(1.0 - (norm - 0.12) / 0.88, 1.65);
+      }
+
+      const baseSpeed = 0.072; // gentle continuous idle lap
+      const currentSpeed = baseSpeed + trainBoostFactor * 0.245;
+      const deltaU = currentSpeed * dt;
+      trainProgress = (trainProgress + deltaU) % 1.0;
+
+      // Position & orient locomotive and 2 carriages along oval track
+      for (const veh of trainVehicles) {
+        const u = (trainProgress + veh.uOffset + 1.0) % 1.0;
+        const pt = trackCurve.getPointAt(u);
+        const tan = trackCurve.getTangentAt(u).normalize();
+        veh.group.position.set(pt.x, pt.y - 0.055, pt.z);
+        veh.group.rotation.set(0, Math.atan2(tan.x, tan.z), 0);
+      }
+
+      // Physically turn all train wheels proportional to linear distance
+      const trackLengthApprox = 16.5;
+      const linearDist = deltaU * trackLengthApprox;
+      wheelAngle += linearDist / 0.09;
+      for (const w of trainWheels) {
+        w.group.rotation.x = wheelAngle;
+      }
+
+      // Warm table lighting brightens during lap + crossing lights blink
+      tableLight.intensity = 2.4 + trainBoostFactor * 2.3;
+      if (trainBoostFactor > 0.04) {
+        const blink = Math.sin(nowSec * 14.0) > 0;
+        mats.crossingLightRed.emissiveIntensity = blink ? 3.2 : 0.15;
+        mats.crossingLightRedB.emissiveIntensity = blink ? 0.15 : 3.2;
+      } else {
+        mats.crossingLightRed.emissiveIntensity = 0.2;
+        mats.crossingLightRedB.emissiveIntensity = 0.2;
+      }
+
+      // Emit light-gray steam puffs during boost (and occasional soft puff in idle)
+      const puffRate = trainBoostFactor > 0.08 ? (0.085 - trainBoostFactor * 0.04) : 0.95;
+      puffAccumulator += dt;
+      if (puffAccumulator >= puffRate) {
+        puffAccumulator = 0;
+        if (trainBoostFactor > 0.05 || Math.sin(nowSec * 1.7) > 0.65) {
+          spawnSteamPuff(0);
+        }
+      }
+
+      // Update active steam puffs (strictly clamped below garage rafters so nothing crosses HUD)
+      for (const puff of steamPuffs) {
+        if (!puff.active) continue;
+        puff.age += dt;
+        const t = puff.age / puff.life;
+        if (t >= 1.0) {
+          puff.active = false;
+          puff.mesh.visible = false;
+          continue;
+        }
+        puff.mesh.position.x += puff.vx * dt;
+        puff.mesh.position.y = Math.min(puff.mesh.position.y + puff.vy * dt, 3.65);
+        puff.mesh.position.z += puff.vz * dt;
+        const sc = 0.065 + t * (0.16 + trainBoostFactor * 0.09);
+        puff.mesh.scale.setScalar(sc);
+        puff.mat.opacity = (1.0 - t) * (0.42 + trainBoostFactor * 0.42);
+      }
+
+      // --- 2. POTATO CLOCK SCIENCE EXPERIMENT (6-SECOND CYCLE) ---
+      const potatoElapsed = nowSec - potatoBoostStart;
+      let potatoFactor = 0;
+      if (potatoElapsed >= 0 && potatoElapsed < POTATO_BOOST_DURATION) {
+        const pNorm = potatoElapsed / POTATO_BOOST_DURATION;
+        potatoFactor = pNorm < 0.1
+          ? pNorm / 0.1
+          : pNorm < 0.75
+            ? 1.0
+            : Math.max(0, 1.0 - (pNorm - 0.75) / 0.25);
+      }
+
+      // Blue/green circuit wire glow + traveling energy beads
+      const pulseWave = 0.5 + 0.5 * Math.sin(nowSec * 12.0);
+      mats.wireBlue.emissiveIntensity = 0.08 + potatoFactor * (1.8 + 0.6 * pulseWave);
+      mats.wireGreen.emissiveIntensity = 0.08 + potatoFactor * (1.8 + 0.6 * (1 - pulseWave));
+      mats.experimentBulb.emissiveIntensity = 0.25 + potatoFactor * (3.4 + 0.8 * pulseWave);
+      potatoGlowLight.intensity = potatoFactor * 3.0;
+
+      for (const bead of pulseBeads) {
+        if (potatoFactor > 0.04) {
+          bead.mesh.visible = true;
+          const u = (nowSec * 0.95 + bead.offset) % 1.0;
+          const pt = bead.curve.getPointAt(u);
+          bead.mesh.position.copy(pt);
+          bead.mesh.scale.setScalar(0.048 + potatoFactor * 0.025);
+        } else {
+          bead.mesh.visible = false;
+        }
+      }
+
+      // Update 12:00 digital clock canvas at ~20fps
+      if (nowSec - lastClockDraw > 0.05) {
+        lastClockDraw = nowSec;
+        updateClockCanvas(potatoFactor, nowSec);
+      }
+
+      // Update TV science show pattern & subtle flicker at ~24fps
+      if (nowSec - lastTvDraw > 0.042) {
+        lastTvDraw = nowSec;
+        updateTVCanvas(nowSec, potatoFactor);
+        tvLight.intensity = 0.62 + 0.12 * Math.sin(nowSec * 9.3) + potatoFactor * 0.95;
+      }
+
+      // --- 3. WARM FLOATING DUST MOTES ---
+      const posAttr = moteGeo.getAttribute('position');
+      for (let i = 0; i < moteCount; i++) {
+        const speed = moteSeeds[i * 3 + 0];
+        const phase = moteSeeds[i * 3 + 1];
+        const baseY = moteSeeds[i * 3 + 2];
+        posAttr.array[i * 3 + 1] = baseY + Math.sin(nowSec * speed + phase) * 0.22;
+      }
+      posAttr.needsUpdate = true;
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
