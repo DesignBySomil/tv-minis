@@ -3,110 +3,204 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Monica's apartment — inspired by Friends</title>
+  <title>Monica's Apartment — Inspired by FRIENDS</title>
   <style>
+    :root {
+      --bg-dark: #120d1d;
+      --bg-mid: #231938;
+      --accent-gold: #f5c542;
+      --accent-purple: #7d66b8;
+      --text-light: #f6f2ff;
+      --text-dim: #bbaee0;
+    }
     * {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
       user-select: none;
       -webkit-user-select: none;
-      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
     }
     html, body {
+      margin: 0;
+      padding: 0;
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: radial-gradient(circle at 50% 42%, #3a2b52 0%, #1d152b 65%, #110c1b 100%);
+      background: radial-gradient(circle at 50% 48%, var(--bg-mid) 0%, var(--bg-dark) 72%, #090610 100%);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      color: #fff8ee;
+      color: var(--text-light);
     }
     #canvas-container {
       position: fixed;
       inset: 0;
       width: 100%;
       height: 100%;
-      touch-action: none;
+      z-index: 1;
     }
-    .hud {
+    /* Dark vignette overlay */
+    .vignette {
       position: fixed;
       inset: 0;
       pointer-events: none;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
-      padding: 14px 12px 12px;
+      z-index: 2;
+      background: radial-gradient(circle at 50% 50%, rgba(18, 13, 29, 0) 55%, rgba(6, 4, 12, 0.68) 100%);
+    }
+    /* Header Pill */
+    .header-pill {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
       z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 14px 8px 16px;
+      background: rgba(24, 17, 40, 0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(245, 197, 66, 0.35);
+      border-radius: 999px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      max-width: calc(100vw - 20px);
     }
-    .header-box {
-      text-align: center;
-      background: rgba(24, 16, 38, 0.66);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 224, 130, 0.25);
-      border-radius: 16px;
-      padding: 8px 18px 9px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.32);
-      max-width: 94vw;
-    }
-    .title {
-      font-size: clamp(1.08rem, 3.8vw, 1.38rem);
-      font-weight: 750;
-      letter-spacing: 0.02em;
-      color: #fff6e5;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-      line-height: 1.15;
-    }
-    .subtitle {
-      font-size: clamp(0.74rem, 2.5vw, 0.86rem);
-      font-weight: 500;
-      color: #ffd56b;
-      letter-spacing: 0.04em;
-      margin-top: 2px;
-    }
-    .bottom-stack {
+    .header-text {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      max-width: 95vw;
+      min-width: 0;
     }
-    .hint-pill {
-      background: rgba(26, 18, 42, 0.78);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 213, 107, 0.35);
-      border-radius: 999px;
-      padding: 6px 14px;
-      font-size: clamp(0.72rem, 2.6vw, 0.84rem);
-      font-weight: 600;
-      color: #ffefc8;
-      letter-spacing: 0.02em;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    .title-row {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
       white-space: nowrap;
     }
-    .footer {
-      font-size: 0.7rem;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: rgba(255, 240, 215, 0.68);
-      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+    .header-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: #fff;
     }
-    #fallback {
-      display: none;
+    .header-subtitle {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent-gold);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .header-hint {
+      font-size: 10.5px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 1px;
+    }
+    .reset-btn {
+      appearance: none;
+      border: 1px solid rgba(245, 197, 66, 0.45);
+      background: rgba(125, 102, 184, 0.25);
+      color: var(--accent-gold);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 11px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      flex-shrink: 0;
+    }
+    .reset-btn:hover {
+      background: rgba(245, 197, 66, 0.2);
+      transform: translateY(-1px);
+    }
+    .reset-btn:active {
+      transform: translateY(0);
+    }
+    /* Toast feedback */
+    #toast {
       position: fixed;
-      inset: 0;
-      background: #1d152b;
-      color: #fff5e4;
+      top: 68px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      z-index: 10;
+      background: rgba(20, 14, 34, 0.85);
+      border: 1px solid rgba(245, 197, 66, 0.4);
+      color: #ffe89e;
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 5px 13px;
+      border-radius: 999px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
+    }
+    #toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    /* Footer */
+    .footer-credit {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      color: rgba(215, 202, 245, 0.45);
+      pointer-events: none;
+      text-transform: uppercase;
+    }
+    /* Floating Circular Mute Button */
+    .mute-btn {
+      position: fixed;
+      bottom: 14px;
+      right: 14px;
+      z-index: 12;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(26, 18, 44, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--text-light);
+      display: flex;
       align-items: center;
       justify-content: center;
-      text-align: center;
-      padding: 24px;
-      z-index: 100;
-      font-size: 1rem;
-      line-height: 1.5;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      transition: transform 0.18s ease, border-color 0.18s ease;
+    }
+    .mute-btn:hover {
+      transform: scale(1.06);
+      border-color: rgba(245, 197, 66, 0.55);
+    }
+    .mute-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+    @media (max-width: 380px) {
+      .header-pill {
+        padding: 6px 10px 6px 12px;
+        gap: 8px;
+      }
+      .header-title {
+        font-size: 12.5px;
+      }
+      .header-subtitle {
+        font-size: 9.5px;
+      }
+      .header-hint {
+        font-size: 9.5px;
+      }
+      .reset-btn {
+        padding: 4px 9px;
+        font-size: 10px;
+      }
     }
   </style>
   <script type="importmap">
@@ -120,169 +214,357 @@
 </head>
 <body>
   <div id="canvas-container"></div>
-  <div class="hud">
-    <div class="header-box">
-      <div class="title">Monica's apartment</div>
-      <div class="subtitle">inspired by Friends</div>
+  <div class="vignette"></div>
+
+  <header class="header-pill">
+    <div class="header-text">
+      <div class="title-row">
+        <span class="header-title">Monica's apartment</span>
+        <span class="header-subtitle">inspired by FRIENDS</span>
+      </div>
+      <div class="header-hint">Tap door #20 or the gold peephole frame</div>
     </div>
-    <div class="bottom-stack">
-      <div class="hint-pill">tap the purple door · tap the kitchen table</div>
-      <div class="footer">A tiny world</div>
-    </div>
-  </div>
-  <div id="fallback">
-    <div>
-      <strong>Unable to initialize 3D WebGL view.</strong><br/>
-      Please ensure hardware acceleration and WebGL are enabled in your browser to explore Monica's purple apartment miniature.
-    </div>
-  </div>
+    <button class="reset-btn" id="reset-btn" type="button">Reset</button>
+  </header>
+
+  <div id="toast"></div>
+
+  <footer class="footer-credit">A TINY WORLD</footer>
+
+  <button class="mute-btn" id="mute-btn" type="button" aria-label="Toggle Audio">
+    <svg id="icon-sound-on" viewBox="0 0 24 24">
+      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+    </svg>
+    <svg id="icon-sound-off" viewBox="0 0 24 24" style="display:none;">
+      <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+    </svg>
+  </button>
 
   <script type="module">
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-    // Deterministic PRNG: mulberry32(20261102)
-    function mulberry32(a) {
-      return function() {
-        let t = a += 0x6D2B79F5;
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-      };
+    // =========================================================================
+    // 1. PROCEDURAL WEBAUDIO MODULE & TEST HOOK
+    // =========================================================================
+    const STORAGE_KEY = 'tvmini-muted';
+    let isMuted = localStorage.getItem(STORAGE_KEY) === 'true';
+
+    class TVAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.masterGain = null;
+        this.analyser = null;
+        this.streamDest = null;
+        this.started = false;
+        this.timeData = new Float32Array(256);
+      }
+
+      init() {
+        if (this.ctx) {
+          if (this.ctx.state === 'suspended') this.ctx.resume();
+          return;
+        }
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+
+        this.ctx = new AudioCtx();
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.value = isMuted ? 0 : 0.85;
+
+        this.analyser = this.ctx.createAnalyser();
+        this.analyser.fftSize = 256;
+
+        this.streamDest = this.ctx.createMediaStreamDestination();
+
+        this.masterGain.connect(this.analyser);
+        this.analyser.connect(this.ctx.destination);
+        this.masterGain.connect(this.streamDest);
+
+        this._startAmbience();
+        this.started = true;
+      }
+
+      _startAmbience() {
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        // Soft NYC apartment room tone + warm low city rumble
+        const bufferSize = this.ctx.sampleRate * 3;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        let lastOut = 0.0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          output[i] = (lastOut + 0.02 * white) / 1.02;
+          lastOut = output[i];
+          output[i] *= 0.15;
+        }
+
+        const whiteNoise = this.ctx.createBufferSource();
+        whiteNoise.buffer = noiseBuffer;
+        whiteNoise.loop = true;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 190;
+
+        const ambGain = this.ctx.createGain();
+        ambGain.gain.value = 0.18;
+
+        // Subtle warm harmonic drone (cozy apartment fridge/room hum)
+        const humOsc = this.ctx.createOscillator();
+        humOsc.type = 'sine';
+        humOsc.frequency.value = 110;
+        const humGain = this.ctx.createGain();
+        humGain.gain.value = 0.018;
+
+        whiteNoise.connect(filter);
+        filter.connect(ambGain);
+        ambGain.connect(this.masterGain);
+
+        humOsc.connect(humGain);
+        humGain.connect(this.masterGain);
+
+        whiteNoise.start(now);
+        humOsc.start(now);
+      }
+
+      setMuted(mute) {
+        isMuted = !!mute;
+        localStorage.setItem(STORAGE_KEY, isMuted ? 'true' : 'false');
+        if (this.masterGain && this.ctx) {
+          this.masterGain.gain.setTargetAtTime(isMuted ? 0 : 0.85, this.ctx.currentTime, 0.04);
+        }
+      }
+
+      playSfx(type) {
+        this.init();
+        if (!this.ctx || isMuted) return;
+        const now = this.ctx.currentTime;
+
+        if (type === 'door') {
+          // Creak + soft latch click
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(160, now);
+          osc.frequency.exponentialRampToValueAtTime(240, now + 0.18);
+          osc.frequency.exponentialRampToValueAtTime(130, now + 0.35);
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(0.14, now + 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        } else if (type === 'knock') {
+          // Two warm wooden knocks + playful blink chime
+          [0, 0.16].forEach((offset, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(idx === 0 ? 145 : 158, now + offset);
+            osc.frequency.exponentialRampToValueAtTime(55, now + offset + 0.09);
+            gain.gain.setValueAtTime(0.28, now + offset);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.1);
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+            osc.start(now + offset);
+            osc.stop(now + offset + 0.11);
+          });
+          // Eyelid blink sparkle
+          const blinkOsc = this.ctx.createOscillator();
+          const blinkGain = this.ctx.createGain();
+          blinkOsc.type = 'sine';
+          blinkOsc.frequency.setValueAtTime(880, now + 0.34);
+          blinkOsc.frequency.exponentialRampToValueAtTime(1320, now + 0.46);
+          blinkGain.gain.setValueAtTime(0.08, now + 0.34);
+          blinkGain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+          blinkOsc.connect(blinkGain);
+          blinkGain.connect(this.masterGain);
+          blinkOsc.start(now + 0.34);
+          blinkOsc.stop(now + 0.5);
+        } else if (type === 'tidy') {
+          // Neat ascending arpeggio (Monica's satisfaction)
+          const notes = [523.25, 659.25, 783.99, 1046.5];
+          notes.forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const t = now + i * 0.065;
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, t);
+            gain.gain.setValueAtTime(0.11, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+            osc.start(t);
+            osc.stop(t + 0.24);
+          });
+        } else if (type === 'poster') {
+          // Swish + camera shutter click
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(640, now + 0.18);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        } else if (type === 'fridge') {
+          // Suction pop + gentle hum
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(210, now);
+          osc.frequency.exponentialRampToValueAtTime(420, now + 0.12);
+          gain.gain.setValueAtTime(0.14, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now);
+          osc.stop(now + 0.18);
+        } else if (type === 'window') {
+          // Day/night dreamy chord shift
+          const freqs = [392.0, 493.88, 587.33];
+          freqs.forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(f, now + i * 0.04);
+            gain.gain.setValueAtTime(0.08, now + i * 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+            osc.start(now + i * 0.04);
+            osc.stop(now + 0.48);
+          });
+        }
+      }
+
+      rms() {
+        if (!this.analyser || isMuted) return 0;
+        this.analyser.getFloatTimeDomainData(this.timeData);
+        let sum = 0;
+        for (let i = 0; i < this.timeData.length; i++) {
+          sum += this.timeData[i] * this.timeData[i];
+        }
+        return Math.sqrt(sum / this.timeData.length);
+      }
+
+      state() {
+        return {
+          initialized: !!this.ctx,
+          contextState: this.ctx ? this.ctx.state : 'uninitialized',
+          muted: isMuted,
+          rms: this.rms()
+        };
+      }
+
+      record(sec = 1) {
+        this.init();
+        return new Promise((resolve) => {
+          if (!this.streamDest || typeof MediaRecorder === 'undefined') {
+            resolve({ duration: sec, rms: this.rms(), bytes: 0 });
+            return;
+          }
+          const chunks = [];
+          const rec = new MediaRecorder(this.streamDest.stream);
+          rec.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) chunks.push(e.data);
+          };
+          rec.onstop = () => {
+            const blob = new Blob(chunks, { type: 'audio/webm' });
+            resolve({ duration: sec, rms: this.rms(), bytes: blob.size, blob });
+          };
+          rec.start();
+          setTimeout(() => {
+            if (rec.state === 'recording') rec.stop();
+          }, Math.max(100, sec * 1000));
+        });
+      }
     }
-    const rand = mulberry32(20261102);
-    const randRange = (min, max) => min + rand() * (max - min);
 
-    const container = document.getElementById('canvas-container');
-    const fallbackEl = document.getElementById('fallback');
+    const audioEngine = new TVAudioEngine();
+    window.__tvAudio = {
+      rms: () => audioEngine.rms(),
+      state: () => audioEngine.state(),
+      record: (sec) => audioEngine.record(sec)
+    };
 
-    let renderer;
-    try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.22;
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
-      container.appendChild(renderer.domElement);
-    } catch (err) {
-      fallbackEl.style.display = 'flex';
-      throw err;
+    const muteBtn = document.getElementById('mute-btn');
+    const iconOn = document.getElementById('icon-sound-on');
+    const iconOff = document.getElementById('icon-sound-off');
+
+    function updateMuteUI() {
+      iconOn.style.display = isMuted ? 'none' : 'block';
+      iconOff.style.display = isMuted ? 'block' : 'none';
+    }
+    updateMuteUI();
+
+    muteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      audioEngine.init();
+      audioEngine.setMuted(!isMuted);
+      updateMuteUI();
+    });
+
+    window.addEventListener('pointerdown', () => {
+      audioEngine.init();
+    }, { once: true });
+
+    // Toast helper
+    const toastEl = document.getElementById('toast');
+    let toastTimer = null;
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('visible');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove('visible'), 2100);
     }
 
-    const scene = new THREE.Scene();
-
-    const camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.1, 120);
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.07;
-    controls.enablePan = false;
-    controls.minPolarAngle = Math.PI * 0.18;
-    controls.maxPolarAngle = Math.PI * 0.44;
-    controls.minAzimuthAngle = -Math.PI * 0.12;
-    controls.maxAzimuthAngle = Math.PI * 0.42;
-
-    // Procedural Canvas Textures
+    // =========================================================================
+    // 2. PROCEDURAL CANVAS TEXTURES
+    // =========================================================================
     function createWoodFloorTexture() {
       const c = document.createElement('canvas');
       c.width = 512;
       c.height = 512;
       const ctx = c.getContext('2d');
-      ctx.fillStyle = '#c8874b';
+      ctx.fillStyle = '#b9824f';
       ctx.fillRect(0, 0, 512, 512);
-      const planks = 16;
-      const pw = 512 / planks;
-      for (let i = 0; i < planks; i++) {
-        for (let j = 0; j < 4; j++) {
-          const shade = Math.floor((rand() - 0.5) * 22);
-          ctx.fillStyle = `rgb(${200 + shade}, ${134 + shade}, ${74 + Math.floor(shade * 0.6)})`;
-          const y0 = ((j * 128 + (i % 2) * 64) % 512);
-          ctx.fillRect(i * pw, y0, pw - 1.5, 126.5);
-          ctx.fillStyle = 'rgba(90, 48, 18, 0.18)';
-          for (let g = 0; g < 5; g++) {
-            ctx.fillRect(i * pw + rand() * (pw - 4), y0 + rand() * 110, 1.5, 18);
+
+      const rows = 16;
+      const cols = 4;
+      const rh = 512 / rows;
+      const cw = 512 / cols;
+
+      for (let r = 0; r < rows; r++) {
+        const offset = (r % 2) * (cw * 0.5);
+        for (let col = -1; col <= cols; col++) {
+          const x = col * cw + offset;
+          const y = r * rh;
+          const shade = (Math.sin(r * 7 + col * 13) * 12) | 0;
+          ctx.fillStyle = `rgb(${182 + shade}, ${126 + shade}, ${76 + (shade >> 1)})`;
+          ctx.fillRect(x + 1, y + 1, cw - 2, rh - 2);
+
+          // Wood grain lines
+          ctx.strokeStyle = 'rgba(95, 55, 25, 0.16)';
+          ctx.lineWidth = 1;
+          for (let g = 0; g < 3; g++) {
+            ctx.beginPath();
+            ctx.moveTo(x + 3, y + 6 + g * 8);
+            ctx.lineTo(x + cw - 3, y + 6 + g * 8 + (g % 2 ? 2 : -2));
+            ctx.stroke();
           }
         }
       }
       const tex = new THREE.CanvasTexture(c);
       tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(2.2, 2.2);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      return tex;
-    }
-
-    function createKitchenTileTexture() {
-      const c = document.createElement('canvas');
-      c.width = 256;
-      c.height = 256;
-      const ctx = c.getContext('2d');
-      ctx.fillStyle = '#ded7c8';
-      ctx.fillRect(0, 0, 256, 256);
-      const grid = 8;
-      const sz = 256 / grid;
-      for (let x = 0; x < grid; x++) {
-        for (let y = 0; y < grid; y++) {
-          const isAccent = (x + y) % 2 === 0;
-          ctx.fillStyle = isAccent ? '#f4efe4' : '#cbd7d2';
-          ctx.fillRect(x * sz + 2, y * sz + 2, sz - 4, sz - 4);
-          if ((x + y) % 4 === 0) {
-            ctx.fillStyle = '#5c939b';
-            ctx.fillRect(x * sz + sz * 0.35, y * sz + sz * 0.35, sz * 0.3, sz * 0.3);
-          }
-        }
-      }
-      const tex = new THREE.CanvasTexture(c);
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(2.2, 2.2);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      return tex;
-    }
-
-    function createRugTexture() {
-      const c = document.createElement('canvas');
-      c.width = 512;
-      c.height = 384;
-      const ctx = c.getContext('2d');
-      ctx.fillStyle = '#b93f35';
-      ctx.fillRect(0, 0, 512, 384);
-
-      // Rich borders
-      ctx.strokeStyle = '#f2c15a';
-      ctx.lineWidth = 18;
-      ctx.strokeRect(20, 20, 472, 344);
-
-      ctx.strokeStyle = '#2d5b6b';
-      ctx.lineWidth = 10;
-      ctx.strokeRect(42, 42, 428, 300);
-
-      ctx.fillStyle = '#df8043';
-      ctx.fillRect(58, 58, 396, 268);
-
-      ctx.fillStyle = '#8e2824';
-      ctx.fillRect(76, 76, 360, 232);
-
-      // Medallions
-      const drawDiamond = (cx, cy, rx, ry, col) => {
-        ctx.fillStyle = col;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - ry);
-        ctx.lineTo(cx + rx, cy);
-        ctx.lineTo(cx, cy + ry);
-        ctx.lineTo(cx - rx, cy);
-        ctx.closePath();
-        ctx.fill();
-      };
-      drawDiamond(256, 192, 115, 72, '#f5d076');
-      drawDiamond(256, 192, 82, 50, '#2c6875');
-      drawDiamond(256, 192, 46, 28, '#e35336');
-      drawDiamond(135, 130, 28, 20, '#f4c762');
-      drawDiamond(377, 130, 28, 20, '#f4c762');
-      drawDiamond(135, 254, 28, 20, '#f4c762');
-      drawDiamond(377, 254, 28, 20, '#f4c762');
-
-      const tex = new THREE.CanvasTexture(c);
+      tex.repeat.set(3.5, 2.8);
       tex.colorSpace = THREE.SRGBColorSpace;
       return tex;
     }
@@ -292,849 +574,1416 @@
       c.width = 256;
       c.height = 256;
       const ctx = c.getContext('2d');
-      ctx.fillStyle = '#8b4232';
+      ctx.fillStyle = '#c8bca8'; // mortar
       ctx.fillRect(0, 0, 256, 256);
-      const rows = 16;
-      const cols = 8;
+
+      const rows = 12;
+      const cols = 6;
       const rh = 256 / rows;
       const cw = 256 / cols;
+
       for (let r = 0; r < rows; r++) {
-        const offset = (r % 2) * (cw * 0.5);
+        const off = (r % 2) * (cw / 2);
         for (let col = -1; col <= cols; col++) {
-          const v = Math.floor((rand() - 0.5) * 28);
-          ctx.fillStyle = `rgb(${168 + v}, ${76 + Math.floor(v * 0.6)}, ${56 + Math.floor(v * 0.5)})`;
-          ctx.fillRect(col * cw + offset + 1.5, r * rh + 1.5, cw - 3, rh - 3);
+          const v = ((Math.sin(r * 19 + col * 23) * 22) | 0);
+          ctx.fillStyle = `rgb(${168 + v}, ${76 + (v >> 1)}, ${58 + (v >> 1)})`;
+          ctx.fillRect(col * cw + off + 2, r * rh + 2, cw - 4, rh - 4);
         }
       }
       const tex = new THREE.CanvasTexture(c);
       tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(1.4, 2.2);
+      tex.repeat.set(2.2, 2.2);
       tex.colorSpace = THREE.SRGBColorSpace;
       return tex;
     }
 
-    function createArtTexture(paletteType) {
+    function createJouetsPosterTexture() {
+      // Jules Chéret "Aux Buttes Chaumont - Jouets" vintage French poster
       const c = document.createElement('canvas');
-      c.width = 128;
-      c.height = 160;
+      c.width = 256;
+      c.height = 384;
       const ctx = c.getContext('2d');
-      if (paletteType === 0) {
-        // Warm vintage poster feel
-        ctx.fillStyle = '#f8e6b5';
-        ctx.fillRect(0, 0, 128, 160);
-        ctx.fillStyle = '#d94838';
-        ctx.fillRect(14, 18, 100, 92);
-        ctx.fillStyle = '#f7c143';
-        ctx.beginPath();
-        ctx.arc(64, 64, 30, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#273859';
-        ctx.fillRect(22, 120, 84, 12);
-        ctx.fillRect(34, 138, 60, 8);
-      } else {
-        // Botanical / geometric art
-        ctx.fillStyle = '#e7f2ed';
-        ctx.fillRect(0, 0, 128, 160);
-        ctx.fillStyle = '#2c7c6c';
-        ctx.beginPath();
-        ctx.arc(64, 85, 38, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#f08a4b';
-        ctx.fillRect(46, 95, 36, 42);
+
+      // Warm vintage cream background
+      const grad = ctx.createLinearGradient(0, 0, 0, 384);
+      grad.addColorStop(0, '#f7e7c4');
+      grad.addColorStop(0.5, '#f2d5a0');
+      grad.addColorStop(1, '#e8be82');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 256, 384);
+
+      // Decorative red border
+      ctx.strokeStyle = '#b92e22';
+      ctx.lineWidth = 10;
+      ctx.strokeRect(10, 10, 236, 364);
+      ctx.strokeStyle = '#2d4b5a';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(18, 18, 220, 348);
+
+      // Header text "AUX BUTTES CHAUMONT"
+      ctx.fillStyle = '#263a47';
+      ctx.font = 'bold 17px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('AUX BUTTES CHAUMONT', 128, 46);
+
+      // Big iconic red "JOUETS" banner
+      ctx.fillStyle = '#c8281c';
+      ctx.font = 'bold 46px Impact, Georgia, serif';
+      ctx.fillText('JOUETS', 128, 96);
+
+      // Joyful child in red dress figure
+      ctx.fillStyle = '#d43828';
+      ctx.beginPath();
+      ctx.moveTo(135, 145);
+      ctx.lineTo(100, 245);
+      ctx.lineTo(175, 245);
+      ctx.closePath();
+      ctx.fill();
+
+      // Child head + golden hair
+      ctx.fillStyle = '#e59b38';
+      ctx.beginPath();
+      ctx.arc(140, 128, 20, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fbe0c2';
+      ctx.beginPath();
+      ctx.arc(136, 130, 14, 0, Math.PI * 2);
+      ctx.fill();
+
+      // White rocking horse silhouette across lower center
+      ctx.fillStyle = '#fff9ee';
+      ctx.strokeStyle = '#3b281e';
+      ctx.lineWidth = 3;
+      // Horse body & neck
+      ctx.beginPath();
+      ctx.ellipse(122, 250, 46, 22, -0.15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Horse head & neck
+      ctx.beginPath();
+      ctx.moveTo(85, 245);
+      ctx.lineTo(66, 200);
+      ctx.lineTo(44, 212);
+      ctx.lineTo(54, 226);
+      ctx.lineTo(74, 252);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Red saddle
+      ctx.fillStyle = '#c8281c';
+      ctx.fillRect(108, 228, 28, 14);
+
+      // Curved wooden rocker bow at bottom
+      ctx.strokeStyle = '#7a3b1e';
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.arc(128, 235, 92, 0.25 * Math.PI, 0.75 * Math.PI);
+      ctx.stroke();
+
+      // Bottom vintage typography
+      ctx.fillStyle = '#263a47';
+      ctx.font = 'bold 15px Georgia, serif';
+      ctx.fillText('PARIS • ÉTRENNES', 128, 352);
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createRugTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#a43f34';
+      ctx.fillRect(0, 0, 256, 256);
+
+      ctx.strokeStyle = '#e7c582';
+      ctx.lineWidth = 10;
+      ctx.strokeRect(14, 14, 228, 228);
+
+      ctx.strokeStyle = '#2d4b5a';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(28, 28, 200, 200);
+
+      // Medallions
+      ctx.fillStyle = '#dfae64';
+      for (let y = 56; y <= 200; y += 48) {
+        for (let x = 56; x <= 200; x += 48) {
+          ctx.beginPath();
+          ctx.arc(x, y, 14, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
       const tex = new THREE.CanvasTexture(c);
       tex.colorSpace = THREE.SRGBColorSpace;
       return tex;
     }
 
-    // Shared Materials (Bright, saturated, well-lit Monica purple and accents)
-    const mats = {
-      baseOuter: new THREE.MeshStandardMaterial({ color: 0x3b2c4e, roughness: 0.65 }),
-      baseTrim: new THREE.MeshStandardMaterial({ color: 0xe6c387, roughness: 0.4, metalness: 0.15 }),
-      woodFloor: new THREE.MeshStandardMaterial({ map: createWoodFloorTexture(), roughness: 0.55 }),
-      tileFloor: new THREE.MeshStandardMaterial({ map: createKitchenTileTexture(), roughness: 0.45 }),
-      rug: new THREE.MeshStandardMaterial({ map: createRugTexture(), roughness: 0.82 }),
-      // Signature readable Monica Purple (vibrant lavender-plum, never dark/black)
-      monicaPurple: new THREE.MeshStandardMaterial({
-        color: 0x9b72cf,
-        emissive: 0x26153d,
-        emissiveIntensity: 0.35,
-        roughness: 0.58
-      }),
-      doorPurple: new THREE.MeshStandardMaterial({
-        color: 0x9368c9,
-        emissive: 0x281540,
-        emissiveIntensity: 0.38,
-        roughness: 0.48
-      }),
-      yellowFrame: new THREE.MeshStandardMaterial({
-        color: 0xffd438,
-        emissive: 0xffae00,
-        emissiveIntensity: 0.38,
-        roughness: 0.32
-      }),
-      whiteTrim: new THREE.MeshStandardMaterial({ color: 0xf7f2eb, roughness: 0.45 }),
-      exposedBrick: new THREE.MeshStandardMaterial({ map: createBrickTexture(), roughness: 0.78 }),
-      tealCabinet: new THREE.MeshStandardMaterial({
-        color: 0x3898a8,
-        emissive: 0x0b2a30,
-        emissiveIntensity: 0.25,
-        roughness: 0.45
-      }),
-      counterTop: new THREE.MeshStandardMaterial({ color: 0xe8dec8, roughness: 0.38 }),
-      butcherBlock: new THREE.MeshStandardMaterial({ color: 0xd19052, roughness: 0.5 }),
-      warmWood: new THREE.MeshStandardMaterial({ color: 0xb5723d, roughness: 0.52 }),
-      darkWood: new THREE.MeshStandardMaterial({ color: 0x6e4124, roughness: 0.58 }),
-      fridgeWhite: new THREE.MeshStandardMaterial({ color: 0xfaf7f0, roughness: 0.28, metalness: 0.08 }),
-      stoveBlack: new THREE.MeshStandardMaterial({ color: 0x2c2b33, roughness: 0.35, metalness: 0.3 }),
-      chrome: new THREE.MeshStandardMaterial({ color: 0xdcdde0, roughness: 0.22, metalness: 0.75 }),
-      brass: new THREE.MeshStandardMaterial({ color: 0xf0c254, roughness: 0.28, metalness: 0.65 }),
-      copperPot: new THREE.MeshStandardMaterial({
-        color: 0xe36640,
-        emissive: 0x3b1206,
-        emissiveIntensity: 0.2,
-        roughness: 0.32,
-        metalness: 0.45
-      }),
-      creamSofa: new THREE.MeshStandardMaterial({ color: 0xf3e6d3, roughness: 0.72 }),
-      terracottaChair: new THREE.MeshStandardMaterial({ color: 0xd96b43, roughness: 0.7 }),
-      plantGreen: new THREE.MeshStandardMaterial({ color: 0x439c58, roughness: 0.55 }),
-      plantDark: new THREE.MeshStandardMaterial({ color: 0x2c7540, roughness: 0.6 }),
-      terracottaPot: new THREE.MeshStandardMaterial({ color: 0xc86441, roughness: 0.65 }),
-      nightSky: new THREE.MeshBasicMaterial({ color: 0x1e2246 }),
-      citySilhouette: new THREE.MeshBasicMaterial({ color: 0x2c2342 }),
-      cityWindowWarm: new THREE.MeshBasicMaterial({ color: 0xffd778 }),
-      cityWindowOrange: new THREE.MeshBasicMaterial({ color: 0xff9e54 }),
-      glassPane: new THREE.MeshStandardMaterial({
-        color: 0x9cd3ee,
-        transparent: true,
-        opacity: 0.22,
-        roughness: 0.1,
-        metalness: 0.2
-      }),
-      hallwayGlowMat: new THREE.MeshBasicMaterial({ color: 0xffd27d }),
-      lampShadeMat: new THREE.MeshStandardMaterial({
-        color: 0xffefc4,
-        emissive: 0xffaa33,
-        emissiveIntensity: 0.65,
-        roughness: 0.4
-      }),
-      invisibleProxy: new THREE.MeshBasicMaterial({
-        transparent: true,
-        opacity: 0,
-        depthWrite: false
-      })
-    };
+    function createFaceCupTexture() {
+      const c = document.createElement('canvas');
+      c.width = 128;
+      c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#f5ead6';
+      ctx.fillRect(0, 0, 128, 128);
+      // Cheek blush
+      ctx.fillStyle = '#e38776';
+      ctx.beginPath();
+      ctx.arc(38, 76, 12, 0, Math.PI * 2);
+      ctx.arc(90, 76, 12, 0, Math.PI * 2);
+      ctx.fill();
+      // Eyes
+      ctx.fillStyle = '#221c18';
+      ctx.beginPath();
+      ctx.arc(44, 52, 5, 0, Math.PI * 2);
+      ctx.arc(84, 52, 5, 0, Math.PI * 2);
+      ctx.fill();
+      // Smile
+      ctx.strokeStyle = '#c43e2f';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(64, 68, 18, 0.15 * Math.PI, 0.85 * Math.PI);
+      ctx.stroke();
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    // =========================================================================
+    // 3. THREE.JS SCENE, RENDERER & MATERIALS
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.12;
+    container.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.5, 120);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.autoRotate = false; // Strictly disabled per requirements
+    controls.enablePan = false;
+    controls.minPolarAngle = THREE.MathUtils.degToRad(18);
+    controls.maxPolarAngle = THREE.MathUtils.degToRad(78);
+    controls.minAzimuthAngle = THREE.MathUtils.degToRad(-65);
+    controls.maxAzimuthAngle = THREE.MathUtils.degToRad(55);
 
     const diorama = new THREE.Group();
     scene.add(diorama);
 
-    // Helper mesh builder
-    function makeBox(w, h, d, mat, x = 0, y = 0, z = 0, parent = diorama, cast = true, receive = true) {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-      m.position.set(x, y, z);
-      m.castShadow = cast;
-      m.receiveShadow = receive;
-      parent.add(m);
-      return m;
-    }
+    // Core Palette Materials (Cold blue-hue purple walls, pine green accent, warm bathroom interior)
+    const mats = {
+      wallPurple: new THREE.MeshStandardMaterial({ color: 0x6b5b9e, roughness: 0.78 }),
+      wallPurpleDark: new THREE.MeshStandardMaterial({ color: 0x574886, roughness: 0.82 }),
+      wallWarmBath: new THREE.MeshStandardMaterial({ color: 0x9b5d8f, roughness: 0.75 }),
+      wallPineGreen: new THREE.MeshStandardMaterial({ color: 0x29594b, roughness: 0.75 }),
+      wallBrick: new THREE.MeshStandardMaterial({ map: createBrickTexture(), roughness: 0.88 }),
+      floorWood: new THREE.MeshStandardMaterial({ map: createWoodFloorTexture(), roughness: 0.62 }),
+      baseDark: new THREE.MeshStandardMaterial({ color: 0x1e162b, roughness: 0.9 }),
+      kitchenBlue: new THREE.MeshStandardMaterial({ color: 0x74a9c4, roughness: 0.55 }),
+      counterTop: new THREE.MeshStandardMaterial({ color: 0xd8cdb8, roughness: 0.5 }),
+      yellowCloset: new THREE.MeshStandardMaterial({ color: 0xf4c430, roughness: 0.5 }),
+      purpleDoor: new THREE.MeshStandardMaterial({ color: 0x765eb8, roughness: 0.6 }),
+      goldFrame: new THREE.MeshStandardMaterial({ color: 0xf6c33b, metalness: 0.65, roughness: 0.28 }),
+      brass: new THREE.MeshStandardMaterial({ color: 0xe5b53a, metalness: 0.75, roughness: 0.25 }),
+      woodWarm: new THREE.MeshStandardMaterial({ color: 0x8c532b, roughness: 0.65 }),
+      woodDark: new THREE.MeshStandardMaterial({ color: 0x4f2d18, roughness: 0.7 }),
+      woodLight: new THREE.MeshStandardMaterial({ color: 0xc8965e, roughness: 0.6 }),
+      couchCream: new THREE.MeshStandardMaterial({ color: 0xf3ead8, roughness: 0.82 }),
+      armchairMustard: new THREE.MeshStandardMaterial({ color: 0xc98a38, roughness: 0.78 }),
+      fridgeCream: new THREE.MeshStandardMaterial({ color: 0xf6f1e3, roughness: 0.35, metalness: 0.1 }),
+      chrome: new THREE.MeshStandardMaterial({ color: 0xdce2e6, metalness: 0.8, roughness: 0.2 }),
+      tvBlack: new THREE.MeshStandardMaterial({ color: 0x232226, roughness: 0.5 }),
+      fernGreen: new THREE.MeshStandardMaterial({ color: 0x3b7a42, roughness: 0.7 }),
+      terraCotta: new THREE.MeshStandardMaterial({ color: 0xb85835, roughness: 0.75 }),
+      glassTransom: new THREE.MeshStandardMaterial({
+        color: 0xdff2ff,
+        transparent: true,
+        opacity: 0.42,
+        roughness: 0.15
+      }),
+      windowGlowDay: new THREE.MeshBasicMaterial({ color: 0xffefc2 }),
+      hallwayGlow: new THREE.MeshBasicMaterial({ color: 0xffd584 })
+    };
 
-    function makeCyl(rt, rb, h, seg, mat, x = 0, y = 0, z = 0, parent = diorama, cast = true, receive = true) {
-      const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat);
-      m.position.set(x, y, z);
-      m.castShadow = cast;
-      m.receiveShadow = receive;
-      parent.add(m);
-      return m;
-    }
+    // =========================================================================
+    // 4. LIGHTING & DAY/NIGHT SKY SYSTEM
+    // =========================================================================
+    const ambientLight = new THREE.AmbientLight(0xffe9d6, 0.95);
+    scene.add(ambientLight);
 
-    // ==========================================
-    // 1. LAYERED DISPLAY PLINTH & FLOORS
-    // ==========================================
-    // Compact footprint: W=7.2, D=6.2
-    makeBox(7.5, 0.36, 6.5, mats.baseOuter, 0, -0.42, 0, diorama, false, true);
-    makeBox(7.32, 0.14, 6.32, mats.baseTrim, 0, -0.18, 0, diorama, false, true);
-    // Main Living Room hardwood floor
-    makeBox(7.2, 0.16, 6.2, mats.woodFloor, 0, -0.06, 0, diorama, false, true);
-    // Kitchen tiled floor platform (Left-Back zone)
-    makeBox(3.55, 0.04, 3.65, mats.tileFloor, -1.75, 0.03, -1.18, diorama, false, true);
-    // Raised window alcove step
-    makeBox(2.55, 0.14, 1.35, mats.woodFloor, -0.1, 0.08, -2.35, diorama, true, true);
-    makeBox(2.58, 0.04, 1.38, mats.whiteTrim, -0.1, 0.16, -2.35, diorama, false, true);
+    const hemiLight = new THREE.HemisphereLight(0xdbe8ff, 0x4b3869, 0.65);
+    scene.add(hemiLight);
 
-    // ==========================================
-    // 2. PURPLE WALLS, WHITE TRIM & ARCHES
-    // ==========================================
-    const wallH = 4.35;
-    const wallY = wallH / 2;
+    const sunLight = new THREE.DirectionalLight(0xffdfb0, 1.65);
+    sunLight.position.set(8, 16, 10);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(1024, 1024);
+    sunLight.shadow.camera.near = 2;
+    sunLight.shadow.camera.far = 35;
+    const d = 10;
+    sunLight.shadow.camera.left = -d;
+    sunLight.shadow.camera.right = d;
+    sunLight.shadow.camera.top = d;
+    sunLight.shadow.camera.bottom = -d;
+    sunLight.shadow.bias = -0.001;
+    scene.add(sunLight);
 
-    // Back Wall Left (Behind Kitchen cabinets)
-    makeBox(2.25, wallH, 0.22, mats.monicaPurple, -2.48, wallY, -3.0, diorama, true, true);
-    // Back Wall Right (Between Window and Right Corner)
-    makeBox(2.25, wallH, 0.22, mats.monicaPurple, 2.48, wallY, -3.0, diorama, true, true);
-    // Back Wall Window Sill & Header
-    makeBox(2.75, 0.78, 0.22, mats.monicaPurple, 0, 0.39, -3.0, diorama, true, true);
-    makeBox(2.75, 0.65, 0.22, mats.monicaPurple, 0, 4.02, -3.0, diorama, true, true);
+    // Warm interior apartment lamps
+    const livingLampLight = new THREE.PointLight(0xffb866, 1.35, 11, 1.5);
+    livingLampLight.position.set(2.8, 3.0, 0.4);
+    diorama.add(livingLampLight);
 
-    // Exposed Brick Column Accent framing the Kitchen & Window
-    makeBox(0.42, wallH + 0.05, 0.34, mats.exposedBrick, -1.32, wallY, -2.96, diorama, true, true);
-    makeBox(0.42, wallH + 0.05, 0.34, mats.exposedBrick, 1.32, wallY, -2.96, diorama, true, true);
+    const kitchenWarmLight = new THREE.PointLight(0xffe0a3, 1.1, 10, 1.5);
+    kitchenWarmLight.position.set(-3.2, 3.8, -1.2);
+    diorama.add(kitchenWarmLight);
 
-    // Overhead Purple Beam across Back Wall
-    makeBox(7.24, 0.28, 0.34, mats.monicaPurple, 0, wallH - 0.1, -2.96, diorama, true, true);
-    makeBox(7.28, 0.1, 0.38, mats.whiteTrim, 0, wallH + 0.06, -2.96, diorama, false, true);
+    const hallwayLight = new THREE.PointLight(0xffae52, 0.1, 7, 1.5);
+    hallwayLight.position.set(6.2, 2.5, -0.3);
+    diorama.add(hallwayLight);
 
-    // Left Cutaway Wall (Steps down gently toward front so kitchen & table are 100% unobstructed)
-    makeBox(0.22, wallH, 3.3, mats.monicaPurple, -3.5, wallY, -1.45, diorama, true, true);
-    makeBox(0.22, 2.35, 1.45, mats.monicaPurple, -3.5, 1.175, 0.9, diorama, true, true);
-    makeBox(0.22, 0.95, 1.45, mats.monicaPurple, -3.5, 0.475, 2.32, diorama, true, true);
-    // Left Wall White Caps & Baseboards
-    makeBox(0.26, 0.1, 3.34, mats.whiteTrim, -3.5, wallH + 0.05, -1.45, diorama, false, true);
-    makeBox(0.26, 0.08, 1.48, mats.whiteTrim, -3.5, 2.39, 0.9, diorama, false, true);
-    makeBox(0.26, 0.08, 1.48, mats.whiteTrim, -3.5, 0.99, 2.32, diorama, false, true);
-    makeBox(0.06, 0.22, 6.1, mats.whiteTrim, -3.37, 0.11, 0, diorama, false, true);
+    const fridgeLight = new THREE.PointLight(0xfff4bd, 0.0, 4, 1.5);
+    fridgeLight.position.set(-4.3, 1.8, 2.35);
+    diorama.add(fridgeLight);
 
-    // Right Wall (Hero Entrance Wall with Entry Alcove & Purple Door)
-    // Back segment of right wall
-    makeBox(0.22, wallH, 3.9, mats.monicaPurple, 3.5, wallY, -1.15, diorama, true, true);
-    // Stepped front segment of right wall
-    makeBox(0.22, 2.75, 1.65, mats.monicaPurple, 3.5, 1.375, 1.62, diorama, true, true);
-    makeBox(0.22, 1.05, 0.65, mats.monicaPurple, 3.5, 0.525, 2.76, diorama, true, true);
-    // Right Wall White Crown & Baseboard
-    makeBox(0.26, 0.1, 3.94, mats.whiteTrim, 3.5, wallH + 0.05, -1.15, diorama, false, true);
-    makeBox(0.26, 0.08, 1.68, mats.whiteTrim, 3.5, 2.79, 1.62, diorama, false, true);
-    makeBox(0.06, 0.22, 6.1, mats.whiteTrim, 3.37, 0.11, 0, diorama, false, true);
-    // Back Wall White Baseboard
-    makeBox(7.0, 0.22, 0.06, mats.whiteTrim, 0, 0.11, -2.87, diorama, false, true);
+    // =========================================================================
+    // 5. APARTMENT ARCHITECTURE (Cutaway Floor, Back Wall, Left & Right Walls)
+    // =========================================================================
+    // Dimensions: W = 10.8 (-5.4 to +5.4), D = 7.6 (-3.8 to +3.8), H = 4.6
+    const W = 10.8;
+    const D = 7.6;
+    const H = 4.6;
 
-    // ==========================================
-    // 3. TALL PANORAMIC WINDOW, BALCONY & CITY
-    // ==========================================
-    const windowGroup = new THREE.Group();
-    windowGroup.position.set(0, 2.24, -3.0);
-    diorama.add(windowGroup);
+    // Thick diorama plinth base
+    const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(W + 0.5, 0.45, D + 0.5), mats.baseDark);
+    baseMesh.position.set(0, -0.24, 0);
+    baseMesh.receiveShadow = true;
+    diorama.add(baseMesh);
 
-    // Deep night diorama box behind window
-    makeBox(2.58, 3.15, 0.55, mats.nightSky, 0, 0, -0.35, windowGroup, false, false);
+    // Hardwood floor
+    const floorMesh = new THREE.Mesh(new THREE.BoxGeometry(W, 0.12, D), mats.floorWood);
+    floorMesh.position.set(0, 0.04, 0);
+    floorMesh.receiveShadow = true;
+    diorama.add(floorMesh);
 
-    // Distant warm apartment building silhouettes + tiny glowing city windows
+    // Elevated kitchen & window terrace step along back-left
+    const rearStep = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.16, 2.1), mats.floorWood);
+    rearStep.position.set(0.0, 0.14, -2.7);
+    rearStep.receiveShadow = true;
+    diorama.add(rearStep);
+
+    // --- LEFT WALL & RAW BRICK BEHIND KITCHEN ---
+    // Left outer purple wall shell
+    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.24, H, D), mats.wallPurple);
+    leftWall.position.set(-W / 2 - 0.1, H / 2, 0);
+    leftWall.receiveShadow = true;
+    leftWall.castShadow = true;
+    diorama.add(leftWall);
+
+    // Raw unpainted brick wall behind the kitchen (left-back & left-side inset)
+    const brickBack = new THREE.Mesh(new THREE.BoxGeometry(3.8, H - 0.1, 0.26), mats.wallBrick);
+    brickBack.position.set(-3.5, H / 2, -D / 2 + 0.02);
+    brickBack.receiveShadow = true;
+    diorama.add(brickBack);
+
+    const brickSide = new THREE.Mesh(new THREE.BoxGeometry(0.18, H - 0.1, 4.4), mats.wallBrick);
+    brickSide.position.set(-W / 2 + 0.08, H / 2, -1.5);
+    brickSide.receiveShadow = true;
+    diorama.add(brickSide);
+
+    // --- PINE GREEN WALL SECTION + BRIGHT YELLOW TOPMOST CLOSET ---
+    // Between kitchen brick & bay window
+    const pineGreenWall = new THREE.Mesh(new THREE.BoxGeometry(1.45, H, 0.85), mats.wallPineGreen);
+    pineGreenWall.position.set(-1.35, H / 2, -D / 2 + 0.42);
+    pineGreenWall.castShadow = true;
+    pineGreenWall.receiveShadow = true;
+    diorama.add(pineGreenWall);
+
+    // Bathroom door on the angled/side of the pine green / purple alcove + warm purple interior hint
+    const bathInteriorBackdrop = new THREE.Mesh(new THREE.BoxGeometry(1.1, 3.2, 0.12), mats.wallWarmBath);
+    bathInteriorBackdrop.position.set(-2.3, 1.65, -3.55);
+    diorama.add(bathInteriorBackdrop);
+
+    // Bright Yellow Topmost Closet above the pine green cabinet area (iconic detail!)
+    const yellowClosetGroup = new THREE.Group();
+    yellowClosetGroup.position.set(-1.35, 3.85, -D / 2 + 0.56);
+    const yellowBox = new THREE.Mesh(new THREE.BoxGeometry(1.32, 0.95, 0.72), mats.yellowCloset);
+    yellowBox.castShadow = true;
+    yellowClosetGroup.add(yellowBox);
+    // Twin doors & knobs on yellow closet
+    [-0.31, 0.31].forEach((dx, i) => {
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.82, 0.05), mats.yellowCloset);
+      panel.position.set(dx, 0, 0.37);
+      yellowClosetGroup.add(panel);
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), mats.brass);
+      knob.position.set(i === 0 ? -0.08 : 0.08, -0.1, 0.41);
+      yellowClosetGroup.add(knob);
+    });
+    diorama.add(yellowClosetGroup);
+
+    // --- BACK BAY WINDOW, BALCONY, FIRE-ESCAPE LADDER & SKYLINE ---
+    const bayWindowGroup = new THREE.Group();
+    bayWindowGroup.position.set(0.65, 0, -D / 2);
+    diorama.add(bayWindowGroup);
+
+    // Sky backdrop box behind bay window
+    const skyBackdropMat = new THREE.MeshBasicMaterial({ color: 0x87b8e6 });
+    const skyPlane = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 4.3), skyBackdropMat);
+    skyPlane.position.set(0, 2.35, -1.25);
+    bayWindowGroup.add(skyPlane);
+
+    // Distant NYC skyline silhouettes + glowing windows
+    const skylineGroup = new THREE.Group();
+    skylineGroup.position.set(0, 0.4, -1.05);
+    bayWindowGroup.add(skylineGroup);
+
+    const bldgMat = new THREE.MeshStandardMaterial({ color: 0x3b3554, roughness: 0.9 });
+    const cityWinMat = new THREE.MeshBasicMaterial({ color: 0xffe48f });
     const bldgConfigs = [
-      { x: -0.78, w: 0.62, h: 2.3, z: -0.45 },
-      { x: -0.15, w: 0.68, h: 2.75, z: -0.48 },
-      { x: 0.58, w: 0.72, h: 2.45, z: -0.44 }
+      { x: -1.4, w: 0.75, h: 3.1, z: -0.1 },
+      { x: -0.6, w: 0.85, h: 3.6, z: 0.0 },
+      { x: 0.25, w: 0.7, h: 2.8, z: -0.08 },
+      { x: 1.05, w: 0.9, h: 3.4, z: 0.02 }
     ];
-    const cityWindowMats = [];
-    bldgConfigs.forEach((b, bi) => {
-      makeBox(b.w, b.h, 0.16, mats.citySilhouette, b.x, -1.45 + b.h / 2, b.z, windowGroup, false, false);
-      const rows = 6;
-      const cols = 3;
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          if (rand() > 0.22) {
-            const wMat = (r + c + bi) % 2 === 0 ? mats.cityWindowWarm.clone() : mats.cityWindowOrange.clone();
-            cityWindowMats.push(wMat);
-            const wx = b.x - b.w * 0.28 + c * (b.w * 0.28);
-            const wy = -1.15 + r * 0.34;
-            if (wy < -1.45 + b.h - 0.2) {
-              makeBox(0.09, 0.15, 0.02, wMat, wx, wy, b.z + 0.09, windowGroup, false, false);
-            }
-          }
+    bldgConfigs.forEach((b) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, 0.3), bldgMat);
+      m.position.set(b.x, b.h / 2, b.z);
+      skylineGroup.add(m);
+      for (let wy = 0.6; wy < b.h - 0.3; wy += 0.42) {
+        for (let wx = -b.w * 0.28; wx <= b.w * 0.28; wx += 0.24) {
+          const wMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.11, 0.18), cityWinMat);
+          wMesh.position.set(b.x + wx, wy, b.z + 0.16);
+          skylineGroup.add(wMesh);
         }
       }
     });
 
-    // Translucent Glass & Classic Mullions
-    makeBox(2.32, 2.9, 0.04, mats.glassPane, 0, 0, 0.02, windowGroup, false, false);
-    // Outer white frame
-    makeBox(2.44, 0.1, 0.18, mats.whiteTrim, 0, 1.46, 0.04, windowGroup, true, true);
-    makeBox(2.44, 0.12, 0.24, mats.whiteTrim, 0, -1.46, 0.06, windowGroup, true, true);
-    makeBox(0.1, 2.96, 0.18, mats.whiteTrim, -1.17, 0, 0.04, windowGroup, true, true);
-    makeBox(0.1, 2.96, 0.18, mats.whiteTrim, 1.17, 0, 0.04, windowGroup, true, true);
-    // Arched & Grid Mullions
-    makeBox(0.06, 2.86, 0.1, mats.whiteTrim, -0.38, 0, 0.05, windowGroup, false, true);
-    makeBox(0.06, 2.86, 0.1, mats.whiteTrim, 0.38, 0, 0.05, windowGroup, false, true);
-    makeBox(2.32, 0.06, 0.1, mats.whiteTrim, 0, 0.55, 0.05, windowGroup, false, true);
-    makeBox(2.32, 0.05, 0.08, mats.whiteTrim, 0, -0.35, 0.05, windowGroup, false, true);
+    // Balcony floor & wrought-iron railing beyond the bay window
+    const balconyFloor = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.14, 1.05), mats.baseDark);
+    balconyFloor.position.set(0, 0.25, -0.52);
+    bayWindowGroup.add(balconyFloor);
 
-    // Exterior Iron Balcony Rail visible right outside window
-    const railMat = mats.stoveBlack;
-    makeBox(2.36, 0.05, 0.05, railMat, 0, -0.68, -0.14, windowGroup, false, false);
-    makeBox(2.36, 0.05, 0.05, railMat, 0, -1.35, -0.14, windowGroup, false, false);
-    for (let i = -5; i <= 5; i++) {
-      makeBox(0.03, 0.68, 0.03, railMat, i * 0.2, -1.01, -0.14, windowGroup, false, false);
+    const ironMat = new THREE.MeshStandardMaterial({ color: 0x1c1c22, metalness: 0.6, roughness: 0.4 });
+    const topRail = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.06, 0.06), ironMat);
+    topRail.position.set(0, 1.25, -0.98);
+    bayWindowGroup.add(topRail);
+
+    for (let rx = -1.65; rx <= 1.65; rx += 0.22) {
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.0, 6), ironMat);
+      bar.position.set(rx, 0.75, -0.98);
+      bayWindowGroup.add(bar);
     }
 
-    // ==========================================
-    // 4. HERO PURPLE DOOR & YELLOW PEEPHOLE FRAME
-    // ==========================================
-    // Placed on an angled entry wall on the right-back corner so the purple face + yellow frame face the camera directly
-    const entryGroup = new THREE.Group();
-    entryGroup.position.set(2.85, 0, -1.45);
-    entryGroup.rotation.y = -Math.PI * 0.32;
-    diorama.add(entryGroup);
+    // Fire-escape ladder on the balcony's LEFT
+    const ladderGroup = new THREE.Group();
+    ladderGroup.position.set(-1.35, 0.3, -0.78);
+    ladderGroup.rotation.z = -0.14;
+    [-0.18, 0.18].forEach((lx) => {
+      const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 3.9, 8), ironMat);
+      rail.position.set(lx, 1.95, 0);
+      ladderGroup.add(rail);
+    });
+    for (let ry = 0.35; ry <= 3.7; ry += 0.34) {
+      const rung = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.36, 6), ironMat);
+      rung.rotation.z = Math.PI / 2;
+      rung.position.set(0, ry, 0);
+      ladderGroup.add(rung);
+    }
+    bayWindowGroup.add(ladderGroup);
 
-    // Entryway Wall Frame & Warm Hallway Backdrop behind the door
-    makeBox(1.85, 4.15, 0.22, mats.monicaPurple, 0, 2.075, 0, entryGroup, true, true);
-    makeBox(1.89, 0.1, 0.26, mats.whiteTrim, 0, 4.16, 0, entryGroup, false, true);
+    // Big Multi-Pane Bay Window Frame (Angled left, center, angled right + grid mullions)
+    const winFrameMat = new THREE.MeshStandardMaterial({ color: 0xeae4d7, roughness: 0.5 });
+    const bayPostPositions = [-1.3, -0.65, 0.65, 1.3];
+    bayPostPositions.forEach((px) => {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.11, 3.8, 0.14), winFrameMat);
+      post.position.set(px, 2.2, Math.abs(px) > 1.0 ? 0.18 : -0.15);
+      bayWindowGroup.add(post);
+    });
+    // Horizontal muntins
+    [0.55, 1.45, 2.35, 3.25, 4.05].forEach((py) => {
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(2.65, 0.08, 0.38), winFrameMat);
+      bar.position.set(0, py, 0.0);
+      bayWindowGroup.add(bar);
+    });
+    // Window glass shimmer plane (also tap target for day/night)
+    const bayGlassMesh = new THREE.Mesh(new THREE.BoxGeometry(2.7, 3.6, 0.45), mats.glassTransom);
+    bayGlassMesh.position.set(0, 2.25, 0.0);
+    bayGlassMesh.userData.interactable = 'window';
+    bayWindowGroup.add(bayGlassMesh);
 
-    // Warm Hallway Recess Box (revealed when door opens)
-    const hallwayBack = makeBox(1.36, 2.95, 0.35, mats.hallwayGlowMat, 0, 1.5, -0.22, entryGroup, false, false);
-    hallwayBack.material = mats.hallwayGlowMat.clone();
-    hallwayBack.material.color.setHex(0xffb85c);
+    // Low purple wall below bay window
+    const bayKneeWall = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.6, 0.35), mats.wallPurple);
+    bayKneeWall.position.set(0, 0.3, 0.05);
+    bayWindowGroup.add(bayKneeWall);
 
-    // White Door Moulding Trim
-    makeBox(1.52, 0.1, 0.28, mats.whiteTrim, 0, 3.02, 0.02, entryGroup, true, true);
-    makeBox(0.1, 3.04, 0.28, mats.whiteTrim, -0.71, 1.52, 0.02, entryGroup, true, true);
-    makeBox(0.1, 3.04, 0.28, mats.whiteTrim, 0.71, 1.52, 0.02, entryGroup, true, true);
+    // --- BACK-RIGHT WALL & TWO BEDROOM DOORS WITH TRANSOM WINDOWS ---
+    const backRightWall = new THREE.Mesh(new THREE.BoxGeometry(3.35, H, 0.24), mats.wallPurple);
+    backRightWall.position.set(3.7, H / 2, -D / 2);
+    backRightWall.receiveShadow = true;
+    diorama.add(backRightWall);
 
-    // Hinged Door Pivot Group (hinge on right side of frame so opening swings inward/away while keeping face visible to camera)
-    const doorPivot = new THREE.Group();
-    doorPivot.position.set(0.64, 0.08, 0.07);
-    entryGroup.add(doorPivot);
+    function createDoorWithTransom(w, h, doorMat) {
+      const g = new THREE.Group();
+      // Outer purple/wood trim
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.16, h + 0.62, 0.14), mats.wallPurpleDark);
+      frame.position.y = (h + 0.62) / 2;
+      g.add(frame);
 
-    // Door Slab (Width 1.28, Height 2.88)
-    const doorSlab = makeBox(1.28, 2.88, 0.1, mats.doorPurple, -0.64, 1.44, 0, doorPivot, true, true);
+      // Door slab
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.16), doorMat);
+      slab.position.set(0, h / 2, 0.02);
+      slab.castShadow = true;
+      g.add(slab);
 
-    // Classic Recessed Door Panels
-    const panelPositions = [
-      [-0.64, 2.25, 0.88, 0.62],
-      [-0.64, 1.38, 0.88, 0.68],
-      [-0.64, 0.52, 0.88, 0.58]
-    ];
-    panelPositions.forEach(([px, py, pw, ph]) => {
-      makeBox(pw, ph, 0.12, mats.monicaPurple, px, py, 0, doorPivot, false, true);
+      // Recessed door panels
+      [h * 0.28, h * 0.72].forEach((py) => {
+        const p = new THREE.Mesh(new THREE.BoxGeometry(w * 0.72, h * 0.34, 0.18), doorMat);
+        p.position.set(0, py, 0.02);
+        g.add(p);
+      });
+
+      // Brass doorknob
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 10), mats.brass);
+      knob.position.set(w * 0.36, h * 0.46, 0.12);
+      g.add(knob);
+
+      // Transom window above door (explicit requirement: transom windows above every door)
+      const transomFrame = new THREE.Mesh(new THREE.BoxGeometry(w, 0.44, 0.16), winFrameMat);
+      transomFrame.position.set(0, h + 0.3, 0.02);
+      g.add(transomFrame);
+
+      const transomGlass = new THREE.Mesh(new THREE.BoxGeometry(w - 0.12, 0.32, 0.18), mats.glassTransom);
+      transomGlass.position.set(0, h + 0.3, 0.02);
+      g.add(transomGlass);
+
+      return g;
+    }
+
+    // Bathroom door (back-left near pine green wall)
+    const bathDoor = createDoorWithTransom(0.92, 2.75, mats.wallPurple);
+    bathDoor.position.set(-2.22, 0.08, -D / 2 + 0.14);
+    diorama.add(bathDoor);
+
+    // Monica's bedroom door (back-right 1)
+    const bedDoor1 = createDoorWithTransom(1.02, 2.75, mats.wallPurple);
+    bedDoor1.position.set(2.75, 0.08, -D / 2 + 0.14);
+    diorama.add(bedDoor1);
+
+    // Rachel's bedroom door (back-right 2)
+    const bedDoor2 = createDoorWithTransom(1.02, 2.75, mats.wallPurple);
+    bedDoor2.position.set(4.25, 0.08, -D / 2 + 0.14);
+    diorama.add(bedDoor2);
+
+    // --- RIGHT WALL: ICONIC PURPLE FRONT DOOR #20, GOLD PEEPHOLE FRAME, SUNFLOWER, HOOKS, TV & JOUETS POSTER ---
+    // We build the right wall with an opening for the front door so when it swings open, a lit hallway is visible!
+    const rightWallBack = new THREE.Mesh(new THREE.BoxGeometry(0.26, H, 2.8), mats.wallPurple);
+    rightWallBack.position.set(W / 2, H / 2, -2.4);
+    rightWallBack.receiveShadow = true;
+    diorama.add(rightWallBack);
+
+    const rightWallFront = new THREE.Mesh(new THREE.BoxGeometry(0.26, H, 3.4), mats.wallPurple);
+    rightWallFront.position.set(W / 2, H / 2, 2.1);
+    rightWallFront.receiveShadow = true;
+    diorama.add(rightWallFront);
+
+    const rightWallTop = new THREE.Mesh(new THREE.BoxGeometry(0.26, 1.65, 1.4), mats.wallPurple);
+    rightWallTop.position.set(W / 2, H - 0.825, -0.3);
+    diorama.add(rightWallTop);
+
+    // Transom window above front door
+    const frontTransomFrame = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.44, 1.26), winFrameMat);
+    frontTransomFrame.position.set(W / 2 - 0.02, 3.22, -0.3);
+    diorama.add(frontTransomFrame);
+    const frontTransomGlass = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.32, 1.14), mats.glassTransom);
+    frontTransomGlass.position.set(W / 2 - 0.02, 3.22, -0.3);
+    diorama.add(frontTransomGlass);
+
+    // Lit Hallway Alcove outside the Purple Door
+    const hallwayGroup = new THREE.Group();
+    hallwayGroup.position.set(W / 2 + 0.55, 0, -0.3);
+    const hallFloor = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.12, 1.6), mats.woodDark);
+    hallFloor.position.y = 0.06;
+    hallwayGroup.add(hallFloor);
+    const hallBack = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3.1, 1.6), mats.hallwayGlow);
+    hallBack.position.set(0.48, 1.55, 0);
+    hallwayGroup.add(hallBack);
+    diorama.add(hallwayGroup);
+
+    // THE ICONIC PURPLE FRONT DOOR (#20 + Gold Picture Frame around Peephole)
+    const frontDoorPivot = new THREE.Group();
+    frontDoorPivot.position.set(W / 2 - 0.05, 0.08, -0.95); // Hinged on its back edge
+    diorama.add(frontDoorPivot);
+
+    const doorWidth = 1.3;
+    const doorHeight = 2.86;
+    const frontDoorGroup = new THREE.Group();
+    frontDoorGroup.position.set(0, 0, doorWidth / 2); // Offset from hinge
+    frontDoorPivot.add(frontDoorGroup);
+
+    const frontDoorSlab = new THREE.Mesh(new THREE.BoxGeometry(0.14, doorHeight, doorWidth), mats.purpleDoor);
+    frontDoorSlab.position.set(0, doorHeight / 2, 0);
+    frontDoorSlab.castShadow = true;
+    frontDoorSlab.receiveShadow = true;
+    frontDoorSlab.userData.interactable = 'door';
+    frontDoorGroup.add(frontDoorSlab);
+
+    // Moulding panels on purple door
+    [0.75, 2.05].forEach((py) => {
+      [-0.28, 0.28].forEach((pz) => {
+        const panel = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.85, 0.42), mats.purpleDoor);
+        panel.position.set(0, py, pz);
+        panel.userData.interactable = 'door';
+        frontDoorGroup.add(panel);
+      });
     });
 
-    // Brass Doorknob & Lockplate + Chain Lock
-    makeCyl(0.055, 0.055, 0.08, 12, mats.brass, -1.1, 1.35, 0.07, doorPivot).rotation.x = Math.PI / 2;
-    makeBox(0.07, 0.22, 0.03, mats.brass, -1.1, 1.38, 0.055, doorPivot);
-    makeBox(0.12, 0.06, 0.04, mats.brass, -1.08, 1.72, 0.06, doorPivot);
-    // Light switch & Intercom box next to door
-    makeBox(0.16, 0.26, 0.05, mats.whiteTrim, -0.84, 1.55, 0.12, entryGroup);
-    makeBox(0.12, 0.16, 0.04, mats.whiteTrim, -0.84, 1.22, 0.12, entryGroup);
+    // Brass doorknob & chain lock
+    const frontKnob = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 12), mats.brass);
+    frontKnob.position.set(-0.12, 1.32, 0.48);
+    frontKnob.userData.interactable = 'door';
+    frontDoorGroup.add(frontKnob);
 
-    // ICONIC YELLOW PEEPHOLE FRAME (Ornate sculpted gold/yellow frame around small brass peephole)
-    const peepGroup = new THREE.Group();
-    peepGroup.position.set(-0.64, 2.12, 0.075);
-    doorPivot.add(peepGroup);
+    // Number "20" in gold above/near the frame
+    const num20Canvas = document.createElement('canvas');
+    num20Canvas.width = 128;
+    num20Canvas.height = 64;
+    const nCtx = num20Canvas.getContext('2d');
+    nCtx.fillStyle = '#765eb8';
+    nCtx.fillRect(0, 0, 128, 64);
+    nCtx.fillStyle = '#ffcf40';
+    nCtx.font = 'bold 46px Georgia, serif';
+    nCtx.textAlign = 'center';
+    nCtx.textBaseline = 'middle';
+    nCtx.fillText('20', 64, 34);
+    const num20Tex = new THREE.CanvasTexture(num20Canvas);
+    num20Tex.colorSpace = THREE.SRGBColorSpace;
+    const num20Plaque = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.28, 0.14),
+      new THREE.MeshBasicMaterial({ map: num20Tex })
+    );
+    num20Plaque.rotation.y = -Math.PI / 2;
+    num20Plaque.position.set(-0.092, 2.52, 0);
+    num20Plaque.userData.interactable = 'door';
+    frontDoorGroup.add(num20Plaque);
 
-    // Top & Bottom ornate bars
-    makeBox(0.42, 0.075, 0.045, mats.yellowFrame, 0, 0.21, 0, peepGroup, false, false);
-    makeBox(0.42, 0.075, 0.045, mats.yellowFrame, 0, -0.21, 0, peepGroup, false, false);
-    // Left & Right ornate bars
-    makeBox(0.075, 0.44, 0.045, mats.yellowFrame, -0.175, 0, 0, peepGroup, false, false);
-    makeBox(0.075, 0.44, 0.045, mats.yellowFrame, 0.175, 0, 0, peepGroup, false, false);
-    // Sculpted Corner Rosettes & Crest
-    makeBox(0.11, 0.11, 0.055, mats.yellowFrame, -0.18, 0.21, 0.005, peepGroup, false, false);
-    makeBox(0.11, 0.11, 0.055, mats.yellowFrame, 0.18, 0.21, 0.005, peepGroup, false, false);
-    makeBox(0.11, 0.11, 0.055, mats.yellowFrame, -0.18, -0.21, 0.005, peepGroup, false, false);
-    makeBox(0.11, 0.11, 0.055, mats.yellowFrame, 0.18, -0.21, 0.005, peepGroup, false, false);
-    makeBox(0.16, 0.07, 0.055, mats.yellowFrame, 0, 0.26, 0.005, peepGroup, false, false);
-    makeBox(0.14, 0.06, 0.055, mats.yellowFrame, 0, -0.26, 0.005, peepGroup, false, false);
-    // Brass Peephole Lens in center
-    const peepholeLens = makeCyl(0.042, 0.042, 0.05, 12, mats.brass, 0, 0, 0, peepGroup, false, false);
-    peepholeLens.rotation.x = Math.PI / 2;
+    // THE GOLD PICTURE FRAME AROUND THE PEEPHOLE (Single most iconic detail - unmistakable & oversized for clarity)
+    const peepholeGroup = new THREE.Group();
+    peepholeGroup.position.set(-0.11, 1.95, 0);
+    frontDoorGroup.add(peepholeGroup);
 
-    // Hallway Warm Light Sweep Plane on floor
-    const sweepGeo = new THREE.PlaneGeometry(2.6, 1.5);
-    const sweepMat = new THREE.MeshBasicMaterial({
-      color: 0xffda7b,
-      transparent: true,
-      opacity: 0.0,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
+    const frameW = 0.48;
+    const frameH = 0.58;
+    const barThick = 0.075;
+    // Ornate gold frame bars
+    const topBar = new THREE.Mesh(new THREE.BoxGeometry(0.07, barThick, frameW), mats.goldFrame);
+    topBar.position.set(0, frameH / 2, 0);
+    const botBar = new THREE.Mesh(new THREE.BoxGeometry(0.07, barThick, frameW), mats.goldFrame);
+    botBar.position.set(0, -frameH / 2, 0);
+    const leftBar = new THREE.Mesh(new THREE.BoxGeometry(0.07, frameH + barThick, barThick), mats.goldFrame);
+    leftBar.position.set(0, 0, -frameW / 2);
+    const rightBar = new THREE.Mesh(new THREE.BoxGeometry(0.07, frameH + barThick, barThick), mats.goldFrame);
+    rightBar.position.set(0, 0, frameW / 2);
+
+    // Ornate corner flourishes
+    [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach(([cy, cz]) => {
+      const rosette = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 10), mats.goldFrame);
+      rosette.position.set(-0.02, cy * (frameH / 2), cz * (frameW / 2));
+      rosette.userData.interactable = 'peephole';
+      peepholeGroup.add(rosette);
     });
-    const lightSweepMesh = new THREE.Mesh(sweepGeo, sweepMat);
-    lightSweepMesh.rotation.x = -Math.PI / 2;
-    lightSweepMesh.position.set(-0.3, 0.05, 0.9);
-    entryGroup.add(lightSweepMesh);
 
-    // Coat Rack / Bookshelf beside Entryway
-    const bookcaseGroup = new THREE.Group();
-    bookcaseGroup.position.set(3.12, 0, 0.55);
-    diorama.add(bookcaseGroup);
-    makeBox(0.52, 2.25, 1.15, mats.warmWood, 0, 1.125, 0, bookcaseGroup, true, true);
-    for (let s = 0; s < 4; s++) {
-      const sy = 0.42 + s * 0.5;
-      makeBox(0.48, 0.05, 1.08, mats.darkWood, -0.02, sy, 0, bookcaseGroup, true, true);
-      // Colorful books on each shelf
-      const bookCols = [0xe0533c, 0x3b8ea5, 0xf4b942, 0x6b9e58, 0x9b5de5, 0xe87a90];
-      for (let b = 0; b < 6; b++) {
-        const bh = 0.24 + rand() * 0.12;
-        const bMat = new THREE.MeshStandardMaterial({ color: bookCols[(s * 3 + b) % bookCols.length], roughness: 0.5 });
-        makeBox(0.28, bh, 0.09, bMat, -0.06, sy + 0.025 + bh / 2, -0.4 + b * 0.15, bookcaseGroup, true, true);
+    [topBar, botBar, leftBar, rightBar].forEach((b) => {
+      b.castShadow = true;
+      b.userData.interactable = 'peephole';
+      peepholeGroup.add(b);
+    });
+
+    // Peephole lens + blinking eye lid
+    const peepBrassRim = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.06, 16), mats.brass);
+    peepBrassRim.rotation.z = Math.PI / 2;
+    peepBrassRim.userData.interactable = 'peephole';
+    peepholeGroup.add(peepBrassRim);
+
+    const peepIris = new THREE.Mesh(
+      new THREE.SphereGeometry(0.062, 14, 14),
+      new THREE.MeshBasicMaterial({ color: 0xffffff })
+    );
+    peepIris.position.x = -0.02;
+    peepIris.userData.interactable = 'peephole';
+    peepholeGroup.add(peepIris);
+
+    const peepPupil = new THREE.Mesh(
+      new THREE.SphereGeometry(0.035, 12, 12),
+      new THREE.MeshBasicMaterial({ color: 0x181224 })
+    );
+    peepPupil.position.x = -0.055;
+    peepIris.add(peepPupil);
+
+    // Eyelid shutter for the blink animation
+    const peepEyelid = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, 0.16), mats.purpleDoor);
+    peepEyelid.position.set(-0.03, 0.16, 0);
+    peepEyelid.scale.y = 0.01;
+    peepholeGroup.add(peepEyelid);
+
+    // Generous invisible hit box for the gold peephole frame
+    const peepHitBox = new THREE.Mesh(
+      new THREE.BoxGeometry(0.28, 0.78, 0.72),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    peepHitBox.userData.interactable = 'peephole';
+    peepholeGroup.add(peepHitBox);
+
+    // Generous hit box for the purple door lower area
+    const doorHitBox = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 1.5, 1.35),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    doorHitBox.position.set(-0.05, 0.85, 0);
+    doorHitBox.userData.interactable = 'door';
+    frontDoorGroup.add(doorHitBox);
+
+    // --- SUNFLOWER SCULPTURE & CLOTHES HOOKS BESIDE THE PURPLE DOOR ---
+    const sunflowerGroup = new THREE.Group();
+    sunflowerGroup.position.set(W / 2 - 0.14, 2.15, -1.55);
+    const sunCenter = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.06, 14), mats.woodDark);
+    sunCenter.rotation.z = Math.PI / 2;
+    sunflowerGroup.add(sunCenter);
+    for (let p = 0; p < 12; p++) {
+      const ang = (p / 12) * Math.PI * 2;
+      const petal = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.18, 0.07), mats.yellowCloset);
+      petal.position.set(-0.02, Math.cos(ang) * 0.2, Math.sin(ang) * 0.2);
+      petal.rotation.x = -ang;
+      sunflowerGroup.add(petal);
+    }
+    diorama.add(sunflowerGroup);
+
+    // Coat hooks + hanging jacket/scarf beside the door
+    const hookRack = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.75), mats.woodWarm);
+    hookRack.position.set(W / 2 - 0.14, 1.65, -1.65);
+    diorama.add(hookRack);
+    [-1.9, -1.65, -1.4].forEach((hz, idx) => {
+      const hook = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.1, 6), mats.brass);
+      hook.rotation.z = Math.PI / 2;
+      hook.position.set(W / 2 - 0.18, 1.65, hz);
+      diorama.add(hook);
+      if (idx !== 1) {
+        const coat = new THREE.Mesh(
+          new THREE.ConeGeometry(0.14, 0.65, 8),
+          new THREE.MeshStandardMaterial({ color: idx === 0 ? 0x3b6e8c : 0xb84a39, roughness: 0.85 })
+        );
+        coat.position.set(W / 2 - 0.2, 1.3, hz);
+        diorama.add(coat);
       }
-    }
+    });
 
-    // ==========================================
-    // 5. TEAL/BLUE KITCHEN, SHELVES, FRIDGE & STOVE
-    // ==========================================
+    // --- JOUETS VINTAGE POSTER BEHIND THE TV (WITH HIDDEN CAMERA HOLE EASTER EGG) ---
+    // First, the hidden "camera hole" recessed into the right wall behind the poster
+    const cameraHoleGroup = new THREE.Group();
+    cameraHoleGroup.position.set(W / 2 - 0.13, 2.35, 1.85);
+    const holeRecess = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 0.72, 0.56),
+      new THREE.MeshBasicMaterial({ color: 0x0b0812 })
+    );
+    cameraHoleGroup.add(holeRecess);
+    // Studio TV camera lens peeking through the hole!
+    const camBody = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.26, 0.26), mats.tvBlack);
+    camBody.position.set(0.08, -0.04, 0);
+    cameraHoleGroup.add(camBody);
+    const camBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.22, 16), mats.chrome);
+    camBarrel.rotation.z = Math.PI / 2;
+    camBarrel.position.set(-0.04, -0.04, 0);
+    cameraHoleGroup.add(camBarrel);
+    const camGlass = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.085, 0.085, 0.23, 16),
+      new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+    );
+    camGlass.rotation.z = Math.PI / 2;
+    camGlass.position.set(-0.045, -0.04, 0);
+    cameraHoleGroup.add(camGlass);
+    // Red tally light on studio camera
+    const tallyLight = new THREE.Mesh(
+      new THREE.SphereGeometry(0.032, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xff2a2a })
+    );
+    tallyLight.position.set(-0.04, 0.14, 0);
+    cameraHoleGroup.add(tallyLight);
+    diorama.add(cameraHoleGroup);
+
+    // Swinging "JOUETS" Poster Pivot
+    const posterPivot = new THREE.Group();
+    posterPivot.position.set(W / 2 - 0.14, 2.35, 1.35); // Hinged on its left edge
+    diorama.add(posterPivot);
+
+    const posterW = 1.0;
+    const posterH = 1.48;
+    const posterFrame = new THREE.Mesh(new THREE.BoxGeometry(0.06, posterH + 0.1, posterW + 0.1), mats.woodDark);
+    posterFrame.position.set(0, 0, posterW / 2);
+    posterFrame.castShadow = true;
+    posterFrame.userData.interactable = 'poster';
+    posterPivot.add(posterFrame);
+
+    const posterArt = new THREE.Mesh(
+      new THREE.PlaneGeometry(posterW, posterH),
+      new THREE.MeshStandardMaterial({ map: createJouetsPosterTexture(), roughness: 0.55 })
+    );
+    posterArt.rotation.y = -Math.PI / 2;
+    posterArt.position.set(-0.035, 0, posterW / 2);
+    posterArt.userData.interactable = 'poster';
+    posterPivot.add(posterArt);
+
+    // =========================================================================
+    // 6. KITCHEN (LEFT SIDE: Light-Blue Shelves/Counter, Window Over Sink,
+    //    Fridge w/ Magnets, Cheese Grater, Cookbook, Fruit Bowl, "Face Cup")
+    // =========================================================================
     const kitchenGroup = new THREE.Group();
     diorama.add(kitchenGroup);
 
-    // Back Counter & Blue/Teal Cabinets
-    makeBox(1.85, 0.92, 0.78, mats.tealCabinet, -2.52, 0.48, -2.48, kitchenGroup, true, true);
-    makeBox(1.92, 0.08, 0.84, mats.counterTop, -2.52, 0.96, -2.48, kitchenGroup, true, true);
-    // Cabinet Doors & Brass Knobs
-    for (let i = 0; i < 3; i++) {
-      const cx = -3.1 + i * 0.58;
-      makeBox(0.5, 0.68, 0.04, mats.tealCabinet, cx, 0.46, -2.08, kitchenGroup, false, true);
-      makeBox(0.05, 0.05, 0.05, mats.brass, cx + 0.16, 0.56, -2.05, kitchenGroup, false, false);
-    }
-    // Sink Basin & Curved Chrome Faucet
-    makeBox(0.68, 0.05, 0.48, mats.chrome, -2.35, 0.99, -2.46, kitchenGroup, false, true);
-    makeCyl(0.03, 0.03, 0.34, 8, mats.chrome, -2.35, 1.15, -2.68, kitchenGroup);
-    makeBox(0.05, 0.05, 0.22, mats.chrome, -2.35, 1.3, -2.58, kitchenGroup);
+    // Window over the sink on the left brick wall
+    const sinkWinGroup = new THREE.Group();
+    sinkWinGroup.position.set(-W / 2 + 0.16, 2.45, -1.65);
+    const sinkWinGlow = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.35, 1.25), mats.windowGlowDay);
+    sinkWinGroup.add(sinkWinGlow);
+    const sinkWinFrame = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.45, 1.35), winFrameMat);
+    sinkWinFrame.position.x = -0.02;
+    sinkWinGroup.add(sinkWinFrame);
+    const sinkGlass = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.25, 1.15), mats.glassTransom);
+    sinkGlass.position.x = 0.02;
+    sinkWinGroup.add(sinkGlass);
+    kitchenGroup.add(sinkWinGroup);
 
-    // Left Counter & Stove Range
-    makeBox(0.78, 0.92, 2.25, mats.tealCabinet, -3.0, 0.48, -1.05, kitchenGroup, true, true);
-    makeBox(0.84, 0.08, 2.3, mats.counterTop, -3.0, 0.96, -1.05, kitchenGroup, true, true);
+    // Back Kitchen Counter & Stove (Light-blue cabinets)
+    const backCounter = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.92, 0.85), mats.kitchenBlue);
+    backCounter.position.set(-3.7, 0.5, -3.2);
+    backCounter.castShadow = true;
+    backCounter.receiveShadow = true;
+    kitchenGroup.add(backCounter);
 
-    // Stove Top & Oven Front
-    makeBox(0.76, 0.06, 0.86, mats.stoveBlack, -2.98, 1.01, -1.25, kitchenGroup, true, true);
-    makeBox(0.06, 0.62, 0.78, mats.stoveBlack, -2.59, 0.48, -1.25, kitchenGroup, false, true);
-    makeBox(0.07, 0.04, 0.68, mats.chrome, -2.55, 0.74, -1.25, kitchenGroup, false, false);
+    const backCounterTop = new THREE.Mesh(new THREE.BoxGeometry(2.86, 0.08, 0.9), mats.counterTop);
+    backCounterTop.position.set(-3.7, 0.98, -3.2);
+    kitchenGroup.add(backCounterTop);
 
-    // HERO COOKING POT & KETTLE ON STOVE
-    const potGroup = new THREE.Group();
-    potGroup.position.set(-2.92, 1.04, -1.05);
-    kitchenGroup.add(potGroup);
-    // Copper Dutch Oven Pot
-    makeCyl(0.22, 0.19, 0.24, 16, mats.copperPot, 0, 0.12, 0, potGroup, true, true);
-    makeCyl(0.23, 0.22, 0.04, 16, mats.copperPot, 0, 0.25, 0, potGroup, true, true);
-    makeCyl(0.04, 0.04, 0.05, 10, mats.brass, 0, 0.29, 0, potGroup, false, false);
-    makeBox(0.54, 0.035, 0.06, mats.brass, 0, 0.18, 0, potGroup, false, false);
+    // Stove range in back counter
+    const stoveTop = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.09, 0.78), mats.tvBlack);
+    stoveTop.position.set(-3.4, 0.99, -3.2);
+    kitchenGroup.add(stoveTop);
 
-    // Red Enamel Tea Kettle on rear burner
-    const kettleMat = new THREE.MeshStandardMaterial({ color: 0xd93829, roughness: 0.3, metalness: 0.3 });
-    makeCyl(0.13, 0.17, 0.18, 14, kettleMat, -2.95, 1.12, -1.48, kitchenGroup, true, true);
-    makeCyl(0.03, 0.05, 0.12, 8, mats.chrome, -2.82, 1.18, -1.48, kitchenGroup).rotation.z = -0.6;
+    // Left Wall Sink Counter (Light-blue)
+    const leftCounter = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.92, 3.6), mats.kitchenBlue);
+    leftCounter.position.set(-4.82, 0.5, -1.2);
+    leftCounter.castShadow = true;
+    leftCounter.receiveShadow = true;
+    kitchenGroup.add(leftCounter);
 
-    // Open Wooden Shelves Packed with Mismatched Colorful Cups, Bowls & Jars
-    const dishColors = [0xff6b5b, 0xffd152, 0x4ecdc4, 0xf7f1e3, 0xff9f43, 0xa55eea, 0x54a0ff];
-    const shelfHeights = [1.75, 2.38, 3.0];
-    shelfHeights.forEach((sy, sIdx) => {
-      // Back wall open shelf
-      makeBox(1.75, 0.06, 0.36, mats.warmWood, -2.5, sy, -2.72, kitchenGroup, true, true);
-      for (let d = 0; d < 5; d++) {
-        const dMat = new THREE.MeshStandardMaterial({
-          color: dishColors[(sIdx * 4 + d) % dishColors.length],
-          roughness: 0.35
-        });
-        const dx = -3.18 + d * 0.34;
-        if ((sIdx + d) % 2 === 0) {
-          // Stacked bowls
-          makeCyl(0.11, 0.07, 0.1, 12, dMat, dx, sy + 0.08, -2.7, kitchenGroup, true, true);
-          makeCyl(0.11, 0.07, 0.1, 12, mats.whiteTrim, dx, sy + 0.17, -2.7, kitchenGroup, true, true);
-        } else {
-          // Tall mug / canister
-          makeCyl(0.075, 0.07, 0.18, 12, dMat, dx, sy + 0.12, -2.7, kitchenGroup, true, true);
-        }
-      }
+    const leftCounterTop = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.08, 3.64), mats.counterTop);
+    leftCounterTop.position.set(-4.82, 0.98, -1.2);
+    kitchenGroup.add(leftCounterTop);
+
+    // Sink basin & chrome faucet under the left window
+    const sinkBasin = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.06, 0.82), mats.chrome);
+    sinkBasin.position.set(-4.8, 1.0, -1.65);
+    kitchenGroup.add(sinkBasin);
+    const faucet = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.025, 8, 16, Math.PI), mats.chrome);
+    faucet.position.set(-5.05, 1.15, -1.65);
+    faucet.rotation.y = Math.PI / 2;
+    kitchenGroup.add(faucet);
+
+    // Angled Kitchen Island / Peninsula with Cookbook, Fruit Bowl & "Face Cup"
+    const islandGroup = new THREE.Group();
+    islandGroup.position.set(-3.15, 0, -0.35);
+    islandGroup.rotation.y = 0.22;
+    kitchenGroup.add(islandGroup);
+
+    const islandBase = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.92, 0.88), mats.kitchenBlue);
+    islandBase.position.y = 0.5;
+    islandBase.castShadow = true;
+    islandBase.receiveShadow = true;
+    islandGroup.add(islandBase);
+
+    const islandTop = new THREE.Mesh(new THREE.BoxGeometry(2.08, 0.08, 0.98), mats.counterTop);
+    islandTop.position.y = 0.98;
+    islandGroup.add(islandTop);
+
+    // Cookbook on stand on the counter
+    const cookbook = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 0.24, 0.06),
+      new THREE.MeshStandardMaterial({ color: 0xc83e32, roughness: 0.6 })
+    );
+    cookbook.position.set(-0.62, 1.12, -0.1);
+    cookbook.rotation.x = -0.35;
+    cookbook.rotation.y = 0.3;
+    islandGroup.add(cookbook);
+
+    // Fruit bowl with colorful fruit
+    const fruitBowl = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.24, 0.14, 0.14, 16),
+      new THREE.MeshStandardMaterial({ color: 0x3b77a8, roughness: 0.3 })
+    );
+    fruitBowl.position.set(0.05, 1.09, 0.05);
+    islandGroup.add(fruitBowl);
+    const fruitColors = [0xe83b2c, 0xf5c52c, 0x6ab038, 0xf27d24];
+    fruitColors.forEach((fc, fi) => {
+      const f = new THREE.Mesh(
+        new THREE.SphereGeometry(0.075, 10, 10),
+        new THREE.MeshStandardMaterial({ color: fc, roughness: 0.4 })
+      );
+      const a = (fi / 4) * Math.PI * 2;
+      f.position.set(0.05 + Math.cos(a) * 0.08, 1.18, 0.05 + Math.sin(a) * 0.08);
+      islandGroup.add(f);
     });
 
-    // Left Wall Upper Teal Cabinet & Open Spice Rack
-    makeBox(0.42, 0.95, 1.45, mats.tealCabinet, -3.18, 2.35, -1.1, kitchenGroup, true, true);
-    makeBox(0.46, 0.06, 1.5, mats.whiteTrim, -3.18, 2.85, -1.1, kitchenGroup, false, true);
+    // The "Face Cup" on the counter (distinctive sculpted face mug)
+    const faceCupGroup = new THREE.Group();
+    faceCupGroup.position.set(0.65, 1.12, 0.12);
+    const faceMug = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.11, 0.095, 0.22, 16),
+      new THREE.MeshStandardMaterial({ map: createFaceCupTexture(), roughness: 0.35 })
+    );
+    faceMug.rotation.y = -0.6;
+    faceCupGroup.add(faceMug);
+    const mugHandle = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.018, 8, 12, Math.PI), mats.counterTop);
+    mugHandle.rotation.z = Math.PI / 2;
+    mugHandle.position.set(0.11, 0, 0);
+    faceCupGroup.add(mugHandle);
+    islandGroup.add(faceCupGroup);
 
-    // Classic White Fridge with Colorful Magnets & Notes
+    // --- OPEN SHELVING PACKED WITH ORGANIZED PLATES, CONDIMENTS & BOOKS ---
+    // Back brick wall open shelves (light blue)
+    [1.85, 2.55, 3.25].forEach((sy) => {
+      const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.06, 0.36), mats.kitchenBlue);
+      shelf.position.set(-3.7, sy, -3.45);
+      shelf.castShadow = true;
+      kitchenGroup.add(shelf);
+    });
+    // Left wall open shelves beside sink window
+    [1.85, 2.55, 3.25].forEach((sy) => {
+      const shelfL = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.06, 1.1), mats.kitchenBlue);
+      shelfL.position.set(-5.05, sy, -0.35);
+      shelfL.castShadow = true;
+      kitchenGroup.add(shelfL);
+    });
+
+    // InstancedMesh for organized stacks of plates, condiment jars, and books on the open shelves
+    const itemCount = 42;
+    const jarGeo = new THREE.CylinderGeometry(0.065, 0.065, 0.18, 10);
+    const jarMat = new THREE.MeshStandardMaterial({ roughness: 0.35 });
+    const instancedJars = new THREE.InstancedMesh(jarGeo, jarMat, itemCount);
+    instancedJars.castShadow = true;
+
+    const dummy = new THREE.Object3D();
+    const palette = [0xe8523f, 0xf2c138, 0x56a8c7, 0x6fb865, 0xf4ede1, 0xd97b38, 0x9b6bc2];
+    let idx = 0;
+    // Populate back shelves
+    [1.97, 2.67, 3.37].forEach((sy, sRow) => {
+      for (let sx = -4.75; sx <= -2.65; sx += 0.22) {
+        if (idx >= itemCount) break;
+        dummy.position.set(sx, sy, -3.44);
+        // Alternate between tall jars and flat plate stacks
+        if ((idx + sRow) % 3 === 0) {
+          dummy.scale.set(1.5, 0.45, 1.5);
+        } else {
+          dummy.scale.set(1, 0.85 + (idx % 3) * 0.2, 1);
+        }
+        dummy.updateMatrix();
+        instancedJars.setMatrixAt(idx, dummy.matrix);
+        instancedJars.setColorAt(idx, new THREE.Color(palette[idx % palette.length]));
+        idx++;
+      }
+    });
+    // Populate left shelves
+    [1.97, 2.67, 3.37].forEach((sy) => {
+      for (let sz = -0.8; sz <= 0.1; sz += 0.24) {
+        if (idx >= itemCount) break;
+        dummy.position.set(-5.04, sy, sz);
+        dummy.scale.set(1.1, 1.0, 1.1);
+        dummy.updateMatrix();
+        instancedJars.setMatrixAt(idx, dummy.matrix);
+        instancedJars.setColorAt(idx, new THREE.Color(palette[idx % palette.length]));
+        idx++;
+      }
+    });
+    instancedJars.instanceMatrix.needsUpdate = true;
+    if (instancedJars.instanceColor) instancedJars.instanceColor.needsUpdate = true;
+    kitchenGroup.add(instancedJars);
+
+    // --- VINTAGE FRIDGE COVERED IN MAGNETS + HANGING CHEESE GRATER BESIDE IT ---
     const fridgeGroup = new THREE.Group();
-    fridgeGroup.position.set(-2.98, 0, 0.35);
+    fridgeGroup.position.set(-4.72, 0.08, 1.85);
     kitchenGroup.add(fridgeGroup);
-    makeBox(0.84, 2.15, 0.84, mats.fridgeWhite, 0, 1.1, 0, fridgeGroup, true, true);
-    // Freezer / Fridge door seam & handles
-    makeBox(0.86, 0.025, 0.86, mats.stoveBlack, 0, 1.55, 0, fridgeGroup, false, false);
-    makeBox(0.05, 0.36, 0.05, mats.chrome, 0.44, 1.82, 0.28, fridgeGroup, false, false);
-    makeBox(0.05, 0.62, 0.05, mats.chrome, 0.44, 1.08, 0.28, fridgeGroup, false, false);
-    // Tiny Colorful Fridge Notes & Magnets on Front & Side
-    const noteCols = [0xff6b6b, 0xfeca57, 0x48dbfb, 0x1dd1a1, 0xff9ff3, 0x54a0ff];
-    for (let n = 0; n < 9; n++) {
-      const nMat = new THREE.MeshBasicMaterial({ color: noteCols[n % noteCols.length] });
-      const ny = 0.85 + (n % 3) * 0.38 + (rand() - 0.5) * 0.08;
-      const nz = -0.24 + Math.floor(n / 3) * 0.24 + (rand() - 0.5) * 0.06;
-      makeBox(0.02, 0.14, 0.12, nMat, 0.43, ny, nz, fridgeGroup, false, false);
+
+    // Fridge body
+    const fridgeBody = new THREE.Mesh(new THREE.BoxGeometry(0.95, 2.15, 0.98), mats.fridgeCream);
+    fridgeBody.position.set(0, 1.08, 0);
+    fridgeBody.castShadow = true;
+    fridgeBody.receiveShadow = true;
+    fridgeBody.userData.interactable = 'fridge';
+    fridgeGroup.add(fridgeBody);
+
+    // Interior cavity glow & shelves when fridge door opens
+    const fridgeInterior = new THREE.Mesh(
+      new THREE.BoxGeometry(0.15, 1.85, 0.82),
+      new THREE.MeshBasicMaterial({ color: 0xfff5c0 })
+    );
+    fridgeInterior.position.set(0.41, 1.1, 0);
+    fridgeGroup.add(fridgeInterior);
+
+    // Swinging Fridge Door Pivot
+    const fridgeDoorPivot = new THREE.Group();
+    fridgeDoorPivot.position.set(0.48, 0.12, 0.48); // Hinged on front edge
+    fridgeGroup.add(fridgeDoorPivot);
+
+    const fridgeDoor = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.98, 0.96), mats.fridgeCream);
+    fridgeDoor.position.set(0, 0.99, -0.48);
+    fridgeDoor.castShadow = true;
+    fridgeDoor.userData.interactable = 'fridge';
+    fridgeDoorPivot.add(fridgeDoor);
+
+    const fridgeHandle = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.38, 0.05), mats.chrome);
+    fridgeHandle.position.set(0.08, 1.1, -0.84);
+    fridgeHandle.userData.interactable = 'fridge';
+    fridgeDoorPivot.add(fridgeHandle);
+
+    // Instanced magnets covering the fridge door & side
+    const magnetGeo = new THREE.BoxGeometry(0.03, 0.09, 0.09);
+    const magnetMat = new THREE.MeshStandardMaterial({ roughness: 0.4 });
+    const magnetCount = 18;
+    const magnetsMesh = new THREE.InstancedMesh(magnetGeo, magnetMat, magnetCount);
+    for (let m = 0; m < magnetCount; m++) {
+      const my = 0.45 + (m % 6) * 0.25 + (Math.sin(m * 3) * 0.04);
+      const mz = -0.18 - Math.floor(m / 6) * 0.28 + (Math.cos(m * 5) * 0.04);
+      dummy.position.set(0.07, my, mz);
+      dummy.rotation.set((m % 3) * 0.2, 0, 0);
+      dummy.scale.set(1, 1, 1);
+      dummy.updateMatrix();
+      magnetsMesh.setMatrixAt(m, dummy.matrix);
+      magnetsMesh.setColorAt(m, new THREE.Color(palette[m % palette.length]));
     }
+    magnetsMesh.instanceMatrix.needsUpdate = true;
+    if (magnetsMesh.instanceColor) magnetsMesh.instanceColor.needsUpdate = true;
+    fridgeDoorPivot.add(magnetsMesh);
 
-    // Compact Kitchen Island / Counter Divider
-    makeBox(0.68, 0.9, 1.15, mats.tealCabinet, -1.55, 0.47, -2.05, kitchenGroup, true, true);
-    makeBox(0.76, 0.08, 1.24, mats.butcherBlock, -1.55, 0.94, -2.05, kitchenGroup, true, true);
-    // Fruit bowl on island
-    makeCyl(0.18, 0.1, 0.09, 14, mats.whiteTrim, -1.55, 1.02, -2.05, kitchenGroup, true, true);
-    makeCyl(0.06, 0.06, 0.09, 10, new THREE.MeshStandardMaterial({ color: 0xffbe3b }), -1.52, 1.08, -2.02, kitchenGroup);
-    makeCyl(0.06, 0.06, 0.09, 10, new THREE.MeshStandardMaterial({ color: 0xe64833 }), -1.6, 1.08, -2.08, kitchenGroup);
+    // Iconic metal Cheese Grater hanging on the wall beside the fridge!
+    const graterGroup = new THREE.Group();
+    graterGroup.position.set(-5.15, 1.75, 0.92);
+    const graterBody = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 0.26, 4), mats.chrome);
+    graterBody.rotation.y = Math.PI / 4;
+    graterGroup.add(graterBody);
+    const graterHandle = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.012, 6, 12), mats.chrome);
+    graterHandle.position.y = 0.15;
+    graterGroup.add(graterHandle);
+    kitchenGroup.add(graterGroup);
 
-    // ==========================================
-    // 6. ROUND WOOD DINING TABLE & 4 MISMATCHED CHAIRS
-    // ==========================================
+    // =========================================================================
+    // 7. CENTER: DINING TABLE WITH MISMATCHED CHAIRS (Tap -> Monica Tidies!)
+    // =========================================================================
     const diningGroup = new THREE.Group();
-    diningGroup.position.set(-1.55, 0.04, 0.48);
+    diningGroup.position.set(-1.35, 0.08, 1.55);
     diorama.add(diningGroup);
 
-    // Round wooden tabletop & turned pedestal legs
-    makeCyl(0.78, 0.78, 0.08, 28, mats.butcherBlock, 0, 0.78, 0, diningGroup, true, true);
-    makeCyl(0.68, 0.68, 0.06, 20, mats.warmWood, 0, 0.72, 0, diningGroup, false, true);
-    makeCyl(0.11, 0.14, 0.72, 14, mats.warmWood, 0, 0.36, 0, diningGroup, true, true);
-    for (let f = 0; f < 4; f++) {
-      const ang = (f * Math.PI) / 2 + Math.PI / 4;
-      const foot = makeBox(0.42, 0.07, 0.09, mats.warmWood, Math.cos(ang) * 0.22, 0.04, Math.sin(ang) * 0.22, diningGroup, true, true);
-      foot.rotation.y = -ang;
+    // Round wooden farmhouse table
+    const tableTop = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.08, 28), mats.woodLight);
+    tableTop.position.y = 0.82;
+    tableTop.castShadow = true;
+    tableTop.receiveShadow = true;
+    tableTop.userData.interactable = 'table';
+    diningGroup.add(tableTop);
+
+    // 4 turned legs
+    for (let l = 0; l < 4; l++) {
+      const ang = (l / 4) * Math.PI * 2 + Math.PI / 4;
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.032, 0.8, 10), mats.woodLight);
+      leg.position.set(Math.cos(ang) * 0.62, 0.4, Math.sin(ang) * 0.62);
+      leg.castShadow = true;
+      leg.userData.interactable = 'table';
+      diningGroup.add(leg);
     }
 
-    // Centerpiece: Warm Candle Lantern & Small Vase on Table
-    const candleBase = makeCyl(0.09, 0.11, 0.06, 12, mats.brass, 0, 0.84, 0, diningGroup, true, true);
-    const tableCandleGlow = makeCyl(0.055, 0.055, 0.16, 12, mats.lampShadeMat.clone(), 0, 0.94, 0, diningGroup, false, false);
-
-    // 4 Dinner Plates + Warm Food Accents (Animated during Interaction 2)
-    const dinnerPlates = [];
-    for (let p = 0; p < 4; p++) {
-      const ang = (p * Math.PI) / 2 + 0.35;
-      const px = Math.cos(ang) * 0.46;
-      const pz = Math.sin(ang) * 0.46;
-      const plateHolder = new THREE.Group();
-      plateHolder.position.set(px, 0.83, pz);
-      plateHolder.scale.set(0.001, 0.001, 0.001);
-      plateHolder.visible = false;
-      diningGroup.add(plateHolder);
-
-      // Ceramic plate rim & center
-      makeCyl(0.17, 0.13, 0.028, 18, mats.whiteTrim, 0, 0.015, 0, plateHolder, true, true);
-      makeCyl(0.12, 0.11, 0.032, 16, new THREE.MeshStandardMaterial({ color: 0xfff5dc, roughness: 0.3 }), 0, 0.018, 0, plateHolder, false, true);
-      // Tiny warm golden roll/garnish
-      makeCyl(0.045, 0.05, 0.035, 10, new THREE.MeshStandardMaterial({ color: 0xf0a84b, roughness: 0.4 }), 0.03, 0.035, 0.02, plateHolder, false, false);
-      dinnerPlates.push(plateHolder);
-    }
-
-    // 4 Mismatched Colorful Vintage Chairs around the table
+    // 4 Mismatched Chairs (different colors & back styles, slightly casual until Monica tidies them!)
     const chairConfigs = [
-      { ang: 0.35, col: 0x45a1b8, style: 0 },      // Aqua blue spindle chair
-      { ang: 1.92, col: 0xf2c14e, style: 1 },      // Mustard yellow ladderback
-      { ang: 3.49, col: 0xe0634b, style: 0 },      // Coral red chair
-      { ang: 5.06, col: 0x78b065, style: 1 }       // Sage green chair
+      { color: 0x5ea1b8, angle: 0, messyDist: 1.15, messyRot: 0.28, neatDist: 0.96, neatRot: 0 },
+      { color: 0xe6b83c, angle: Math.PI / 2, messyDist: 1.18, messyRot: -0.32, neatDist: 0.96, neatRot: 0 },
+      { color: 0xc95244, angle: Math.PI, messyDist: 1.12, messyRot: 0.24, neatDist: 0.96, neatRot: 0 },
+      { color: 0x6aa36f, angle: -Math.PI / 2, messyDist: 1.2, messyRot: -0.25, neatDist: 0.96, neatRot: 0 }
     ];
-    chairConfigs.forEach((cfg) => {
-      const ch = new THREE.Group();
-      const dist = 0.86;
-      ch.position.set(Math.cos(cfg.ang) * dist, 0, Math.sin(cfg.ang) * dist);
-      ch.rotation.y = -cfg.ang - Math.PI / 2;
-      diningGroup.add(ch);
+    const chairObjects = [];
 
-      const cMat = new THREE.MeshStandardMaterial({ color: cfg.col, roughness: 0.48 });
-      // Seat
-      makeBox(0.42, 0.055, 0.42, cMat, 0, 0.46, 0, ch, true, true);
-      // 4 Legs
-      [[-0.17, -0.17], [0.17, -0.17], [-0.17, 0.17], [0.17, 0.17]].forEach(([lx, lz]) => {
-        makeCyl(0.025, 0.02, 0.46, 8, cMat, lx, 0.23, lz, ch, true, true);
+    chairConfigs.forEach((cfg, ci) => {
+      const cg = new THREE.Group();
+      const chMat = new THREE.MeshStandardMaterial({ color: cfg.color, roughness: 0.6 });
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.05, 0.44), chMat);
+      seat.position.y = 0.46;
+      seat.castShadow = true;
+      seat.userData.interactable = 'table';
+      cg.add(seat);
+
+      // Chair legs
+      [[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]].forEach(([lx, lz]) => {
+        const cLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.02, 0.46, 8), chMat);
+        cLeg.position.set(lx, 0.23, lz);
+        cg.add(cLeg);
       });
-      // Backrest posts
-      makeCyl(0.025, 0.025, 0.52, 8, cMat, -0.17, 0.72, -0.17, ch, true, true);
-      makeCyl(0.025, 0.025, 0.52, 8, cMat, 0.17, 0.72, -0.17, ch, true, true);
-      makeBox(0.38, 0.07, 0.04, cMat, 0, 0.96, -0.17, ch, true, true);
-      if (cfg.style === 0) {
-        for (let s = -1; s <= 1; s++) {
-          makeCyl(0.015, 0.015, 0.44, 6, cMat, s * 0.08, 0.71, -0.17, ch, false, false);
+
+      // Mismatched backrest styles
+      if (ci % 2 === 0) {
+        // Spindle back
+        for (let s = -0.15; s <= 0.15; s += 0.1) {
+          const spindle = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.48, 6), chMat);
+          spindle.position.set(s, 0.7, 0.19);
+          cg.add(spindle);
         }
+        const crest = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.07, 0.04), chMat);
+        crest.position.set(0, 0.94, 0.19);
+        cg.add(crest);
       } else {
-        makeBox(0.34, 0.05, 0.03, cMat, 0, 0.8, -0.17, ch, false, false);
-        makeBox(0.34, 0.05, 0.03, cMat, 0, 0.65, -0.17, ch, false, false);
+        // Ladder slat back
+        [-0.19, 0.19].forEach((px) => {
+          const post = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.5, 8), chMat);
+          post.position.set(px, 0.71, 0.19);
+          cg.add(post);
+        });
+        [0.64, 0.82].forEach((sy) => {
+          const slat = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.07, 0.03), chMat);
+          slat.position.set(0, sy, 0.19);
+          cg.add(slat);
+        });
       }
+
+      diningGroup.add(cg);
+      chairObjects.push({ group: cg, cfg });
     });
 
-    // ==========================================
-    // 7. LIVING ROOM: CREAM COUCH, RUG, COFFEE TABLE, PLANTS & ART
-    // ==========================================
+    // Tabletop props (placemats, mugs, vase) that snap into crisp geometric alignment when tidied
+    const tableProps = [];
+    const propDefs = [
+      { type: 'vase', color: 0xf5d442, messyPos: [-0.12, 0.96, 0.14], messyRot: 0.4, neatPos: [0, 0.96, 0], neatRot: 0 },
+      { type: 'mat', color: 0xd94e3b, messyPos: [0.46, 0.87, 0.18], messyRot: 0.55, neatPos: [0.55, 0.87, 0], neatRot: 0 },
+      { type: 'mat', color: 0x4589b0, messyPos: [-0.52, 0.87, -0.15], messyRot: -0.48, neatPos: [-0.55, 0.87, 0], neatRot: 0 },
+      { type: 'mat', color: 0x62a865, messyPos: [0.14, 0.87, 0.52], messyRot: 0.38, neatPos: [0, 0.87, 0.55], neatRot: Math.PI / 2 },
+      { type: 'mat', color: 0xe69f35, messyPos: [-0.16, 0.87, -0.49], messyRot: -0.62, neatPos: [0, 0.87, -0.55], neatRot: Math.PI / 2 }
+    ];
+
+    propDefs.forEach((pd) => {
+      let mesh;
+      if (pd.type === 'vase') {
+        mesh = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.08, 0.11, 0.22, 12),
+          new THREE.MeshStandardMaterial({ color: pd.color, roughness: 0.35 })
+        );
+      } else {
+        mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.28, 0.025, 0.36),
+          new THREE.MeshStandardMaterial({ color: pd.color, roughness: 0.7 })
+        );
+      }
+      mesh.userData.interactable = 'table';
+      diningGroup.add(mesh);
+      tableProps.push({ mesh, pd });
+    });
+
+    // Hit cylinder covering the whole dining table & chairs
+    const tableHit = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.4, 1.4, 1.15, 16),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    tableHit.position.y = 0.55;
+    tableHit.userData.interactable = 'table';
+    diningGroup.add(tableHit);
+
+    // =========================================================================
+    // 8. RIGHT-CENTER: LIVING AREA (Cream Couch, Coffee Table w/ Flower Pot +
+    //    Magazines, Separate Armchair, TV Set on Wooden Dresser + Potted Ferns)
+    // =========================================================================
     const livingGroup = new THREE.Group();
-    livingGroup.position.set(1.05, 0, 0.82);
+    livingGroup.position.set(1.85, 0.08, 0.75);
     diorama.add(livingGroup);
 
-    // Richly Patterned Area Rug
-    makeBox(3.45, 0.03, 2.75, mats.rug, 0, 0.02, 0.12, livingGroup, false, true);
+    // Flea-market Persian Area Rug
+    const rugMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(3.8, 0.025, 3.1),
+      new THREE.MeshStandardMaterial({ map: createRugTexture(), roughness: 0.88 })
+    );
+    rugMesh.position.set(0.2, 0.015, 0.1);
+    rugMesh.receiveShadow = true;
+    livingGroup.add(rugMesh);
 
-    // Cozy Cream Sofa (angled slightly to invite viewer into conversation area)
-    const sofaGroup = new THREE.Group();
-    sofaGroup.position.set(0.15, 0.03, 0.98);
-    sofaGroup.rotation.y = Math.PI + 0.08;
-    livingGroup.add(sofaGroup);
+    // White/Cream Couch (facing right toward the TV)
+    const couchGroup = new THREE.Group();
+    couchGroup.position.set(-0.75, 0, 0.05);
+    couchGroup.rotation.y = Math.PI / 2; // Faces +X (toward TV on right wall)
+    livingGroup.add(couchGroup);
 
-    // Sofa Base & Wooden Feet
-    makeBox(2.28, 0.28, 0.94, mats.creamSofa, 0, 0.22, 0, sofaGroup, true, true);
-    [[-1.02, -0.38], [1.02, -0.38], [-1.02, 0.38], [1.02, 0.38]].forEach(([fx, fz]) => {
-      makeCyl(0.035, 0.025, 0.1, 8, mats.darkWood, fx, 0.05, fz, sofaGroup);
+    const couchSeat = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.42, 0.92), mats.couchCream);
+    couchSeat.position.y = 0.26;
+    couchSeat.castShadow = true;
+    couchSeat.receiveShadow = true;
+    couchGroup.add(couchSeat);
+
+    const couchBack = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.85, 0.26), mats.couchCream);
+    couchBack.position.set(0, 0.56, -0.35);
+    couchBack.castShadow = true;
+    couchGroup.add(couchBack);
+
+    [-1.08, 1.08].forEach((ax) => {
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.64, 0.92), mats.couchCream);
+      arm.position.set(ax, 0.42, 0);
+      arm.castShadow = true;
+      couchGroup.add(arm);
     });
-    // 3 Plush Seat Cushions
-    for (let c = -1; c <= 1; c++) {
-      makeBox(0.68, 0.16, 0.78, mats.creamSofa, c * 0.7, 0.42, 0.04, sofaGroup, true, true);
-      makeBox(0.68, 0.48, 0.2, mats.creamSofa, c * 0.7, 0.68, -0.34, sofaGroup, true, true);
-    }
-    // Backrest & Rolled Arms
-    makeBox(2.28, 0.68, 0.22, mats.creamSofa, 0, 0.62, -0.4, sofaGroup, true, true);
-    makeBox(0.24, 0.46, 0.94, mats.creamSofa, -1.08, 0.5, 0, sofaGroup, true, true);
-    makeBox(0.24, 0.46, 0.94, mats.creamSofa, 1.08, 0.5, 0, sofaGroup, true, true);
 
-    // Colorful Throw Pillows & Cozy Draped Blanket on Sofa
-    const pillowCols = [0xd94e34, 0xf2b738, 0x3b8ea5, 0x8a508f];
-    const pillowPositions = [
-      [-0.82, 0.6, -0.15, 0.25],
-      [-0.56, 0.58, -0.18, -0.15],
-      [0.78, 0.6, -0.15, -0.22]
-    ];
-    pillowPositions.forEach(([px, py, pz, rotZ], idx) => {
-      const pMat = new THREE.MeshStandardMaterial({ color: pillowCols[idx], roughness: 0.65 });
-      const pil = makeBox(0.32, 0.32, 0.12, pMat, px, py, pz, sofaGroup, true, true);
-      pil.rotation.z = rotZ;
-      pil.rotation.x = 0.2;
+    // Colorful throw pillows on the cream couch
+    [
+      { x: -0.78, color: 0xc84b3c, rot: 0.2 },
+      { x: 0.0, color: 0x4b7fa8, rot: -0.1 },
+      { x: 0.78, color: 0xe3b23c, rot: -0.25 }
+    ].forEach((pl) => {
+      const pillow = new THREE.Mesh(
+        new THREE.BoxGeometry(0.36, 0.34, 0.14),
+        new THREE.MeshStandardMaterial({ color: pl.color, roughness: 0.8 })
+      );
+      pillow.position.set(pl.x, 0.62, -0.16);
+      pillow.rotation.z = pl.rot;
+      couchGroup.add(pillow);
     });
-    // Mustard Throw Blanket draped over right arm
-    const throwMat = new THREE.MeshStandardMaterial({ color: 0xe89938, roughness: 0.75 });
-    makeBox(0.34, 0.06, 0.55, throwMat, 1.08, 0.75, 0.05, sofaGroup, true, true);
-    makeBox(0.06, 0.42, 0.52, throwMat, 1.22, 0.56, 0.05, sofaGroup, true, true);
 
-    // Warm Terracotta Armchair opposite Sofa
-    const chairGroup = new THREE.Group();
-    chairGroup.position.set(1.22, 0.03, -0.32);
-    chairGroup.rotation.y = -Math.PI * 0.38;
-    livingGroup.add(chairGroup);
-    makeBox(0.86, 0.36, 0.82, mats.terracottaChair, 0, 0.24, 0, chairGroup, true, true);
-    makeBox(0.86, 0.52, 0.2, mats.terracottaChair, 0, 0.62, -0.31, chairGroup, true, true);
-    makeBox(0.16, 0.32, 0.82, mats.terracottaChair, -0.38, 0.5, 0, chairGroup, true, true);
-    makeBox(0.16, 0.32, 0.82, mats.terracottaChair, 0.38, 0.5, 0, chairGroup, true, true);
-    makeBox(0.3, 0.28, 0.1, new THREE.MeshStandardMaterial({ color: 0xf4d068, roughness: 0.6 }), 0, 0.54, -0.16, chairGroup, true, true);
+    // Wooden Coffee Table in front of the couch (with Flower Pot + Magazines)
+    const coffeeTableGroup = new THREE.Group();
+    coffeeTableGroup.position.set(0.45, 0, 0.05);
+    livingGroup.add(coffeeTableGroup);
 
-    // Classic Wooden Coffee Table with Stacked Art Books, Tray & Mugs
-    const coffeeTable = new THREE.Group();
-    coffeeTable.position.set(0.12, 0.03, -0.12);
-    livingGroup.add(coffeeTable);
-    makeBox(1.38, 0.07, 0.76, mats.warmWood, 0, 0.44, 0, coffeeTable, true, true);
-    makeBox(1.22, 0.04, 0.62, mats.darkWood, 0, 0.18, 0, coffeeTable, false, true);
-    [[-0.58, -0.3], [0.58, -0.3], [-0.58, 0.3], [0.58, 0.3]].forEach(([lx, lz]) => {
-      makeCyl(0.032, 0.025, 0.44, 8, mats.darkWood, lx, 0.22, lz, coffeeTable, true, true);
+    const ctTop = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.07, 1.55), mats.woodWarm);
+    ctTop.position.y = 0.44;
+    ctTop.castShadow = true;
+    ctTop.receiveShadow = true;
+    coffeeTableGroup.add(ctTop);
+
+    [[-0.32, -0.65], [0.32, -0.65], [-0.32, 0.65], [0.32, 0.65]].forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, 0.06), mats.woodWarm);
+      leg.position.set(lx, 0.21, lz);
+      coffeeTableGroup.add(leg);
     });
-    // Books & Mugs on Coffee Table
-    makeBox(0.34, 0.06, 0.26, new THREE.MeshStandardMaterial({ color: 0x387ca0 }), -0.32, 0.5, 0.04, coffeeTable, true, true);
-    makeBox(0.28, 0.05, 0.22, new THREE.MeshStandardMaterial({ color: 0xe3624a }), -0.32, 0.555, 0.04, coffeeTable, true, true);
-    // Two Colorful Mugs
-    makeCyl(0.065, 0.055, 0.11, 12, new THREE.MeshStandardMaterial({ color: 0xffc845 }), 0.22, 0.53, -0.08, coffeeTable, true, true);
-    makeCyl(0.065, 0.055, 0.11, 12, new THREE.MeshStandardMaterial({ color: 0x9b5de5 }), 0.4, 0.53, 0.1, coffeeTable, true, true);
 
-    // Vintage Standing Floor Lamp next to Window & Couch
-    const floorLamp = new THREE.Group();
-    floorLamp.position.set(0.95, 0.03, -1.45);
-    livingGroup.add(floorLamp);
-    makeCyl(0.22, 0.24, 0.06, 16, mats.brass, 0, 0.03, 0, floorLamp, true, true);
-    makeCyl(0.03, 0.03, 1.85, 10, mats.brass, 0, 0.95, 0, floorLamp, true, true);
-    const mainLampShade = makeCyl(0.22, 0.34, 0.38, 18, mats.lampShadeMat, 0, 1.92, 0, floorLamp, false, false);
+    // Flower pot on coffee table
+    const ctPot = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.16, 12), mats.terraCotta);
+    ctPot.position.set(0, 0.55, -0.22);
+    coffeeTableGroup.add(ctPot);
+    const ctFoliage = new THREE.Mesh(new THREE.DodecahedronGeometry(0.15, 1), mats.fernGreen);
+    ctFoliage.position.set(0, 0.68, -0.22);
+    coffeeTableGroup.add(ctFoliage);
+    const ctBlossom = new THREE.Mesh(
+      new THREE.SphereGeometry(0.06, 8, 8),
+      new THREE.MeshStandardMaterial({ color: 0xf46b94 })
+    );
+    ctBlossom.position.set(0.04, 0.78, -0.2);
+    coffeeTableGroup.add(ctBlossom);
 
-    // Side Table + Cozy Table Lamp next to Sofa
-    const sideTable = new THREE.Group();
-    sideTable.position.set(-1.12, 0.03, 0.95);
-    livingGroup.add(sideTable);
-    makeCyl(0.28, 0.28, 0.05, 16, mats.warmWood, 0, 0.58, 0, sideTable, true, true);
-    makeCyl(0.05, 0.08, 0.58, 10, mats.warmWood, 0, 0.29, 0, sideTable, true, true);
-    makeCyl(0.09, 0.12, 0.2, 12, mats.tealCabinet, 0, 0.7, 0, sideTable, true, true);
-    const sideLampShade = makeCyl(0.14, 0.22, 0.24, 16, mats.lampShadeMat.clone(), 0, 0.9, 0, sideTable, false, false);
+    // Magazines fanned out on coffee table
+    [
+      { z: 0.22, rot: 0.18, color: 0x3882b8 },
+      { z: 0.36, rot: -0.24, color: 0xd9483b }
+    ].forEach((mg) => {
+      const mag = new THREE.Mesh(
+        new THREE.BoxGeometry(0.28, 0.02, 0.36),
+        new THREE.MeshStandardMaterial({ color: mg.color, roughness: 0.5 })
+      );
+      mag.position.set(0.04, 0.485, mg.z);
+      mag.rotation.y = mg.rot;
+      coffeeTableGroup.add(mag);
+    });
 
-    // Lush Potted Houseplants (Window Alcove, Bookshelf Corner & Front Floor)
-    function createHouseplant(x, y, z, scale = 1.0) {
-      const pg = new THREE.Group();
-      pg.position.set(x, y, z);
-      pg.scale.setScalar(scale);
-      diorama.add(pg);
-      makeCyl(0.18, 0.13, 0.32, 14, mats.terracottaPot, 0, 0.16, 0, pg, true, true);
-      makeCyl(0.19, 0.19, 0.05, 14, mats.terracottaPot, 0, 0.3, 0, pg, false, true);
-      for (let l = 0; l < 7; l++) {
-        const ang = (l / 7) * Math.PI * 2;
-        const leaf = makeBox(0.14, 0.36, 0.04, l % 2 === 0 ? mats.plantGreen : mats.plantDark, Math.cos(ang) * 0.09, 0.44, Math.sin(ang) * 0.09, pg, true, false);
-        leaf.rotation.y = -ang + Math.PI / 2;
-        leaf.rotation.x = 0.42;
+    // Separate Vintage Armchair (angled comfortably near the coffee table)
+    const armchairGroup = new THREE.Group();
+    armchairGroup.position.set(0.35, 0, -1.45);
+    armchairGroup.rotation.y = -0.45;
+    livingGroup.add(armchairGroup);
+
+    const acSeat = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.4, 0.85), mats.armchairMustard);
+    acSeat.position.y = 0.25;
+    acSeat.castShadow = true;
+    armchairGroup.add(acSeat);
+    const acBack = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.82, 0.24), mats.armchairMustard);
+    acBack.position.set(0, 0.55, -0.32);
+    acBack.castShadow = true;
+    armchairGroup.add(acBack);
+    [-0.38, 0.38].forEach((ax) => {
+      const acArm = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.58, 0.85), mats.armchairMustard);
+      acArm.position.set(ax, 0.38, 0);
+      armchairGroup.add(acArm);
+    });
+
+    // Cozy Standing Floor Lamp with warm glowing shade
+    const lampGroup = new THREE.Group();
+    lampGroup.position.set(-0.7, 0, -1.55);
+    const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.06, 16), mats.brass);
+    lampBase.position.y = 0.03;
+    lampGroup.add(lampBase);
+    const lampPole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.85, 10), mats.brass);
+    lampPole.position.y = 0.95;
+    lampGroup.add(lampPole);
+    const lampShade = new THREE.Mesh(
+      new THREE.ConeGeometry(0.34, 0.42, 16, 1, true),
+      new THREE.MeshStandardMaterial({
+        color: 0xffe4a8,
+        emissive: 0xffa838,
+        emissiveIntensity: 0.65,
+        side: THREE.DoubleSide
+      })
+    );
+    lampShade.position.y = 1.92;
+    lampGroup.add(lampShade);
+    livingGroup.add(lampGroup);
+
+    // --- TV SET ON A WOODEN DRESSER WITH POTTED FERNS BESIDE IT ---
+    const tvDresserGroup = new THREE.Group();
+    tvDresserGroup.position.set(2.95, 0, 1.05); // Right wall area below/near JOUETS poster
+    livingGroup.add(tvDresserGroup);
+
+    const dresser = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.78, 1.45), mats.woodDark);
+    dresser.position.y = 0.42;
+    dresser.castShadow = true;
+    dresser.receiveShadow = true;
+    tvDresserGroup.add(dresser);
+
+    // CRT TV set angled slightly toward the couch
+    const tvSetGroup = new THREE.Group();
+    tvSetGroup.position.set(0, 0.82, 0);
+    tvSetGroup.rotation.y = 0.18;
+    const tvBox = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.56, 0.68), mats.tvBlack);
+    tvBox.position.y = 0.28;
+    tvBox.castShadow = true;
+    tvSetGroup.add(tvBox);
+
+    const tvScreenMat = new THREE.MeshBasicMaterial({ color: 0x6ea8d6 });
+    const tvScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.54, 0.42), tvScreenMat);
+    tvScreen.rotation.y = -Math.PI / 2;
+    tvScreen.position.set(-0.265, 0.29, 0);
+    tvSetGroup.add(tvScreen);
+
+    // Rabbit-ear antennas on TV
+    [-0.18, 0.18].forEach((az) => {
+      const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.45, 6), mats.chrome);
+      ant.position.set(0, 0.72, az);
+      ant.rotation.x = az > 0 ? 0.45 : -0.45;
+      tvSetGroup.add(ant);
+    });
+    tvDresserGroup.add(tvSetGroup);
+
+    // Potted Ferns beside the TV dresser (both sides)
+    function createPottedFern(x, z, scale = 1) {
+      const fg = new THREE.Group();
+      fg.position.set(x, 0, z);
+      fg.scale.setScalar(scale);
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.15, 0.36, 12), mats.terraCotta);
+      pot.position.y = 0.18;
+      pot.castShadow = true;
+      fg.add(pot);
+      for (let f = 0; f < 9; f++) {
+        const frond = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.55, 5), mats.fernGreen);
+        const a = (f / 9) * Math.PI * 2;
+        frond.position.set(Math.cos(a) * 0.14, 0.48, Math.sin(a) * 0.14);
+        frond.rotation.z = -Math.cos(a) * 0.65;
+        frond.rotation.x = Math.sin(a) * 0.65;
+        fg.add(frond);
       }
-      return pg;
+      return fg;
     }
-    createHouseplant(0.88, 0.18, -2.35, 1.05);
-    createHouseplant(-0.95, 0.18, -2.38, 0.88);
-    createHouseplant(3.05, 0.02, 1.55, 1.15);
 
-    // Framed Vintage Wall Art & Decorative Shelves on Purple Walls
-    function createFramedArt(w, h, texType, x, y, z, rotY = 0) {
-      const ag = new THREE.Group();
-      ag.position.set(x, y, z);
-      ag.rotation.y = rotY;
-      diorama.add(ag);
-      makeBox(w + 0.1, h + 0.1, 0.05, mats.yellowFrame, 0, 0, 0, ag, true, false);
-      const artMat = new THREE.MeshBasicMaterial({ map: createArtTexture(texType) });
-      makeBox(w, h, 0.06, artMat, 0, 0, 0.005, ag, false, false);
-    }
-    // Framed poster on Back-Right Purple Wall
-    createFramedArt(0.76, 0.98, 0, 2.08, 2.55, -2.86, 0);
-    // Framed art on Right Stepped Wall
-    createFramedArt(0.66, 0.82, 1, 3.36, 1.92, 1.58, -Math.PI / 2);
+    const fern1 = createPottedFern(2.95, 0.05, 1.0);
+    const fern2 = createPottedFern(2.95, 2.02, 0.92);
+    livingGroup.add(fern1);
+    livingGroup.add(fern2);
 
-    // ==========================================
-    // 8. LIGHTING SETUP (Bright, Warm & Contrast-Rich)
-    // ==========================================
-    const hemiLight = new THREE.HemisphereLight(0xffe9d2, 0x6b4d8a, 1.35);
-    scene.add(hemiLight);
-
-    const mainDirLight = new THREE.DirectionalLight(0xfff1d6, 1.75);
-    mainDirLight.position.set(5.5, 9.5, 6.5);
-    mainDirLight.castShadow = true;
-    mainDirLight.shadow.mapSize.set(1024, 1024);
-    mainDirLight.shadow.camera.near = 1;
-    mainDirLight.shadow.camera.far = 24;
-    const sc = 5.4;
-    mainDirLight.shadow.camera.left = -sc;
-    mainDirLight.shadow.camera.right = sc;
-    mainDirLight.shadow.camera.top = sc;
-    mainDirLight.shadow.camera.bottom = -sc;
-    mainDirLight.shadow.bias = -0.0008;
-    scene.add(mainDirLight);
-
-    // Fill light from front-left so purple walls stay vibrant and readable
-    const purpleFillLight = new THREE.DirectionalLight(0xe5d4ff, 0.72);
-    purpleFillLight.position.set(-6, 4, 5);
-    scene.add(purpleFillLight);
-
-    // Warm Living Room Lamp PointLight
-    const livingLampLight = new THREE.PointLight(0xffae42, 1.4, 7.5, 1.5);
-    livingLampLight.position.set(1.9, 2.1, -0.5);
-    diorama.add(livingLampLight);
-
-    // Interactive Light 1: Doorway Hallway Welcome Light
-    const doorGlowLight = new THREE.PointLight(0xffc44d, 0.4, 6.5, 1.4);
-    doorGlowLight.position.set(2.45, 2.0, -1.2);
-    diorama.add(doorGlowLight);
-
-    // Interactive Light 2: Kitchen Table & Stove Cozy Dinner Light
-    const dinnerTableLight = new THREE.PointLight(0xffa73b, 0.85, 6.5, 1.4);
-    dinnerTableLight.position.set(-1.55, 1.85, 0.48);
-    diorama.add(dinnerTableLight);
-
-    // ==========================================
-    // 9. PARTICLES: STEAM, SPARKLES, TWINKLES & MOTES
-    // ==========================================
-    // A. Ambient Warm Floating Motes (Contained inside room volume)
-    const moteCount = 34;
+    // =========================================================================
+    // 9. FLOATING DUST MOTES & WINDOW LIGHT SHIMMER
+    // =========================================================================
+    const moteCount = 65;
     const moteGeo = new THREE.BufferGeometry();
-    const motePos = new Float32Array(moteCount * 3);
-    const moteSeeds = [];
+    const motePositions = new Float32Array(moteCount * 3);
+    const motePhases = new Float32Array(moteCount);
+
     for (let i = 0; i < moteCount; i++) {
-      const mx = randRange(-2.8, 2.8);
-      const my = randRange(0.5, 3.1);
-      const mz = randRange(-2.2, 2.2);
-      motePos[i * 3] = mx;
-      motePos[i * 3 + 1] = my;
-      motePos[i * 3 + 2] = mz;
-      moteSeeds.push({ x: mx, y: my, z: mz, phase: rand() * Math.PI * 2, speed: randRange(0.4, 0.9) });
+      motePositions[i * 3] = (Math.random() - 0.5) * 9.2;
+      motePositions[i * 3 + 1] = 0.6 + Math.random() * 3.4;
+      motePositions[i * 3 + 2] = (Math.random() - 0.5) * 6.2;
+      motePhases[i] = Math.random() * Math.PI * 2;
     }
-    moteGeo.setAttribute('position', new THREE.BufferAttribute(motePos, 3));
+    moteGeo.setAttribute('position', new THREE.BufferAttribute(motePositions, 3));
+
     const moteMat = new THREE.PointsMaterial({
-      color: 0xffe299,
-      size: 0.065,
+      color: 0xfff3c4,
+      size: 0.085,
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.65,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
-    const motePoints = new THREE.Points(moteGeo, moteMat);
-    diorama.add(motePoints);
+    const dustMotes = new THREE.Points(moteGeo, moteMat);
+    diorama.add(dustMotes);
 
-    // B. Door Yellow Peephole Frame Twinkles (8 star puffs around yellow frame)
-    const doorTwinkles = [];
-    const twinkleMatBase = new THREE.MeshBasicMaterial({
-      color: 0xfff088,
-      transparent: true,
-      opacity: 0.9,
-      blending: THREE.AdditiveBlending
-    });
-    const twinkleDiamondGeo = new THREE.OctahedronGeometry(0.055, 0);
-    for (let i = 0; i < 8; i++) {
-      const ang = (i / 8) * Math.PI * 2;
-      const tm = new THREE.Mesh(twinkleDiamondGeo, twinkleMatBase.clone());
-      tm.position.set(Math.cos(ang) * 0.25, Math.sin(ang) * 0.3, 0.045);
-      tm.scale.setScalar(0.001);
-      peepGroup.add(tm);
-      doorTwinkles.push({ mesh: tm, ang, phase: i * 0.7 });
-    }
-
-    // C. Stove Pot Steam Curls (Contained well below header)
-    const steamPuffs = [];
-    const steamMatBase = new THREE.MeshBasicMaterial({
-      color: 0xfffaf0,
-      transparent: true,
-      opacity: 0.0,
-      depthWrite: false
-    });
-    const steamGeo = new THREE.SphereGeometry(0.085, 10, 10);
-    for (let i = 0; i < 14; i++) {
-      const sm = new THREE.Mesh(steamGeo, steamMatBase.clone());
-      diorama.add(sm);
-      steamPuffs.push({
-        mesh: sm,
-        offset: i / 14,
-        radius: randRange(0.04, 0.14),
-        phase: rand() * Math.PI * 2
-      });
-    }
-
-    // D. Dining Table Warm Dinner Sparkles
-    const tableSparkles = [];
-    for (let i = 0; i < 16; i++) {
-      const sm = new THREE.Mesh(twinkleDiamondGeo, twinkleMatBase.clone());
-      sm.scale.setScalar(0.001);
-      diningGroup.add(sm);
-      tableSparkles.push({
-        mesh: sm,
-        ang: (i / 16) * Math.PI * 2,
-        rad: randRange(0.22, 0.68),
-        baseY: randRange(0.88, 1.32),
-        speed: randRange(1.5, 2.8),
-        phase: rand() * Math.PI * 2
-      });
-    }
-
-    // ==========================================
-    // 10. FAT INVISIBLE RAYCAST TARGET PROXIES
-    // ==========================================
-    const interactProxies = [];
-
-    // Proxy 1: Generous fat hitbox around Purple Door & Yellow Frame
-    const doorProxy = makeBox(1.85, 3.35, 1.15, mats.invisibleProxy, 0, 1.68, 0.15, entryGroup, false, false);
-    doorProxy.userData.action = 'door';
-    interactProxies.push(doorProxy);
-
-    // Proxy 2A: Generous fat hitbox around Kitchen Dining Table
-    const tableProxy = makeCyl(1.18, 1.18, 1.65, 16, mats.invisibleProxy, -1.55, 0.82, 0.48, diorama, false, false);
-    tableProxy.userData.action = 'dinner';
-    interactProxies.push(tableProxy);
-
-    // Proxy 2B: Generous fat hitbox around Stove & Cooking Pot
-    const potProxy = makeBox(1.25, 1.45, 1.35, mats.invisibleProxy, -2.9, 1.35, -1.15, diorama, false, false);
-    potProxy.userData.action = 'dinner';
-    interactProxies.push(potProxy);
-
-    // ==========================================
-    // 11. INTERACTION STATE & POINTER HANDLING
-    // ==========================================
-    const interactionState = {
-      doorStart: -1,
-      doorDuration: 6000, // 6 seconds clean return to baseline
-      dinnerStart: -1,
-      dinnerDuration: 8000, // 8 seconds clean return to baseline
-      lastUserTouch: performance.now(),
-      lastIdleTwinkle: performance.now()
+    // =========================================================================
+    // 10. INTERACTION STATE MACHINE & ANIMATIONS
+    // =========================================================================
+    const state = {
+      doorOpen: false,
+      doorAngle: 0,
+      peepBlinkTime: -10,
+      tableTidy: false,
+      tableTidyMix: 0, // 0 = messy, 1 = neat
+      posterOpen: false,
+      posterAngle: 0,
+      fridgeOpen: false,
+      fridgeAngle: 0,
+      isNight: false,
+      nightMix: 0
     };
 
-    function triggerDoor(now) {
-      interactionState.doorStart = now;
-      interactionState.lastUserTouch = now;
+    function applyTableMix(mix) {
+      chairObjects.forEach(({ group, cfg }) => {
+        const dist = THREE.MathUtils.lerp(cfg.messyDist, cfg.neatDist, mix);
+        const rotOffset = THREE.MathUtils.lerp(cfg.messyRot, cfg.neatRot, mix);
+        group.position.set(Math.sin(cfg.angle) * dist, 0, Math.cos(cfg.angle) * dist);
+        group.rotation.y = cfg.angle + Math.PI + rotOffset;
+      });
+      tableProps.forEach(({ mesh, pd }) => {
+        mesh.position.set(
+          THREE.MathUtils.lerp(pd.messyPos[0], pd.neatPos[0], mix),
+          THREE.MathUtils.lerp(pd.messyPos[1], pd.neatPos[1], mix),
+          THREE.MathUtils.lerp(pd.messyPos[2], pd.neatPos[2], mix)
+        );
+        mesh.rotation.y = THREE.MathUtils.lerp(pd.messyRot, pd.neatRot, mix);
+      });
+    }
+    applyTableMix(0);
+
+    function resetAll() {
+      state.doorOpen = false;
+      state.peepBlinkTime = -10;
+      state.tableTidy = false;
+      state.posterOpen = false;
+      state.fridgeOpen = false;
+      state.isNight = false;
+      frameCameraToViewport();
+      showToast('Apartment reset to initial state');
     }
 
-    function triggerDinner(now) {
-      interactionState.dinnerStart = now;
-      interactionState.lastUserTouch = now;
-    }
+    document.getElementById('reset-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      audioEngine.playSfx('tidy');
+      resetAll();
+    });
 
+    // Raycaster & Tap Detection (distinguishes tap from orbit drag)
     const raycaster = new THREE.Raycaster();
-    const pointerNdc = new THREE.Vector2();
+    const pointer = new THREE.Vector2();
     let downX = 0;
     let downY = 0;
     let downTime = 0;
@@ -1148,379 +1997,195 @@
     renderer.domElement.addEventListener('pointerup', (e) => {
       const dx = e.clientX - downX;
       const dy = e.clientY - downY;
-      const dist = Math.hypot(dx, dy);
       const dt = performance.now() - downTime;
-      // Separate tap vs orbit drag
-      if (dist < 10 && dt < 500) {
-        const rect = renderer.domElement.getBoundingClientRect();
-        pointerNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        pointerNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-        raycaster.setFromCamera(pointerNdc, camera);
-        const hits = raycaster.intersectObjects(interactProxies, false);
-        if (hits.length > 0) {
-          window.__tvSfx&&window.__tvSfx();
-          const act = hits[0].object.userData.action;
-          const now = performance.now();
-          if (act === 'door') triggerDoor(now);
-          else if (act === 'dinner') triggerDinner(now);
+      if (Math.hypot(dx, dy) > 10 || dt > 500) return;
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(diorama.children, true);
+
+      let targetType = null;
+      for (const hit of hits) {
+        let obj = hit.object;
+        while (obj) {
+          if (obj.userData && obj.userData.interactable) {
+            targetType = obj.userData.interactable;
+            break;
+          }
+          obj = obj.parent;
         }
+        if (targetType) break;
+      }
+
+      if (!targetType) return;
+
+      if (targetType === 'peephole') {
+        state.peepBlinkTime = performance.now() * 0.001;
+        audioEngine.playSfx('knock');
+        showToast('Knock-knock! The peephole frame winks');
+      } else if (targetType === 'door') {
+        state.doorOpen = !state.doorOpen;
+        audioEngine.playSfx('door');
+        showToast(state.doorOpen ? 'Purple Door #20 opened to the hallway' : 'Purple Door #20 closed');
+      } else if (targetType === 'table') {
+        state.tableTidy = !state.tableTidy;
+        audioEngine.playSfx('tidy');
+        showToast(state.tableTidy ? 'Monica tidied the kitchen table!' : 'Table back to lived-in mode');
+      } else if (targetType === 'poster') {
+        state.posterOpen = !state.posterOpen;
+        audioEngine.playSfx('poster');
+        showToast(state.posterOpen ? 'JOUETS poster swung aside: hidden camera hole!' : 'JOUETS poster closed');
+      } else if (targetType === 'fridge') {
+        state.fridgeOpen = !state.fridgeOpen;
+        audioEngine.playSfx('fridge');
+        showToast(state.fridgeOpen ? 'Fridge opened — stocked & lit!' : 'Fridge closed');
+      } else if (targetType === 'window') {
+        state.isNight = !state.isNight;
+        audioEngine.playSfx('window');
+        showToast(state.isNight ? 'Nighttime in Greenwich Village' : 'Warm Manhattan daylight');
       }
     });
 
-    // ==========================================
-    // 12. ASPECT-AWARE CAMERA FRAMING
-    // ==========================================
-    // Fits 616x562, 390x844, 320x700 with comfortable clearance for header & footer pills
-    const sceneBoundsSphere = new THREE.Sphere(new THREE.Vector3(0.0, 1.75, -0.15), 4.95);
+    // =========================================================================
+    // 11. RESPONSIVE PORTRAIT-FIRST CAMERA FRAMING
+    // =========================================================================
+    // Compute scene bounding sphere once so nothing ever clips at 320x700, 390x844, 616x562, or desktop
+    const sceneBox = new THREE.Box3().setFromObject(diorama);
+    const sceneSphere = new THREE.Sphere();
+    sceneBox.getBoundingSphere(sceneSphere);
 
-    function updateCameraFraming() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      renderer.setSize(w, h);
-      camera.aspect = w / h;
+    // Classic sitcom cutaway direction: front-left-elevated so kitchen, bay window, couch & purple door are all prominent
+    const cutawayDir = new THREE.Vector3(-0.17, 0.76, 0.66).normalize();
 
-      // Reserve vertical safe margins for top title box and bottom hint pill
+    function frameCameraToViewport() {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const aspect = vw / vh;
+
+      camera.aspect = aspect;
+
+      // Adjust FOV slightly for tall portrait vs landscape so vertical space is filled richly
+      camera.fov = aspect < 0.75 ? 44 : 32;
+      camera.updateProjectionMatrix();
+
       const vFovRad = THREE.MathUtils.degToRad(camera.fov);
-      const hFovRad = 2 * Math.atan(Math.tan(vFovRad / 2) * camera.aspect);
+      const hFovRad = 2 * Math.atan(Math.tan(vFovRad / 2) * aspect);
 
-      const safeVerticalFraction = h < 640 ? 0.76 : 0.78;
-      const safeHorizontalFraction = w < 420 ? 0.88 : 0.86;
+      // Reserve safe margin for header pill at top and footer credit at bottom
+      const safeHorizFraction = aspect < 0.75 ? 0.95 : 0.84;
+      const safeVertFraction = aspect < 0.75 ? 0.78 : 0.78;
 
-      const distV = sceneBoundsSphere.radius / (Math.sin((vFovRad * safeVerticalFraction) / 2));
-      const distH = sceneBoundsSphere.radius / (Math.sin((hFovRad * safeHorizontalFraction) / 2));
-      const dist = Math.max(distV, distH) * 0.94;
+      // Projected horizontal & vertical extents of the angled cutaway box
+      const effectiveRadiusH = sceneSphere.radius * 0.91;
+      const effectiveRadiusV = sceneSphere.radius * 0.66;
 
-      // Position camera at classic sitcom cutaway angle (front-left-elevated) so kitchen, window, couch, and right-side purple door are all prominent
-      const elev = Math.PI * 0.195;
-      const azim = Math.PI * 0.135;
+      const distH = effectiveRadiusH / (Math.tan(hFovRad / 2) * safeHorizFraction);
+      const distV = effectiveRadiusV / (Math.tan(vFovRad / 2) * safeVertFraction);
+      const distance = Math.max(distH, distV) * (aspect < 0.75 ? 1.0 : 1.0);
 
-      const target = sceneBoundsSphere.center.clone();
-      // Slight vertical offset so diorama sits centered between header and footer
-      target.y += camera.aspect < 0.75 ? 0.12 : 0.05;
+      // Upward target offset on narrow screens so the diorama sits centered between header & footer
+      const targetYOffset = aspect < 0.75 ? 0.05 : 0.12;
+      const target = new THREE.Vector3(
+        sceneSphere.center.x + 0.30,
+        sceneSphere.center.y + targetYOffset,
+        sceneSphere.center.z
+      );
 
       controls.target.copy(target);
-      camera.position.set(
-        target.x + dist * Math.sin(azim) * Math.cos(elev),
-        target.y + dist * Math.sin(elev),
-        target.z + dist * Math.cos(azim) * Math.cos(elev)
-      );
-      controls.minDistance = dist * 0.72;
-      controls.maxDistance = dist * 1.25;
-      camera.updateProjectionMatrix();
+      camera.position.copy(target).addScaledVector(cutawayDir, distance);
+      controls.minDistance = distance * 0.55;
+      controls.maxDistance = distance * 1.45;
       controls.update();
     }
 
-    window.addEventListener('resize', updateCameraFraming);
-    updateCameraFraming();
+    frameCameraToViewport();
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      frameCameraToViewport();
+    });
 
-    // ==========================================
-    // 13. ANIMATION LOOP (performance.now only)
-    // ==========================================
-    function animate(now) {
+    // =========================================================================
+    // 12. RENDER LOOP & SUBTLE IDLE ANIMATIONS
+    // =========================================================================
+    const clock = new THREE.Clock();
+    const daySkyColor = new THREE.Color(0x87b8e6);
+    const nightSkyColor = new THREE.Color(0x131836);
+    const dayWinGlow = new THREE.Color(0xffefc2);
+    const nightWinGlow = new THREE.Color(0x283666);
+
+    function animate() {
       requestAnimationFrame(animate);
-      const t = now * 0.001;
+      const dt = Math.min(clock.getDelta(), 0.1);
+      const elapsed = clock.getElapsedTime();
 
-      // 1. IDLE ANIMATIONS:
-      // Gentle window-light shimmer on city windows
-      for (let i = 0; i < cityWindowMats.length; i++) {
-        const pulse = 0.85 + 0.15 * Math.sin(t * 1.4 + i * 1.7);
-        cityWindowMats[i].color.setRGB(1.0 * pulse, (i % 2 === 0 ? 0.84 : 0.64) * pulse, 0.42 * pulse);
+      // 1. Purple Door #20 swing + hallway light
+      const targetDoor = state.doorOpen ? -1.15 : 0;
+      state.doorAngle = THREE.MathUtils.lerp(state.doorAngle, targetDoor, dt * 7);
+      frontDoorPivot.rotation.y = state.doorAngle;
+      hallwayLight.intensity = THREE.MathUtils.lerp(hallwayLight.intensity, state.doorOpen ? 2.2 : 0.1, dt * 6);
+
+      // 2. Gold Peephole Frame knock & eye-blink animation
+      const blinkAge = elapsed - state.peepBlinkTime;
+      if (blinkAge >= 0 && blinkAge < 0.75) {
+        const bWave = Math.sin((blinkAge / 0.75) * Math.PI * 2);
+        peepEyelid.scale.y = Math.max(0.01, Math.abs(bWave));
+        peepEyelid.position.y = 0.08 * (1 - peepEyelid.scale.y);
+        peepholeGroup.scale.setScalar(1 + 0.08 * Math.sin(blinkAge * 24));
+      } else {
+        peepEyelid.scale.y = 0.01;
+        peepholeGroup.scale.setScalar(1);
       }
 
-      // Soft warm floor lamp flicker
-      const lampFlicker = 1.38 + 0.08 * Math.sin(t * 3.1) + 0.04 * Math.cos(t * 7.3);
-      livingLampLight.intensity = lampFlicker;
-      mats.lampShadeMat.emissiveIntensity = 0.62 + 0.08 * Math.sin(t * 3.1);
+      // 3. Kitchen Table Monica Tidy animation
+      const targetTidy = state.tableTidy ? 1 : 0;
+      if (Math.abs(state.tableTidyMix - targetTidy) > 0.001) {
+        state.tableTidyMix = THREE.MathUtils.lerp(state.tableTidyMix, targetTidy, dt * 7.5);
+        applyTableMix(state.tableTidyMix);
+      }
 
-      // Contained warm floating dust motes
-      const posAttr = moteGeo.getAttribute('position');
+      // 4. JOUETS Poster swing + hidden camera tally blink
+      const targetPoster = state.posterOpen ? 1.18 : 0;
+      state.posterAngle = THREE.MathUtils.lerp(state.posterAngle, targetPoster, dt * 7);
+      posterPivot.rotation.y = state.posterAngle;
+      tallyLight.material.color.setHex(Math.sin(elapsed * 6) > 0 ? 0xff2a2a : 0x550000);
+
+      // 5. Fridge door swing + interior light
+      const targetFridge = state.fridgeOpen ? 1.25 : 0;
+      state.fridgeAngle = THREE.MathUtils.lerp(state.fridgeAngle, targetFridge, dt * 7);
+      fridgeDoorPivot.rotation.y = state.fridgeAngle;
+      fridgeLight.intensity = THREE.MathUtils.lerp(fridgeLight.intensity, state.fridgeOpen ? 1.8 : 0.0, dt * 8);
+
+      // 6. Bay Window Day/Night transition
+      const targetNight = state.isNight ? 1 : 0;
+      state.nightMix = THREE.MathUtils.lerp(state.nightMix, targetNight, dt * 4.5);
+      skyBackdropMat.color.lerpColors(daySkyColor, nightSkyColor, state.nightMix);
+      mats.windowGlowDay.color.lerpColors(dayWinGlow, nightWinGlow, state.nightMix);
+      sunLight.intensity = THREE.MathUtils.lerp(1.65, 0.32, state.nightMix);
+      ambientLight.intensity = THREE.MathUtils.lerp(0.95, 0.52, state.nightMix);
+      livingLampLight.intensity = THREE.MathUtils.lerp(1.35, 2.25, state.nightMix) + Math.sin(elapsed * 3.1) * 0.05;
+
+      // 7. Subtle idle life: floating dust motes, gentle fern sway, TV screen flicker, face cup bob
+      const posAttr = dustMotes.geometry.attributes.position;
       for (let i = 0; i < moteCount; i++) {
-        const s = moteSeeds[i];
-        posAttr.setXYZ(
-          i,
-          s.x + Math.sin(t * s.speed + s.phase) * 0.14,
-          s.y + Math.cos(t * (s.speed * 0.8) + s.phase) * 0.12,
-          s.z + Math.sin(t * (s.speed * 0.6) + s.phase * 1.3) * 0.14
-        );
+        const phase = motePhases[i];
+        posAttr.array[i * 3 + 1] += Math.sin(elapsed * 0.7 + phase) * 0.0015;
+        posAttr.array[i * 3] += Math.cos(elapsed * 0.5 + phase) * 0.001;
       }
       posAttr.needsUpdate = true;
 
-      // Periodic 25-second subtle door-frame twinkle demo if untouched
-      let idleTwinkleEnv = 0;
-      if (now - interactionState.lastUserTouch > 25000) {
-        const cycleElapsed = (now - interactionState.lastIdleTwinkle) % 25000;
-        if (cycleElapsed < 2600) {
-          idleTwinkleEnv = Math.sin((cycleElapsed / 2600) * Math.PI);
-        }
-      } else {
-        interactionState.lastIdleTwinkle = now;
-      }
-
-      // 2. INTERACTION 1: PURPLE DOOR & YELLOW PEEPHOLE FRAME (6s cycle)
-      let doorEnv = 0;
-      if (interactionState.doorStart > 0) {
-        const elapsed = now - interactionState.doorStart;
-        if (elapsed < interactionState.doorDuration) {
-          const p = elapsed / interactionState.doorDuration;
-          // Smoothly open in first 20%, hold warm welcome, gently close by 6s
-          if (p < 0.18) {
-            doorEnv = Math.sin((p / 0.18) * (Math.PI / 2));
-          } else if (p < 0.68) {
-            doorEnv = 1.0;
-          } else {
-            doorEnv = Math.cos(((p - 0.68) / 0.32) * (Math.PI / 2));
-          }
-        } else {
-          interactionState.doorStart = -1;
-          doorEnv = 0;
-        }
-      }
-
-      // Apply door rotation (opens ~22 degrees inward so purple door face & yellow frame remain clearly visible)
-      doorPivot.rotation.y = doorEnv * 0.38;
-
-      // Yellow peephole frame twinkle & emissive boost
-      const combinedTwinkle = Math.max(doorEnv, idleTwinkleEnv * 0.75);
-      mats.yellowFrame.emissiveIntensity = 0.38 + combinedTwinkle * 1.45;
-      doorGlowLight.intensity = 0.4 + doorEnv * 3.2;
-
-      // Friendly welcome light sweep across entryway floor
-      if (doorEnv > 0.01) {
-        lightSweepMesh.material.opacity = doorEnv * 0.52;
-        const sweepProgress = ((now - interactionState.doorStart) % 2000) / 2000;
-        lightSweepMesh.position.z = 0.45 + sweepProgress * 0.95;
-        lightSweepMesh.scale.x = 0.85 + 0.35 * Math.sin(sweepProgress * Math.PI);
-      } else {
-        lightSweepMesh.material.opacity = 0;
-      }
-
-      // Animate yellow frame twinkle diamonds
-      for (let i = 0; i < doorTwinkles.length; i++) {
-        const tk = doorTwinkles[i];
-        if (combinedTwinkle > 0.02) {
-          const pulse = 0.5 + 0.5 * Math.sin(t * 9.0 + tk.phase);
-          const scVal = combinedTwinkle * (0.65 + 0.75 * pulse);
-          tk.mesh.scale.setScalar(Math.max(0.001, scVal));
-          tk.mesh.rotation.z = t * 3.5 + tk.phase;
-        } else {
-          tk.mesh.scale.setScalar(0.001);
-        }
-      }
-
-      // 3. INTERACTION 2: KITCHEN TABLE & STOVE POT DINNER MOMENT (8s cycle)
-      let dinnerEnv = 0;
-      if (interactionState.dinnerStart > 0) {
-        const elapsed = now - interactionState.dinnerStart;
-        if (elapsed < interactionState.dinnerDuration) {
-          const p = elapsed / interactionState.dinnerDuration;
-          if (p < 0.14) {
-            dinnerEnv = Math.sin((p / 0.14) * (Math.PI / 2));
-          } else if (p < 0.74) {
-            dinnerEnv = 1.0;
-          } else {
-            dinnerEnv = Math.cos(((p - 0.74) / 0.26) * (Math.PI / 2));
-          }
-        } else {
-          interactionState.dinnerStart = -1;
-          dinnerEnv = 0;
-        }
-      }
-
-      // Stove pot & kettle steam curls (faint idle steam + rich curling steam during dinner moment, strictly capped below header)
-      const steamIntensity = 0.18 + dinnerEnv * 0.82;
-      for (let i = 0; i < steamPuffs.length; i++) {
-        const sp = steamPuffs[i];
-        const cycle = (t * (0.55 + dinnerEnv * 0.45) + sp.offset) % 1.0;
-        // Originates at stove pot (-2.92, 1.32, -1.05) and curls up max 1.15 units (well below header)
-        const curlX = -2.92 + Math.sin(cycle * Math.PI * 3 + sp.phase) * (sp.radius * (0.5 + cycle));
-        const curlY = 1.32 + cycle * (0.75 + dinnerEnv * 0.55);
-        const curlZ = -1.05 + Math.cos(cycle * Math.PI * 3 + sp.phase) * (sp.radius * (0.5 + cycle));
-        sp.mesh.position.set(curlX, curlY, curlZ);
-
-        const env = Math.sin(cycle * Math.PI);
-        const sScale = (0.35 + dinnerEnv * 0.85) * (0.5 + cycle * 0.9);
-        sp.mesh.scale.setScalar(sScale);
-        sp.mesh.material.opacity = env * steamIntensity * 0.58;
-      }
-
-      // Dining Table Candle, Lamp & 4 Plates + Sparkles
-      dinnerTableLight.intensity = 0.85 + dinnerEnv * 2.85;
-      tableCandleGlow.material.emissiveIntensity = 0.65 + dinnerEnv * 1.8;
-      tableCandleGlow.scale.set(1 + dinnerEnv * 0.25, 1 + dinnerEnv * 0.35, 1 + dinnerEnv * 0.25);
-      sideLampShade.material.emissiveIntensity = 0.65 + dinnerEnv * 1.1;
-
-      // 4 Small Plates on Dining Table
-      for (let p = 0; p < dinnerPlates.length; p++) {
-        const pl = dinnerPlates[p];
-        if (dinnerEnv > 0.01) {
-          pl.visible = true;
-          const s = Math.max(0.001, dinnerEnv);
-          pl.scale.set(s, s, s);
-        } else {
-          pl.visible = false;
-          pl.scale.setScalar(0.001);
-        }
-      }
-
-      // Warm Little Sparkles dancing above Dining Table
-      for (let i = 0; i < tableSparkles.length; i++) {
-        const spk = tableSparkles[i];
-        if (dinnerEnv > 0.01) {
-          const wave = 0.5 + 0.5 * Math.sin(t * spk.speed * 3.0 + spk.phase);
-          const curAng = spk.ang + t * 0.9;
-          spk.mesh.position.set(
-            Math.cos(curAng) * spk.rad,
-            spk.baseY + Math.sin(t * 2.2 + spk.phase) * 0.14,
-            Math.sin(curAng) * spk.rad
-          );
-          spk.mesh.rotation.y = t * 3.0;
-          spk.mesh.rotation.z = t * 2.2;
-          spk.mesh.scale.setScalar(Math.max(0.001, dinnerEnv * (0.45 + 0.75 * wave)));
-        } else {
-          spk.mesh.scale.setScalar(0.001);
-        }
-      }
+      fern1.rotation.z = Math.sin(elapsed * 1.4) * 0.022;
+      fern2.rotation.x = Math.cos(elapsed * 1.2) * 0.022;
+      const tvFlicker = 0.88 + 0.12 * Math.sin(elapsed * 7.3) * Math.cos(elapsed * 3.7);
+      tvScreenMat.color.setRGB(0.42 * tvFlicker, 0.65 * tvFlicker, 0.85 * tvFlicker);
 
       controls.update();
       renderer.render(scene, camera);
     }
 
-    requestAnimationFrame(animate);
+    animate();
   </script>
-<script>
-/* tv-audio v1: procedural ambience + tap sfx. All sounds synthesized, no assets. */
-(() => {
-  const CFG = {"amb": ["room", "city"]};
-  const KEY = "tvmini-muted";
-  let ctx = null, master = null, analyser = null, NOISE = null, started = false;
-  let muted = false;
-  try { muted = localStorage.getItem(KEY) === "1"; } catch (e) {}
-
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.setAttribute("aria-label", "Toggle sound");
-  btn.style.cssText = "position:fixed;right:14px;bottom:max(14px,env(safe-area-inset-bottom));z-index:5;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:rgba(12,14,18,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:.8;transition:opacity .3s";
-  const ICON_ON = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#e8ecf2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
-  const ICON_OFF = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#e8ecf2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>';
-  const paint = () => { btn.innerHTML = muted ? ICON_OFF : ICON_ON; btn.style.opacity = muted ? ".45" : ".8"; };
-  paint();
-  document.body.appendChild(btn);
-
-  function ensureCtx(){
-    if (ctx) return;
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    ctx = new AC();
-    master = ctx.createGain(); master.gain.value = 0;
-    analyser = ctx.createAnalyser(); analyser.fftSize = 512;
-    master.connect(analyser); analyser.connect(ctx.destination);
-    NOISE = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-    const d = NOISE.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-  }
-  function noiseLoop(){ const s = ctx.createBufferSource(); s.buffer = NOISE; s.loop = true; s.start(); return s; }
-  function filt(type, f, q){ const n = ctx.createBiquadFilter(); n.type = type; n.frequency.value = f; if (q) n.Q.value = q; return n; }
-  function gn(v){ const n = ctx.createGain(); n.gain.value = v; return n; }
-  function lfo(freq, amt, param){ const o = ctx.createOscillator(); o.frequency.value = freq; const lg = gn(amt); o.connect(lg); lg.connect(param); o.start(); }
-  function hum(f, v){ const o = ctx.createOscillator(); o.frequency.value = f; const g2 = gn(v); o.connect(g2); g2.connect(master); o.start(); }
-  function every(minS, maxS, fn){ (function loop(){ if (ctx) fn(); setTimeout(loop, (minS + Math.random() * (maxS - minS)) * 1000); })(); }
-  function ping(type, f0, f1, dur, vol){
-    const o = ctx.createOscillator(); o.type = type; const g2 = gn(0);
-    o.frequency.setValueAtTime(f0, ctx.currentTime);
-    if (f1) o.frequency.exponentialRampToValueAtTime(f1, ctx.currentTime + dur);
-    o.connect(g2); g2.connect(master);
-    g2.gain.setValueAtTime(0, ctx.currentTime);
-    g2.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.012);
-    g2.gain.exponentialRampToValueAtTime(0.0004, ctx.currentTime + dur);
-    o.start(); o.stop(ctx.currentTime + dur + 0.05);
-  }
-  function shot(dur){
-    const s = ctx.createBufferSource(); s.buffer = NOISE;
-    const g2 = gn(0); s.connect(g2);
-    s.start(); s.stop(ctx.currentTime + dur);
-    return g2;
-  }
-  function echo(dt, fbv, wetv){
-    const dl = ctx.createDelay(1); dl.delayTime.value = dt;
-    const fb = gn(fbv); dl.connect(fb); fb.connect(dl);
-    const wet = gn(wetv); dl.connect(wet); wet.connect(master);
-    return dl;
-  }
-
-  const R = {
-    wind(){ const bp = filt("bandpass", 480, 0.5), g2 = gn(0.09); noiseLoop().connect(bp); bp.connect(g2); g2.connect(master); lfo(0.07, 0.045, g2.gain); lfo(0.13, 170, bp.frequency); },
-    coldwind(){ const bp = filt("bandpass", 830, 0.7), g2 = gn(0.065); noiseLoop().connect(bp); bp.connect(g2); g2.connect(master); lfo(0.09, 0.04, g2.gain); lfo(0.21, 250, bp.frequency); hum(52, 0.026); },
-    crackle(){ every(0.05, 0.3, () => { const hp = filt("highpass", 1900), g2 = shot(0.05); g2.connect(hp); hp.connect(master); g2.gain.setValueAtTime(0.015 + Math.random() * 0.045, ctx.currentTime); g2.gain.exponentialRampToValueAtTime(0.0004, ctx.currentTime + 0.05); }); hum(62, 0.011); },
-    murmur(){ const bp = filt("bandpass", 380, 1.1), g2 = gn(0.045); noiseLoop().connect(bp); bp.connect(g2); g2.connect(master); every(0.8, 2.4, () => bp.frequency.setTargetAtTime(250 + Math.random() * 380, ctx.currentTime, 0.4)); },
-    clink(){ every(4, 9, () => ping("sine", 2000 + Math.random() * 400, 0, 0.16, 0.028)); },
-    room(){ const lp = filt("lowpass", 220), g2 = gn(0.02); noiseLoop().connect(lp); lp.connect(g2); g2.connect(master); hum(58, 0.009); },
-    hum(){ hum(120, 0.011); hum(240, 0.005); const bp = filt("bandpass", 1150, 3), g2 = gn(0.004); noiseLoop().connect(bp); bp.connect(g2); g2.connect(master); },
-    humsoft(){ hum(100, 0.007); },
-    plink(){ const dl = echo(0.42, 0.3, 0.4); every(4.5, 9, () => { const f = [660, 587, 494, 440, 392][Math.floor(Math.random() * 5)]; const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = f; const g2 = gn(0); o.connect(g2); g2.connect(master); g2.connect(dl); g2.gain.setValueAtTime(0.04, ctx.currentTime); g2.gain.exponentialRampToValueAtTime(0.0004, ctx.currentTime + 1.4); o.start(); o.stop(ctx.currentTime + 1.5); }); },
-    leaves(){ const bp = filt("bandpass", 2300, 0.4), g2 = gn(0.028); noiseLoop().connect(bp); bp.connect(g2); g2.connect(master); lfo(0.3, 0.016, g2.gain); lfo(0.09, 550, bp.frequency); },
-    birds(){ every(3, 8, () => { const n = 2 + Math.floor(Math.random() * 2); for (let i = 0; i < n; i++) setTimeout(() => { if (ctx) ping("sine", 2700 + Math.random() * 600, 3200, 0.09, 0.03); }, i * 140); }); },
-    clank(){ const dl = echo(0.3, 0.35, 0.5); every(7, 15, () => { const bp = filt("bandpass", 820 + Math.random() * 300, 2.5), g2 = shot(0.14); g2.connect(bp); bp.connect(master); bp.connect(dl); g2.gain.setValueAtTime(0.05, ctx.currentTime); g2.gain.exponentialRampToValueAtTime(0.0004, ctx.currentTime + 0.14); }); },
-    cave(){ const lp = filt("lowpass", 280), g2 = gn(0.035); noiseLoop().connect(lp); lp.connect(g2); g2.connect(master); const dl = echo(0.32, 0.4, 0.35); every(2, 7, () => { const o = ctx.createOscillator(); o.frequency.setValueAtTime(1000 + Math.random() * 300, ctx.currentTime); o.frequency.exponentialRampToValueAtTime(480, ctx.currentTime + 0.16); const g3 = gn(0); o.connect(g3); g3.connect(master); g3.connect(dl); g3.gain.setValueAtTime(0.055, ctx.currentTime); g3.gain.exponentialRampToValueAtTime(0.0004, ctx.currentTime + 0.18); o.start(); o.stop(ctx.currentTime + 0.2); }); },
-    tick(){ let hi = false; every(1, 1, () => { hi = !hi; ping("square", hi ? 1900 : 1500, 0, 0.03, 0.028); }); },
-    clack(){ every(0.5, 2.4, () => { const n = 1 + Math.floor(Math.random() * 5); for (let i = 0; i < n; i++) setTimeout(() => { if (!ctx) return; const bp = filt("bandpass", 2400 + Math.random() * 800, 3), g2 = shot(0.03); g2.connect(bp); bp.connect(master); g2.gain.setValueAtTime(0.028, ctx.currentTime); g2.gain.exponentialRampToValueAtTime(0.0004, ctx.currentTime + 0.03); }, i * (55 + Math.random() * 60)); }); },
-    city(){ const lp = filt("lowpass", 400), g2 = gn(0.045); noiseLoop().connect(lp); lp.connect(g2); g2.connect(master); lfo(0.05, 0.015, g2.gain); hum(55, 0.018); },
-    crickets(){ every(1.2, 2.6, () => { for (let i = 0; i < 3; i++) setTimeout(() => { if (ctx) ping("sine", 4300, 4100, 0.05, 0.022); }, i * 75); }); }
-  };
-
-  function applyGain(){ if (!ctx || !master) return; master.gain.setTargetAtTime(muted ? 0 : 3.5, ctx.currentTime, 0.5); }
-  function unlock(){
-    ensureCtx();
-    if (!ctx) return;
-    if (ctx.state === "suspended") ctx.resume();
-    if (!started){ started = true; CFG.amb.forEach(n => R[n] && R[n]()); }
-    applyGain();
-  }
-  window.addEventListener("pointerdown", unlock, { passive: true });
-  window.addEventListener("keydown", unlock);
-  btn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    muted = !muted;
-    try { localStorage.setItem(KEY, muted ? "1" : "0"); } catch (err) {}
-    paint();
-    if (!ctx && !muted) unlock(); else applyGain();
-  });
-
-  window.__tvSfx = () => {
-    if (!ctx || muted || ctx.state !== "running") return;
-    ping("triangle", 640, 300, 0.11, 0.11);
-    const hp = filt("highpass", 2600), g2 = shot(0.02);
-    g2.connect(hp); hp.connect(master);
-    g2.gain.setValueAtTime(0.05, ctx.currentTime);
-    g2.gain.exponentialRampToValueAtTime(0.0004, ctx.currentTime + 0.02);
-  };
-  const abuf = new Uint8Array(256);
-  function record(sec){
-    return new Promise((res) => {
-      if (!ctx) return res(null);
-      const dest = ctx.createMediaStreamDestination();
-      master.connect(dest);
-      const rec = new MediaRecorder(dest.stream);
-      const chunks = [];
-      rec.ondataavailable = (e) => chunks.push(e.data);
-      rec.onstop = async () => {
-        master.disconnect(dest);
-        const blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" });
-        const bytes = new Uint8Array(await blob.arrayBuffer());
-        let bin = "";
-        for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
-        res(btoa(bin));
-      };
-      rec.start();
-      setTimeout(() => rec.stop(), sec * 1000);
-    });
-  }
-  window.__tvAudio = {
-    rms(){ if (!analyser) return -1; analyser.getByteTimeDomainData(abuf); let s = 0; for (let i = 0; i < abuf.length; i++){ const v = (abuf[i] - 128) / 128; s += v * v; } return Math.sqrt(s / abuf.length); },
-    state(){ return { started, muted, ctx: ctx ? ctx.state : "none" }; },
-    record
-  };
-})();
-</script>
-
 </body>
 </html>
