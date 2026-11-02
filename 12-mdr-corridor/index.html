@@ -604,7 +604,7 @@ let firstFrames = 0;
     crickets(){ every(1.2, 2.6, () => { for (let i = 0; i < 3; i++) setTimeout(() => { if (ctx) ping("sine", 4300, 4100, 0.05, 0.022); }, i * 75); }); }
   };
 
-  function applyGain(){ if (!ctx || !master) return; master.gain.setTargetAtTime(muted ? 0 : 1, ctx.currentTime, 0.5); }
+  function applyGain(){ if (!ctx || !master) return; master.gain.setTargetAtTime(muted ? 0 : 3.5, ctx.currentTime, 0.5); }
   function unlock(){
     ensureCtx();
     if (!ctx) return;
