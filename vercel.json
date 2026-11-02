@@ -28,7 +28,7 @@
           "value": "friends.somiljain.com"
         }
       ],
-      "destination": "/03-central-perk/$1"
+      "destination": "/15-monicas-apartment/$1"
     },
     {
       "source": "/(.*)",
