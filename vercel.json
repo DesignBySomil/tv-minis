@@ -129,6 +129,16 @@
         }
       ],
       "destination": "/13-apartment-4a/$1"
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "youngsheldon.somiljain.com"
+        }
+      ],
+      "destination": "/14-garage-universe/$1"
     }
   ]
 }
