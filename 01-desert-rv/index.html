@@ -104,6 +104,30 @@ function allCornersFit(){
   }
   return true;
 }
+
+/* shift camera+orbit-target in the screen plane so the projected model
+   bounding box lands at viewport centre (small lift for the hint pill) */
+function centerProjectedModel(){
+  for (let pass = 0; pass < 2; pass++){
+    camera.updateMatrixWorld();
+    const p = new THREE.Vector3();
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const c of FIT_CORNERS){
+      p.copy(c).project(camera);
+      if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+    }
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    const dist = camera.position.distanceTo(controls.target);
+    const halfH = Math.tan(camera.fov * Math.PI / 360) * dist;
+    const halfW = halfH * camera.aspect;
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+    camera.position.addScaledVector(right, cx * halfW).addScaledVector(up, (cy - 0.05) * halfH);
+    controls.target.addScaledVector(right, cx * halfW).addScaledVector(up, (cy - 0.05) * halfH);
+    camera.lookAt(controls.target);
+  }
+}
 function frameForViewport(){
   const aspect = innerWidth/innerHeight;
   camera.aspect = aspect;
@@ -121,6 +145,7 @@ function frameForViewport(){
   }
   camera.position.copy(controls.target).addScaledVector(dir, hi);
   camera.lookAt(controls.target);
+  centerProjectedModel();
 }
 camera.position.set(6.3, 5.7, 1.4);
 frameForViewport();
@@ -697,12 +722,13 @@ renderer.domElement.addEventListener('pointerup', e=>{
   const doorHit = ray.intersectObjects(doorPivot.children, true);
   const rvHit = ray.intersectObject(rv, true);
   if (doorHit.length || rvHit.length){
+    window.__tvSfx&&window.__tvSfx();
     doorOpenTarget = !doorOpenTarget;
     if (doorOpenTarget){ puffSmoke(); } else { smokeOn = false; }
     return;
   }
   const skyHit = ray.intersectObject(sky);
-  if (skyHit.length) cycleState();
+  if (skyHit.length){ window.__tvSfx&&window.__tvSfx(); cycleState(); }
 });
 
 /* ================= resize / loop ================= */
@@ -769,7 +795,141 @@ function tick(){
 }
 applyState(STATES[stateIdx]);
 tick();
-setTimeout(()=>{ controls.autoRotate = true; }, 25000);
 </script>
+<script>
+/* tv-audio v1: procedural ambience + tap sfx. All sounds synthesized, no assets. */
+(() => {
+  const CFG = {"amb": ["wind", "crackle"]};
+  const KEY = "tvmini-muted";
+  let ctx = null, master = null, analyser = null, NOISE = null, started = false;
+  let muted = false;
+  try { muted = localStorage.getItem(KEY) === "1"; } catch (e) {}
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.setAttribute("aria-label", "Toggle sound");
+  btn.style.cssText = "position:fixed;right:14px;bottom:max(14px,env(safe-area-inset-bottom));z-index:5;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:rgba(12,14,18,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:.8;transition:opacity .3s";
+  const ICON_ON = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#e8ecf2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+  const ICON_OFF = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#e8ecf2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>';
+  const paint = () => { btn.innerHTML = muted ? ICON_OFF : ICON_ON; btn.style.opacity = muted ? ".45" : ".8"; };
+  paint();
+  document.body.appendChild(btn);
+
+  function ensureCtx(){
+    if (ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    ctx = new AC();
+    master = ctx.createGain(); master.gain.value = 0;
+    analyser = ctx.createAnalyser(); analyser.fftSize = 512;
+    master.connect(analyser); analyser.connect(ctx.destination);
+    NOISE = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+    const d = NOISE.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  function noiseLoop(){ const s = ctx.createBufferSource(); s.buffer = NOISE; s.loop = true; s.start(); return s; }
+  function filt(type, f, q){ const n = ctx.createBiquadFilter(); n.type = type; n.frequency.value = f; if (q) n.Q.value = q; return n; }
+  function gn(v){ const n = ctx.createGain(); n.gain.value = v; return n; }
+  function lfo(freq, amt, param){ const o = ctx.createOscillator(); o.frequency.value = freq; const lg = gn(amt); o.connect(lg); lg.connect(param); o.start(); }
+  function hum(f, v){ const o = ctx.createOscillator(); o.frequency.value = f; const g2 = gn(v); o.connect(g2); g2.connect(master); o.start(); }
+  function every(minS, maxS, fn){ (function loop(){ if (ctx) fn(); setTimeout(loop, (minS + Math.random() * (maxS - minS)) * 1000); })(); }
+  function ping(type, f0, f1, dur, vol){
+    const o = ctx.createOscillator(); o.type = type; const g2 = gn(0);
+    o.frequency.setValueAtTime(f0, ctx.currentTime);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, ctx.currentTime + dur);
+    o.connect(g2); g2.connect(master);
+    g2.gain.setValueAtTime(0, ctx.currentTime);
+    g2.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.012);
+    g2.gain.exponentialRampToValueAtTime(0.0004, ctx.currentTime + dur);
+    o.start(); o.stop(ctx.currentTime + dur + 0.05);
+  }
+  function shot(dur){
+    const s = ctx.createBufferSource(); s.buffer = NOISE;
+    const g2 = gn(0); s.connect(g2);
+    s.start(); s.stop(ctx.currentTime + dur);
+    return g2;
+  }
+  function echo(dt, fbv, wetv){
+    const dl = ctx.createDelay(1); dl.delayTime.value = dt;
+    const fb = gn(fbv); dl.connect(fb); fb.connect(dl);
+    const wet = gn(wetv); dl.connect(wet); wet.connect(master);
+    return dl;
+  }
+
+  const R = {
+    wind(){ const bp = filt("bandpass", 480, 0.5), g2 = gn(0.09); noiseLoop().connect(bp); bp.connect(g2); g2.connect(master); lfo(0.07, 0.045, g2.gain); lfo(0.13, 170, bp.frequency); },
+    coldwind(){ const bp = filt("bandpass", 830, 0.7), g2 = gn(0.065); noiseLoop().connect(bp); bp.connect(g2); g2.connect(master); lfo(0.09, 0.04, g2.gain); lfo(0.21, 250, bp.frequency); hum(52, 0.026); },
+    crackle(){ every(0.05, 0.3, () => { const hp = filt("highpass", 1900), g2 = shot(0.05); g2.connect(hp); hp.connect(master); g2.gain.setValueAtTime(0.015 + Math.random() * 0.045, ctx.currentTime); g2.gain.exponentialRampToValueAtTime(0.0004, ctx.currentTime + 0.05); }); hum(62, 0.011); },
+    murmur(){ const bp = filt("bandpass", 380, 1.1), g2 = gn(0.045); noiseLoop().connect(bp); bp.connect(g2); g2.connect(master); every(0.8, 2.4, () => bp.frequency.setTargetAtTime(250 + Math.random() * 380, ctx.currentTime, 0.4)); },
+    clink(){ every(4, 9, () => ping("sine", 2000 + Math.random() * 400, 0, 0.16, 0.028)); },
+    room(){ const lp = filt("lowpass", 220), g2 = gn(0.02); noiseLoop().connect(lp); lp.connect(g2); g2.connect(master); hum(58, 0.009); },
+    hum(){ hum(120, 0.011); hum(240, 0.005); const bp = filt("bandpass", 1150, 3), g2 = gn(0.004); noiseLoop().connect(bp); bp.connect(g2); g2.connect(master); },
+    humsoft(){ hum(100, 0.007); },
+    plink(){ const dl = echo(0.42, 0.3, 0.4); every(4.5, 9, () => { const f = [660, 587, 494, 440, 392][Math.floor(Math.random() * 5)]; const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = f; const g2 = gn(0); o.connect(g2); g2.connect(master); g2.connect(dl); g2.gain.setValueAtTime(0.04, ctx.currentTime); g2.gain.exponentialRampToValueAtTime(0.0004, ctx.currentTime + 1.4); o.start(); o.stop(ctx.currentTime + 1.5); }); },
+    leaves(){ const bp = filt("bandpass", 2300, 0.4), g2 = gn(0.028); noiseLoop().connect(bp); bp.connect(g2); g2.connect(master); lfo(0.3, 0.016, g2.gain); lfo(0.09, 550, bp.frequency); },
+    birds(){ every(3, 8, () => { const n = 2 + Math.floor(Math.random() * 2); for (let i = 0; i < n; i++) setTimeout(() => { if (ctx) ping("sine", 2700 + Math.random() * 600, 3200, 0.09, 0.03); }, i * 140); }); },
+    clank(){ const dl = echo(0.3, 0.35, 0.5); every(7, 15, () => { const bp = filt("bandpass", 820 + Math.random() * 300, 2.5), g2 = shot(0.14); g2.connect(bp); bp.connect(master); bp.connect(dl); g2.gain.setValueAtTime(0.05, ctx.currentTime); g2.gain.exponentialRampToValueAtTime(0.0004, ctx.currentTime + 0.14); }); },
+    cave(){ const lp = filt("lowpass", 280), g2 = gn(0.035); noiseLoop().connect(lp); lp.connect(g2); g2.connect(master); const dl = echo(0.32, 0.4, 0.35); every(2, 7, () => { const o = ctx.createOscillator(); o.frequency.setValueAtTime(1000 + Math.random() * 300, ctx.currentTime); o.frequency.exponentialRampToValueAtTime(480, ctx.currentTime + 0.16); const g3 = gn(0); o.connect(g3); g3.connect(master); g3.connect(dl); g3.gain.setValueAtTime(0.055, ctx.currentTime); g3.gain.exponentialRampToValueAtTime(0.0004, ctx.currentTime + 0.18); o.start(); o.stop(ctx.currentTime + 0.2); }); },
+    tick(){ let hi = false; every(1, 1, () => { hi = !hi; ping("square", hi ? 1900 : 1500, 0, 0.03, 0.028); }); },
+    clack(){ every(0.5, 2.4, () => { const n = 1 + Math.floor(Math.random() * 5); for (let i = 0; i < n; i++) setTimeout(() => { if (!ctx) return; const bp = filt("bandpass", 2400 + Math.random() * 800, 3), g2 = shot(0.03); g2.connect(bp); bp.connect(master); g2.gain.setValueAtTime(0.028, ctx.currentTime); g2.gain.exponentialRampToValueAtTime(0.0004, ctx.currentTime + 0.03); }, i * (55 + Math.random() * 60)); }); },
+    city(){ const lp = filt("lowpass", 400), g2 = gn(0.045); noiseLoop().connect(lp); lp.connect(g2); g2.connect(master); lfo(0.05, 0.015, g2.gain); hum(55, 0.018); },
+    crickets(){ every(1.2, 2.6, () => { for (let i = 0; i < 3; i++) setTimeout(() => { if (ctx) ping("sine", 4300, 4100, 0.05, 0.022); }, i * 75); }); }
+  };
+
+  function applyGain(){ if (!ctx || !master) return; master.gain.setTargetAtTime(muted ? 0 : 3.5, ctx.currentTime, 0.5); }
+  function unlock(){
+    ensureCtx();
+    if (!ctx) return;
+    if (ctx.state === "suspended") ctx.resume();
+    if (!started){ started = true; CFG.amb.forEach(n => R[n] && R[n]()); }
+    applyGain();
+  }
+  window.addEventListener("pointerdown", unlock, { passive: true });
+  window.addEventListener("keydown", unlock);
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    muted = !muted;
+    try { localStorage.setItem(KEY, muted ? "1" : "0"); } catch (err) {}
+    paint();
+    if (!ctx && !muted) unlock(); else applyGain();
+  });
+
+  window.__tvSfx = () => {
+    if (!ctx || muted || ctx.state !== "running") return;
+    ping("triangle", 640, 300, 0.11, 0.11);
+    const hp = filt("highpass", 2600), g2 = shot(0.02);
+    g2.connect(hp); hp.connect(master);
+    g2.gain.setValueAtTime(0.05, ctx.currentTime);
+    g2.gain.exponentialRampToValueAtTime(0.0004, ctx.currentTime + 0.02);
+  };
+  const abuf = new Uint8Array(256);
+  function record(sec){
+    return new Promise((res) => {
+      if (!ctx) return res(null);
+      const dest = ctx.createMediaStreamDestination();
+      master.connect(dest);
+      const rec = new MediaRecorder(dest.stream);
+      const chunks = [];
+      rec.ondataavailable = (e) => chunks.push(e.data);
+      rec.onstop = async () => {
+        master.disconnect(dest);
+        const blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" });
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        let bin = "";
+        for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+        res(btoa(bin));
+      };
+      rec.start();
+      setTimeout(() => rec.stop(), sec * 1000);
+    });
+  }
+  window.__tvAudio = {
+    rms(){ if (!analyser) return -1; analyser.getByteTimeDomainData(abuf); let s = 0; for (let i = 0; i < abuf.length; i++){ const v = (abuf[i] - 128) / 128; s += v * v; } return Math.sqrt(s / abuf.length); },
+    state(){ return { started, muted, ctx: ctx ? ctx.state : "none" }; },
+    record
+  };
+})();
+</script>
+
 </body>
 </html>
