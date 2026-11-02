@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Apartment 4A — Inspired by The Big Bang Theory</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0e1019;
+      background-image: radial-gradient(circle at 50% 42%, #1d2336 0%, #0d1018 74%, #07090e 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #f4ece1;
+      touch-action: none;
+    }
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+    canvas:active {
+      cursor: grabbing;
+    }
+    /* Safe HUD Layout with strict top/bottom bands */
+    #hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px 16px 12px;
+    }
+    .header-box {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
+    }
+    h1.title {
+      font-family: Georgia, "Times New Roman", Times, serif;
+      font-size: clamp(1.35rem, 3.8vw, 1.95rem);
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: #ffeed6;
+      line-height: 1.1;
+    }
+    p.subtitle {
+      font-size: clamp(0.75rem, 2.2vw, 0.9rem);
+      font-weight: 400;
+      letter-spacing: 0.05em;
+      color: #b7c3db;
+      line-height: 1.2;
+    }
+    .hint-pill {
+      margin-top: 4px;
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(18, 23, 36, 0.78);
+      border: 1px solid rgba(255, 206, 138, 0.28);
+      color: #ffd79b;
+      font-size: clamp(0.68rem, 2vw, 0.8rem);
+      letter-spacing: 0.04em;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+      transition: border-color 0.3s ease, color 0.3s ease;
+    }
+    .footer-box {
+      text-align: center;
+      font-family: Georgia, "Times New Roman", Times, serif;
+      font-size: clamp(0.72rem, 2vw, 0.84rem);
+      font-style: italic;
+      letter-spacing: 0.08em;
+      color: rgba(235, 224, 208, 0.65);
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+    }
+    /* Floating locally-anchored labels clamped strictly inside safe zone */
+    .floating-label {
+      position: fixed;
+      left: 0;
+      top: 0;
+      transform: translate(-50%, -100%);
+      pointer-events: none;
+      z-index: 8;
+      padding: 5px 11px;
+      border-radius: 8px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 700;
+      font-size: clamp(0.76rem, 2.2vw, 0.9rem);
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.18s ease;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.65);
+    }
+    #spot-label {
+      background: rgba(26, 20, 14, 0.9);
+      border: 1.5px solid #ffbe55;
+      color: #ffdf9e;
+    }
+    #knock-label {
+      background: rgba(24, 18, 12, 0.9);
+      border: 1.5px solid #ffa94d;
+      color: #ffd096;
+      font-style: italic;
+    }
+    #fallback-msg {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: #10131d;
+      color: #f2e8dc;
+      padding: 24px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-family: sans-serif;
+    }
+    #fallback-msg .card {
+      max-width: 400px;
+      background: #1a2030;
+      border: 1px solid #394564;
+      padding: 20px;
+      border-radius: 12px;
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <div id="hud">
+    <div class="header-box" id="hud-header">
+      <h1 class="title">Apartment 4A</h1>
+      <p class="subtitle">inspired by The Big Bang Theory</p>
+      <div class="hint-pill">tap the couch spot &middot; tap 4A door</div>
+    </div>
+    <div class="footer-box" id="hud-footer">A tiny world</div>
+  </div>
+
+  <div id="spot-label" class="floating-label">My spot</div>
+  <div id="knock-label" class="floating-label">knock knock knock</div>
+
+  <div id="fallback-msg">
+    <div class="card">
+      <h2 style="margin-bottom:8px;color:#ffd599;">WebGL Required</h2>
+      <p style="font-size:0.9rem;line-height:1.4;color:#c5cee0;">
+        Unable to initialize the 3D miniature of Apartment 4A. Please ensure hardware acceleration and WebGL are enabled in your browser.
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // Deterministic PRNG: mulberry32(20261102)
+    function mulberry32(seed) {
+      let a = seed >>> 0;
+      return function () {
+        let t = (a += 0x6D2B79F5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    const rand = mulberry32(20261102);
+    const randRange = (min, max) => min + rand() * (max - min);
+
+    const container = document.getElementById('canvas-container');
+    const spotLabelEl = document.getElementById('spot-label');
+    const knockLabelEl = document.getElementById('knock-label');
+    const hudHeaderEl = document.getElementById('hud-header');
+    const hudFooterEl = document.getElementById('hud-footer');
+    const fallbackEl = document.getElementById('fallback-msg');
+
+    let renderer, scene, camera, controls;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    } catch (err) {
+      fallbackEl.style.display = 'flex';
+      throw err;
+    }
+
+    const maxDPR = Math.min(window.devicePixelRatio || 1, 1.85);
+    renderer.setPixelRatio(maxDPR);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.18;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(renderer.domElement);
+
+    scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x111522, 0.022);
+
+    camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.5, 80);
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.065;
+    controls.enablePan = false;
+    controls.minPolarAngle = 0.52;
+    controls.maxPolarAngle = 1.38;
+    controls.minAzimuthAngle = -0.38;
+    controls.maxAzimuthAngle = 1.25;
+
+    const dioramaRoot = new THREE.Group();
+    scene.add(dioramaRoot);
+
+    // Procedural Canvas Textures
+    function createRugTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#8b2f23';
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Warm geometric concentric borders & medallions
+      const borders = [
+        { pad: 18, color: '#d7a85b', w: 8 },
+        { pad: 34, color: '#2b4257', w: 14 },
+        { pad: 56, color: '#e6caa0', w: 6 },
+        { pad: 74, color: '#5c1d18', w: 10 }
+      ];
+      borders.forEach(b => {
+        ctx.strokeStyle = b.color;
+        ctx.lineWidth = b.w;
+        ctx.strokeRect(b.pad, b.pad, 512 - b.pad * 2, 512 - b.pad * 2);
+      });
+
+      // Repeating diamond motifs
+      for (let y = 96; y <= 416; y += 64) {
+        for (let x = 96; x <= 416; x += 64) {
+          ctx.fillStyle = ((x + y) / 64) % 2 === 0 ? '#d89b48' : '#2d4c63';
+          ctx.beginPath();
+          ctx.moveTo(x, y - 22);
+          ctx.lineTo(x + 22, y);
+          ctx.lineTo(x, y + 22);
+          ctx.lineTo(x - 22, y);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.fillStyle = '#f2dec0';
+          ctx.beginPath();
+          ctx.arc(x, y, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      // Subtle woven grain
+      ctx.fillStyle = 'rgba(255,240,210,0.04)';
+      for (let i = 0; i < 1200; i++) {
+        ctx.fillRect(Math.floor(rand() * 512), Math.floor(rand() * 512), 2, 2);
+      }
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 4;
+      return tex;
+    }
+
+    function createWhiteboardTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 384;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#f5f7fa';
+      ctx.fillRect(0, 0, 512, 384);
+
+      // Subtle dry-erase smudge
+      const grad = ctx.createRadialGradient(256, 192, 30, 256, 192, 240);
+      grad.addColorStop(0, 'rgba(210,220,235,0.25)');
+      grad.addColorStop(1, 'rgba(245,247,250,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 384);
+
+      ctx.strokeStyle = '#1d3557';
+      ctx.fillStyle = '#1d3557';
+      ctx.lineWidth = 3;
+      ctx.font = 'bold 20px Georgia, serif';
+      ctx.fillText('H|\u03C8\u27E9 = E|\u03C8\u27E9', 26, 42);
+      ctx.font = 'italic 17px Georgia, serif';
+      ctx.fillText('ds\u00B2 = -(1 - 2GM/r)dt\u00B2 + dr\u00B2/(1 - 2GM/r)', 26, 74);
+      ctx.fillText('\u2211 L_\u03BC\u03BD = \u2202_\u03BC A_\u03BD - \u2202_\u03BD A_\u03BC', 26, 106);
+
+      // Feynman-like diagram
+      ctx.strokeStyle = '#b8292f';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(40, 150);
+      ctx.lineTo(110, 190);
+      ctx.moveTo(40, 230);
+      ctx.lineTo(110, 190);
+      ctx.stroke();
+
+      // Wavy propagator
+      ctx.strokeStyle = '#1f6f8b';
+      ctx.beginPath();
+      for (let x = 110; x <= 210; x += 5) {
+        const y = 190 + Math.sin((x - 110) * 0.25) * 9;
+        if (x === 110) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      ctx.strokeStyle = '#b8292f';
+      ctx.beginPath();
+      ctx.moveTo(210, 190);
+      ctx.lineTo(275, 150);
+      ctx.moveTo(210, 190);
+      ctx.lineTo(275, 230);
+      ctx.stroke();
+
+      // Geometric orbital rings & vectors on right side
+      ctx.strokeStyle = '#264653';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.ellipse(390, 135, 75, 36, 0.35, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(390, 135, 75, 36, -0.45, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Sine wave plot bottom
+      ctx.strokeStyle = '#2a9d8f';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(35, 320);
+      ctx.lineTo(470, 320);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#e76f51';
+      ctx.beginPath();
+      for (let x = 40; x < 460; x += 4) {
+        const env = Math.exp(-Math.pow((x - 250) / 110, 2));
+        const y = 320 - Math.cos((x - 250) * 0.14) * 44 * env;
+        if (x === 40) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createDoorPlaqueTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#d8a648';
+      ctx.fillRect(0, 0, 256, 128);
+      ctx.strokeStyle = '#704e14';
+      ctx.lineWidth = 8;
+      ctx.strokeRect(8, 8, 240, 112);
+      ctx.fillStyle = '#1f1608';
+      ctx.font = 'bold 82px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('4A', 128, 68);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createCautionTapeTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 64;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#f4c41c';
+      ctx.fillRect(0, 0, 512, 64);
+      ctx.fillStyle = '#181818';
+      for (let x = -64; x < 576; x += 64) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + 30, 0);
+        ctx.lineTo(x + 6, 64);
+        ctx.lineTo(x - 24, 64);
+        ctx.closePath();
+        ctx.fill();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createWoodFloorTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#7d5233';
+      ctx.fillRect(0, 0, 512, 512);
+      const rows = 16;
+      const rowH = 512 / rows;
+      for (let r = 0; r < rows; r++) {
+        const y = r * rowH;
+        const offset = (r % 2) * 128;
+        for (let x = -128; x < 512; x += 128) {
+          const shade = Math.floor(randRange(-12, 12));
+          ctx.fillStyle = `rgb(${125 + shade}, ${82 + Math.floor(shade * 0.7)}, ${51 + Math.floor(shade * 0.5)})`;
+          ctx.fillRect(x + offset, y, 126, rowH - 2);
+        }
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(2, 2);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createMonitorTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 192;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#0d2238';
+      ctx.fillRect(0, 0, 256, 192);
+      ctx.fillStyle = '#48cae4';
+      for (let y = 20; y < 140; y += 14) {
+        const w = 40 + ((y * 17) % 140);
+        ctx.fillRect(20, y, w, 6);
+      }
+      ctx.strokeStyle = '#90e0ef';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(195, 115, 32, 0, Math.PI * 2);
+      ctx.stroke();
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    // Shared Materials
+    const mats = {
+      baseOuter: new THREE.MeshStandardMaterial({ color: 0x261c16, roughness: 0.55, metalness: 0.08 }),
+      baseTrim: new THREE.MeshStandardMaterial({ color: 0x9b7442, roughness: 0.35, metalness: 0.45 }),
+      floorWood: new THREE.MeshStandardMaterial({ map: createWoodFloorTexture(), roughness: 0.62 }),
+      hallFloor: new THREE.MeshStandardMaterial({ color: 0x5c5750, roughness: 0.75 }),
+      wallCream: new THREE.MeshStandardMaterial({ color: 0xd9ccb8, roughness: 0.82 }),
+      wallHall: new THREE.MeshStandardMaterial({ color: 0xbcae99, roughness: 0.85 }),
+      wallCap: new THREE.MeshStandardMaterial({ color: 0x4a372a, roughness: 0.5 }),
+      wainscot: new THREE.MeshStandardMaterial({ color: 0x8a6647, roughness: 0.65 }),
+      woodFurniture: new THREE.MeshStandardMaterial({ color: 0x5d3a22, roughness: 0.58 }),
+      woodDark: new THREE.MeshStandardMaterial({ color: 0x3b2313, roughness: 0.52 }),
+      leatherMain: new THREE.MeshStandardMaterial({ color: 0x6b3a20, roughness: 0.46, metalness: 0.05 }),
+      leatherSeat: new THREE.MeshStandardMaterial({ color: 0x7a4326, roughness: 0.42, metalness: 0.05 }),
+      leatherSpot: new THREE.MeshStandardMaterial({
+        color: 0x84492a,
+        roughness: 0.38,
+        metalness: 0.05,
+        emissive: new THREE.Color(0xff9d2e),
+        emissiveIntensity: 0.0
+      }),
+      pillowRed: new THREE.MeshStandardMaterial({ color: 0xc83e2b, roughness: 0.72 }),
+      pillowGold: new THREE.MeshStandardMaterial({ color: 0xe09f3e, roughness: 0.72 }),
+      doorGreen: new THREE.MeshStandardMaterial({
+        color: 0x365b45,
+        roughness: 0.55,
+        emissive: new THREE.Color(0xff9f38),
+        emissiveIntensity: 0.0
+      }),
+      elevatorMetal: new THREE.MeshStandardMaterial({ color: 0x6f7782, roughness: 0.4, metalness: 0.55 }),
+      elevatorDark: new THREE.MeshStandardMaterial({ color: 0x2c3038, roughness: 0.6, metalness: 0.3 }),
+      brass: new THREE.MeshStandardMaterial({ color: 0xd8a84c, roughness: 0.28, metalness: 0.78 }),
+      metalSilver: new THREE.MeshStandardMaterial({ color: 0xb8c0c8, roughness: 0.3, metalness: 0.7 }),
+      ceramicWhite: new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.25 }),
+      takeoutRed: new THREE.MeshStandardMaterial({ color: 0xc93b2b, roughness: 0.5 }),
+      mugBlue: new THREE.MeshStandardMaterial({ color: 0x2b5c8f, roughness: 0.3 }),
+      mugOrange: new THREE.MeshStandardMaterial({ color: 0xd96b27, roughness: 0.3 }),
+      lampShade: new THREE.MeshStandardMaterial({
+        color: 0xffe3b3,
+        roughness: 0.4,
+        emissive: new THREE.Color(0xffae42),
+        emissiveIntensity: 0.85
+      }),
+      windowGlow: new THREE.MeshBasicMaterial({ color: 0x5688c7 }),
+      blinds: new THREE.MeshStandardMaterial({ color: 0xdce3ec, roughness: 0.6 }),
+      monitorCase: new THREE.MeshStandardMaterial({ color: 0x999487, roughness: 0.65 }),
+      monitorScreen: new THREE.MeshStandardMaterial({
+        map: createMonitorTexture(),
+        roughness: 0.2,
+        emissive: new THREE.Color(0x3a96dd),
+        emissiveIntensity: 0.75
+      }),
+      rug: new THREE.MeshStandardMaterial({ map: createRugTexture(), roughness: 0.88 }),
+      whiteboard: new THREE.MeshStandardMaterial({ map: createWhiteboardTexture(), roughness: 0.35 }),
+      plaque4A: new THREE.MeshStandardMaterial({ map: createDoorPlaqueTexture(), roughness: 0.3, metalness: 0.4 }),
+      cautionTape: new THREE.MeshStandardMaterial({
+        map: createCautionTapeTexture(),
+        roughness: 0.5,
+        emissive: new THREE.Color(0x554000),
+        emissiveIntensity: 0.18
+      })
+    };
+
+    // Helper for rounded display base
+    function createRoundedBase(w, d, h, r) {
+      const shape = new THREE.Shape();
+      const hw = w / 2, hd = d / 2;
+      shape.moveTo(-hw + r, -hd);
+      shape.lineTo(hw - r, -hd);
+      shape.quadraticCurveTo(hw, -hd, hw, -hd + r);
+      shape.lineTo(hw, hd - r);
+      shape.quadraticCurveTo(hw, hd, hw - r, hd);
+      shape.lineTo(-hw + r, hd);
+      shape.quadraticCurveTo(-hw, hd, -hw, hd - r);
+      shape.lineTo(-hw, -hd + r);
+      shape.quadraticCurveTo(-hw, -hd, -hw + r, -hd);
+
+      const extrude = new THREE.ExtrudeGeometry(shape, {
+        depth: h,
+        bevelEnabled: true,
+        bevelSegments: 3,
+        steps: 1,
+        bevelSize: 0.08,
+        bevelThickness: 0.08
+      });
+      extrude.rotateX(Math.PI / 2);
+      return extrude;
+    }
+
+    // 1. Thick Rounded Display Base & Floors
+    const baseGroup = new THREE.Group();
+    dioramaRoot.add(baseGroup);
+
+    const plinthGeo = createRoundedBase(7.6, 5.9, 0.52, 0.45);
+    const plinthMesh = new THREE.Mesh(plinthGeo, mats.baseOuter);
+    plinthMesh.position.y = 0;
+    plinthMesh.receiveShadow = true;
+    baseGroup.add(plinthMesh);
+
+    const brassRimGeo = createRoundedBase(7.42, 5.72, 0.06, 0.42);
+    const brassRim = new THREE.Mesh(brassRimGeo, mats.baseTrim);
+    brassRim.position.y = 0.03;
+    baseGroup.add(brassRim);
+
+    // Living room wood floor
+    const livingFloor = new THREE.Mesh(new THREE.BoxGeometry(5.15, 0.08, 5.35), mats.floorWood);
+    livingFloor.position.set(-0.98, 0.04, 0);
+    livingFloor.receiveShadow = true;
+    baseGroup.add(livingFloor);
+
+    // Hallway foyer stone floor
+    const hallFloor = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.08, 5.35), mats.hallFloor);
+    hallFloor.position.set(2.57, 0.04, 0);
+    hallFloor.receiveShadow = true;
+    baseGroup.add(hallFloor);
+
+    // 2. Cutaway Walls & Architectural Trim
+    const wallGroup = new THREE.Group();
+    dioramaRoot.add(wallGroup);
+
+    const wallH = 3.65;
+    const wallY = 0.08 + wallH / 2;
+
+    // Back wall (North, z = -2.62)
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(7.1, wallH, 0.18), mats.wallCream);
+    backWall.position.set(0.0, wallY, -2.62);
+    backWall.castShadow = true;
+    backWall.receiveShadow = true;
+    wallGroup.add(backWall);
+
+    // Back wall top cap
+    const backCap = new THREE.Mesh(new THREE.BoxGeometry(7.14, 0.09, 0.22), mats.wallCap);
+    backCap.position.set(0.0, 0.08 + wallH + 0.04, -2.62);
+    wallGroup.add(backCap);
+
+    // Left wall (West, x = -3.50) with stepped front cutaway
+    const leftWallBack = new THREE.Mesh(new THREE.BoxGeometry(0.18, wallH, 3.65), mats.wallCream);
+    leftWallBack.position.set(-3.50, wallY, -0.88);
+    leftWallBack.castShadow = true;
+    leftWallBack.receiveShadow = true;
+    wallGroup.add(leftWallBack);
+
+    const leftWallCap = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.09, 3.68), mats.wallCap);
+    leftWallCap.position.set(-3.50, 0.08 + wallH + 0.04, -0.88);
+    wallGroup.add(leftWallCap);
+
+    // Low front-left knee wall so desk & couch remain 100% framed
+    const leftWallLow = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.15, 1.72), mats.wallCream);
+    leftWallLow.position.set(-3.50, 0.08 + 1.15 / 2, 1.80);
+    leftWallLow.receiveShadow = true;
+    wallGroup.add(leftWallLow);
+
+    const leftWallLowCap = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.08, 1.76), mats.wallCap);
+    leftWallLowCap.position.set(-3.50, 0.08 + 1.15 + 0.04, 1.80);
+    wallGroup.add(leftWallLowCap);
+
+    // Partition wall between Living Room and Hallway (x = 1.56)
+    // Back pier behind 4A door
+    const partBack = new THREE.Mesh(new THREE.BoxGeometry(0.18, wallH, 1.25), mats.wallCream);
+    partBack.position.set(1.56, wallY, -2.02);
+    partBack.castShadow = true;
+    partBack.receiveShadow = true;
+    wallGroup.add(partBack);
+
+    // Header lintel above 4A doorway
+    const doorHeader = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.85, 1.32), mats.wallCream);
+    doorHeader.position.set(1.56, 0.08 + wallH - 0.425, -0.74);
+    wallGroup.add(doorHeader);
+
+    // Middle pier in front of 4A doorway, stepping down toward front so hallway stays open
+    const partMid = new THREE.Mesh(new THREE.BoxGeometry(0.18, wallH, 0.72), mats.wallCream);
+    partMid.position.set(1.56, wallY, 0.28);
+    partMid.castShadow = true;
+    partMid.receiveShadow = true;
+    wallGroup.add(partMid);
+
+    const partFrontLow = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.95, 2.02), mats.wallCream);
+    partFrontLow.position.set(1.56, 0.08 + 0.95 / 2, 1.65);
+    wallGroup.add(partFrontLow);
+
+    // Baseboards / Wainscot trim
+    const trimBack = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.22, 0.04), mats.wainscot);
+    trimBack.position.set(-0.98, 0.19, -2.51);
+    wallGroup.add(trimBack);
+
+    const trimLeft = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.22, 5.2), mats.wainscot);
+    trimLeft.position.set(-3.39, 0.19, 0.0);
+    wallGroup.add(trimLeft);
+
+    // 3. Large Window on Left Wall with Blinds & Evening Blue Glow
+    const windowGroup = new THREE.Group();
+    windowGroup.position.set(-3.39, 2.15, -0.82);
+    dioramaRoot.add(windowGroup);
+
+    const winFrame = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.85, 1.95), mats.woodFurniture);
+    windowGroup.add(winFrame);
+
+    const winGlass = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.68, 1.78), mats.windowGlow);
+    winGlass.position.x = 0.03;
+    windowGroup.add(winGlass);
+
+    // Horizontal blinds slats
+    const blindSlatGeo = new THREE.BoxGeometry(0.06, 0.035, 1.74);
+    for (let i = 0; i < 14; i++) {
+      const slat = new THREE.Mesh(blindSlatGeo, mats.blinds);
+      slat.position.set(0.055, 0.74 - i * 0.11, 0);
+      slat.rotation.z = 0.22;
+      windowGroup.add(slat);
+    }
+
+    // Window Mullions
+    const mullionV = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.7, 0.05), mats.woodFurniture);
+    mullionV.position.x = 0.04;
+    windowGroup.add(mullionV);
+
+    // 4. Tall Wooden Bookcases (Back Wall) + Instanced Books + Collectibles
+    const bookcaseGroup = new THREE.Group();
+    dioramaRoot.add(bookcaseGroup);
+
+    function buildBookcase(cx, cz, width, height, depth, shelves) {
+      const group = new THREE.Group();
+      group.position.set(cx, 0.08, cz);
+
+      const backPanel = new THREE.Mesh(new THREE.BoxGeometry(width, height, 0.04), mats.woodDark);
+      backPanel.position.set(0, height / 2, -depth / 2 + 0.02);
+      group.add(backPanel);
+
+      const sideGeo = new THREE.BoxGeometry(0.07, height, depth);
+      const leftSide = new THREE.Mesh(sideGeo, mats.woodFurniture);
+      leftSide.position.set(-width / 2 + 0.035, height / 2, 0);
+      leftSide.castShadow = true;
+      group.add(leftSide);
+
+      const rightSide = new THREE.Mesh(sideGeo, mats.woodFurniture);
+      rightSide.position.set(width / 2 - 0.035, height / 2, 0);
+      rightSide.castShadow = true;
+      group.add(rightSide);
+
+      const shelfGeo = new THREE.BoxGeometry(width - 0.04, 0.055, depth);
+      for (let s = 0; s <= shelves; s++) {
+        const sy = 0.08 + (s / shelves) * (height - 0.14);
+        const shelf = new THREE.Mesh(shelfGeo, mats.woodFurniture);
+        shelf.position.set(0, sy, 0);
+        shelf.receiveShadow = true;
+        group.add(shelf);
+      }
+      return group;
+    }
+
+    const bc1 = buildBookcase(-1.85, -2.28, 1.65, 3.15, 0.44, 5);
+    const bc2 = buildBookcase(-0.08, -2.28, 1.55, 3.15, 0.44, 5);
+    bookcaseGroup.add(bc1, bc2);
+
+    // Instanced Books across shelves
+    const bookGeo = new THREE.BoxGeometry(1, 1, 1);
+    const bookMat = new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.05 });
+    const bookTransforms = [];
+    const bookColors = [];
+    const palette = [
+      0xa83228, 0x2b5b84, 0x386641, 0xd48c28, 0x6d4c3d,
+      0x7b2cbf, 0xbc4749, 0x264653, 0xe76f51, 0x457b9d, 0xc9a227
+    ];
+
+    const shelfHeights = [];
+    for (let s = 0; s < 5; s++) {
+      shelfHeights.push(0.08 + 0.08 + (s / 5) * (3.15 - 0.14) + 0.028);
+    }
+
+    function populateShelfBooks(centerX, width, shelfIdx, skipCenterForCollectible) {
+      const sy = shelfHeights[shelfIdx];
+      let xCursor = centerX - width / 2 + 0.11;
+      const xEnd = centerX + width / 2 - 0.11;
+
+      while (xCursor < xEnd - 0.05) {
+        if (skipCenterForCollectible && Math.abs(xCursor - centerX) < 0.24) {
+          xCursor += 0.36;
+          continue;
+        }
+        if (rand() < 0.08) {
+          xCursor += 0.08;
+          continue;
+        }
+        const bw = randRange(0.042, 0.082);
+        const bh = randRange(0.28, 0.44);
+        const bd = randRange(0.24, 0.32);
+        const tilt = rand() < 0.14 ? randRange(-0.14, 0.14) : 0;
+
+        const dummy = new THREE.Object3D();
+        dummy.position.set(xCursor + bw / 2, sy + bh / 2, -2.26 + randRange(-0.02, 0.03));
+        dummy.rotation.z = tilt;
+        dummy.scale.set(bw, bh, bd);
+        dummy.updateMatrix();
+        bookTransforms.push(dummy.matrix.clone());
+        const col = new THREE.Color(palette[Math.floor(rand() * palette.length)]);
+        col.offsetHSL(0, 0, randRange(-0.06, 0.06));
+        bookColors.push(col);
+
+        xCursor += bw + 0.007;
+      }
+    }
+
+    for (let s = 0; s < 5; s++) {
+      populateShelfBooks(-1.85, 1.65, s, s === 2 || s === 4);
+      populateShelfBooks(-0.08, 1.55, s, s === 3);
+    }
+
+    const booksInstanced = new THREE.InstancedMesh(bookGeo, bookMat, bookTransforms.length);
+    for (let i = 0; i < bookTransforms.length; i++) {
+      booksInstanced.setMatrixAt(i, bookTransforms[i]);
+      booksInstanced.setColorAt(i, bookColors[i]);
+    }
+    booksInstanced.instanceMatrix.needsUpdate = true;
+    booksInstanced.instanceColor.needsUpdate = true;
+    booksInstanced.castShadow = true;
+    booksInstanced.receiveShadow = true;
+    dioramaRoot.add(booksInstanced);
+
+    // Science Collectibles on Bookcase Shelves (Atom model, telescope, Rubik cube, globe)
+    const globeStand = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.04, 12), mats.brass);
+    globeStand.position.set(-1.85, shelfHeights[2] + 0.02, -2.24);
+    const globeSphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.13, 16, 12),
+      new THREE.MeshStandardMaterial({ color: 0x3b8ea5, roughness: 0.4 })
+    );
+    globeSphere.position.set(-1.85, shelfHeights[2] + 0.17, -2.24);
+    dioramaRoot.add(globeStand, globeSphere);
+
+    const trophyCup = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.04, 0.24, 12), mats.brass);
+    trophyCup.position.set(-0.08, shelfHeights[3] + 0.12, -2.24);
+    dioramaRoot.add(trophyCup);
+
+    const dnaHelixGroup = new THREE.Group();
+    dnaHelixGroup.position.set(-1.85, shelfHeights[4] + 0.18, -2.24);
+    const miniRing = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.015, 8, 20), mats.metalSilver);
+    miniRing.rotation.x = 0.6;
+    const miniRing2 = miniRing.clone();
+    miniRing2.rotation.y = 1.1;
+    dnaHelixGroup.add(miniRing, miniRing2);
+    dioramaRoot.add(dnaHelixGroup);
+
+    // 5. Standing Scientific Whiteboard with Fine Geometric Diagrams & Equations
+    const wbGroup = new THREE.Group();
+    wbGroup.position.set(0.95, 0.08, -1.68);
+    wbGroup.rotation.y = -0.36;
+    dioramaRoot.add(wbGroup);
+
+    // Frame & legs
+    const wbLegGeo = new THREE.BoxGeometry(0.05, 2.35, 0.05);
+    const wbLegL = new THREE.Mesh(wbLegGeo, mats.metalSilver);
+    wbLegL.position.set(-0.56, 1.175, 0);
+    const wbLegR = new THREE.Mesh(wbLegGeo, mats.metalSilver);
+    wbLegR.position.set(0.56, 1.175, 0);
+
+    const wbFootGeo = new THREE.BoxGeometry(0.06, 0.05, 0.55);
+    const wbFootL = new THREE.Mesh(wbFootGeo, mats.metalSilver);
+    wbFootL.position.set(-0.56, 0.025, 0);
+    const wbFootR = new THREE.Mesh(wbFootGeo, mats.metalSilver);
+    wbFootR.position.set(0.56, 0.025, 0);
+
+    const wbBoard = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.92, 0.05), mats.metalSilver);
+    wbBoard.position.set(0, 1.68, 0);
+    wbBoard.castShadow = true;
+
+    const wbSurface = new THREE.Mesh(new THREE.PlaneGeometry(1.10, 0.84), mats.whiteboard);
+    wbSurface.position.set(0, 1.68, 0.028);
+
+    const wbTray = new THREE.Mesh(new THREE.BoxGeometry(1.12, 0.03, 0.09), mats.metalSilver);
+    wbTray.position.set(0, 1.21, 0.04);
+
+    wbGroup.add(wbLegL, wbLegR, wbFootL, wbFootR, wbBoard, wbSurface, wbTray);
+
+    // 6. Detailed Patterned Area Rug
+    const rugMesh = new THREE.Mesh(new THREE.BoxGeometry(3.45, 0.022, 2.45), mats.rug);
+    rugMesh.position.set(-0.92, 0.091, 0.42);
+    rugMesh.receiveShadow = true;
+    dioramaRoot.add(rugMesh);
+
+    // 7. Hero-Scale Brown Sectional Couch (3 Defined Seat/Back Cushions + Chaise + 2 Bright Pillows)
+    const couchGroup = new THREE.Group();
+    couchGroup.position.set(-0.95, 0.08, -0.35);
+    dioramaRoot.add(couchGroup);
+
+    // Wooden feet
+    const footGeo = new THREE.CylinderGeometry(0.045, 0.03, 0.10, 10);
+    const footCoords = [
+      [-1.36, 0.05, -0.42], [1.36, 0.05, -0.42],
+      [-1.36, 0.05, 0.42],  [1.36, 0.05, 0.42],
+      [1.36, 0.05, 1.18],   [0.48, 0.05, 1.18]
+    ];
+    footCoords.forEach(([fx, fy, fz]) => {
+      const f = new THREE.Mesh(footGeo, mats.woodDark);
+      f.position.set(fx, fy, fz);
+      couchGroup.add(f);
+    });
+
+    // Base plinth of sofa
+    const sofaBase = new THREE.Mesh(new THREE.BoxGeometry(2.86, 0.22, 0.96), mats.leatherMain);
+    sofaBase.position.set(0, 0.21, 0);
+    sofaBase.castShadow = true;
+    sofaBase.receiveShadow = true;
+    couchGroup.add(sofaBase);
+
+    // Chaise base extension on right side
+    const chaiseBase = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.22, 0.78), mats.leatherMain);
+    chaiseBase.position.set(0.97, 0.21, 0.85);
+    chaiseBase.castShadow = true;
+    chaiseBase.receiveShadow = true;
+    couchGroup.add(chaiseBase);
+
+    // Backrest frame
+    const sofaBackFrame = new THREE.Mesh(new THREE.BoxGeometry(2.86, 0.86, 0.22), mats.leatherMain);
+    sofaBackFrame.position.set(0, 0.68, -0.38);
+    sofaBackFrame.castShadow = true;
+    sofaBackFrame.receiveShadow = true;
+    couchGroup.add(sofaBackFrame);
+
+    // Left & Right Rolled Armrests
+    const armGeo = new THREE.BoxGeometry(0.24, 0.56, 0.98);
+    const armLeft = new THREE.Mesh(armGeo, mats.leatherMain);
+    armLeft.position.set(-1.35, 0.52, 0.01);
+    armLeft.castShadow = true;
+    const armRight = new THREE.Mesh(armGeo, mats.leatherMain);
+    armRight.position.set(1.35, 0.52, 0.01);
+    armRight.castShadow = true;
+    couchGroup.add(armLeft, armRight);
+
+    // Three Defined Seat Cushions (Left = Sheldon's Spot!)
+    const seatGeo = new THREE.BoxGeometry(0.80, 0.19, 0.78);
+    const backCushGeo = new THREE.BoxGeometry(0.80, 0.52, 0.22);
+
+    // Left Cushion (Sheldon's Spot - uses dedicated material for warm highlight)
+    const leftSeatCushion = new THREE.Mesh(seatGeo, mats.leatherSpot);
+    leftSeatCushion.position.set(-0.82, 0.40, 0.06);
+    leftSeatCushion.castShadow = true;
+    leftSeatCushion.receiveShadow = true;
+    couchGroup.add(leftSeatCushion);
+
+    const leftBackCushion = new THREE.Mesh(backCushGeo, mats.leatherSpot);
+    leftBackCushion.position.set(-0.82, 0.75, -0.20);
+    leftBackCushion.rotation.x = -0.08;
+    leftBackCushion.castShadow = true;
+    leftBackCushion.receiveShadow = true;
+    couchGroup.add(leftBackCushion);
+
+    // Middle Cushion
+    const midSeatCushion = new THREE.Mesh(seatGeo, mats.leatherSeat);
+    midSeatCushion.position.set(0.0, 0.40, 0.06);
+    midSeatCushion.castShadow = true;
+    midSeatCushion.receiveShadow = true;
+    couchGroup.add(midSeatCushion);
+
+    const midBackCushion = new THREE.Mesh(backCushGeo, mats.leatherSeat);
+    midBackCushion.position.set(0.0, 0.75, -0.20);
+    midBackCushion.rotation.x = -0.08;
+    midBackCushion.castShadow = true;
+    couchGroup.add(midBackCushion);
+
+    // Right Chaise Cushion
+    const rightSeatCushion = new THREE.Mesh(new THREE.BoxGeometry(0.80, 0.19, 1.54), mats.leatherSeat);
+    rightSeatCushion.position.set(0.82, 0.40, 0.44);
+    rightSeatCushion.castShadow = true;
+    rightSeatCushion.receiveShadow = true;
+    couchGroup.add(rightSeatCushion);
+
+    const rightBackCushion = new THREE.Mesh(backCushGeo, mats.leatherSeat);
+    rightBackCushion.position.set(0.82, 0.75, -0.20);
+    rightBackCushion.rotation.x = -0.08;
+    rightBackCushion.castShadow = true;
+    couchGroup.add(rightBackCushion);
+
+    // Two Bright Accent Cushions (Pillows)
+    const pillowGeo = new THREE.BoxGeometry(0.34, 0.32, 0.14);
+    const pillow1 = new THREE.Mesh(pillowGeo, mats.pillowRed);
+    pillow1.position.set(-1.05, 0.62, -0.02);
+    pillow1.rotation.set(0.12, 0.35, -0.18);
+    pillow1.castShadow = true;
+
+    const pillow2 = new THREE.Mesh(pillowGeo, mats.pillowGold);
+    pillow2.position.set(1.06, 0.62, -0.02);
+    pillow2.rotation.set(0.10, -0.4, 0.15);
+    pillow2.castShadow = true;
+    couchGroup.add(pillow1, pillow2);
+
+    // 8. Low Coffee Table with Takeout Cartons, Chopsticks & Mugs
+    const tableGroup = new THREE.Group();
+    tableGroup.position.set(-1.05, 0.08, 1.12);
+    dioramaRoot.add(tableGroup);
+
+    const tableTop = new THREE.Mesh(new THREE.BoxGeometry(1.68, 0.08, 0.88), mats.woodFurniture);
+    tableTop.position.y = 0.46;
+    tableTop.castShadow = true;
+    tableTop.receiveShadow = true;
+    tableGroup.add(tableTop);
+
+    const tableShelf = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.04, 0.70), mats.woodDark);
+    tableShelf.position.y = 0.18;
+    tableGroup.add(tableShelf);
+
+    const tLegGeo = new THREE.BoxGeometry(0.07, 0.45, 0.07);
+    [[-0.74, -0.35], [0.74, -0.35], [-0.74, 0.35], [0.74, 0.35]].forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(tLegGeo, mats.woodDark);
+      leg.position.set(lx, 0.225, lz);
+      leg.castShadow = true;
+      tableGroup.add(leg);
+    });
+
+    // Takeout Cartons (tapered white boxes with red stripe & wire handle)
+    function createTakeoutBox(x, z, rotY) {
+      const g = new THREE.Group();
+      g.position.set(x, 0.50, z);
+      g.rotation.y = rotY;
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.085, 0.18, 4), mats.ceramicWhite);
+      body.rotation.y = Math.PI / 4;
+      body.position.y = 0.09;
+      body.castShadow = true;
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.112, 0.105, 0.035, 4), mats.takeoutRed);
+      band.rotation.y = Math.PI / 4;
+      band.position.y = 0.11;
+      g.add(body, band);
+      return g;
+    }
+    tableGroup.add(
+      createTakeoutBox(-0.38, -0.06, 0.3),
+      createTakeoutBox(-0.12, 0.12, -0.45),
+      createTakeoutBox(0.16, -0.10, 0.8)
+    );
+
+    // Two Mugs
+    function createMug(x, z, mat) {
+      const g = new THREE.Group();
+      g.position.set(x, 0.50, z);
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.06, 0.13, 14), mat);
+      cup.position.y = 0.065;
+      cup.castShadow = true;
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.038, 0.012, 8, 12), mat);
+      handle.position.set(0.065, 0.065, 0);
+      g.add(cup, handle);
+      return g;
+    }
+    tableGroup.add(
+      createMug(0.48, 0.14, mats.mugBlue),
+      createMug(-0.56, 0.18, mats.mugOrange)
+    );
+
+    // 9. Desk with Old-Style Monitor, Keyboard & Warm Task Lamp (Front-Left Corner)
+    const deskGroup = new THREE.Group();
+    deskGroup.position.set(-2.78, 0.08, 1.35);
+    dioramaRoot.add(deskGroup);
+
+    const deskTop = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.07, 1.55), mats.woodFurniture);
+    deskTop.position.y = 0.78;
+    deskTop.castShadow = true;
+    deskTop.receiveShadow = true;
+    deskGroup.add(deskTop);
+
+    const deskDrawerPedestal = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.74, 0.52), mats.woodDark);
+    deskDrawerPedestal.position.set(0, 0.37, 0.45);
+    deskDrawerPedestal.castShadow = true;
+    deskGroup.add(deskDrawerPedestal);
+
+    const deskBackLegL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.74, 0.08), mats.woodDark);
+    deskBackLegL.position.set(-0.44, 0.37, -0.68);
+    const deskBackLegR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.74, 0.08), mats.woodDark);
+    deskBackLegR.position.set(0.44, 0.37, -0.68);
+    deskGroup.add(deskBackLegL, deskBackLegR);
+
+    // Old-style bulky monitor
+    const monGroup = new THREE.Group();
+    monGroup.position.set(-0.08, 0.82, -0.22);
+    monGroup.rotation.y = 0.48;
+    deskGroup.add(monGroup);
+
+    const monStand = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.06, 12), mats.monitorCase);
+    monStand.position.y = 0.03;
+    const monBezel = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.40, 0.18), mats.monitorCase);
+    monBezel.position.set(0, 0.25, 0);
+    monBezel.castShadow = true;
+    const monBack = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.28, 0.20), mats.monitorCase);
+    monBack.position.set(0, 0.24, -0.16);
+    const monScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.31), mats.monitorScreen);
+    monScreen.position.set(0, 0.25, 0.092);
+    monGroup.add(monStand, monBezel, monBack, monScreen);
+
+    // Keyboard
+    const keyboard = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.025, 0.15), mats.monitorCase);
+    keyboard.position.set(0.14, 0.83, 0.02);
+    keyboard.rotation.y = 0.48;
+    deskGroup.add(keyboard);
+
+    // Warm Articulated Task Lamp on Desk
+    const lampGroup = new THREE.Group();
+    lampGroup.position.set(-0.22, 0.82, 0.48);
+    deskGroup.add(lampGroup);
+
+    const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.04, 14), mats.brass);
+    lampBase.position.y = 0.02;
+    const lampStem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.42, 8), mats.brass);
+    lampStem.position.set(-0.03, 0.22, 0);
+    lampStem.rotation.z = -0.18;
+    const lampCone = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.20, 16, 1, true), mats.lampShade);
+    lampCone.position.set(0.06, 0.40, 0);
+    lampCone.rotation.z = 0.45;
+    const lampBulb = new THREE.Mesh(
+      new THREE.SphereGeometry(0.055, 10, 10),
+      new THREE.MeshBasicMaterial({ color: 0xffdf9a })
+    );
+    lampBulb.position.set(0.05, 0.36, 0);
+    lampGroup.add(lampBase, lampStem, lampCone, lampBulb);
+
+    // Standing Floor Lamp near Bookcase/Couch
+    const floorLampGroup = new THREE.Group();
+    floorLampGroup.position.set(-2.95, 0.08, -1.78);
+    dioramaRoot.add(floorLampGroup);
+
+    const flBase = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, 0.05, 16), mats.brass);
+    flBase.position.y = 0.025;
+    const flPole = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 2.25, 10), mats.brass);
+    flPole.position.y = 1.15;
+    const flShade = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.34, 0.38, 18), mats.lampShade);
+    flShade.position.y = 2.30;
+    floorLampGroup.add(flBase, flPole, flShade);
+
+    // 10. Hallway Wing: Green Apartment Door with Legible "4A" Brass Label & Broken Elevator with Crossed Caution Tape
+    // 4A Door Assembly (pivots on hinge when knocked)
+    const doorFrameGroup = new THREE.Group();
+    doorFrameGroup.position.set(1.56, 0.08, -0.74);
+    dioramaRoot.add(doorFrameGroup);
+
+    // Wooden door casing
+    const jambGeo = new THREE.BoxGeometry(0.22, 2.82, 0.08);
+    const jambBack = new THREE.Mesh(jambGeo, mats.woodDark);
+    jambBack.position.set(0, 1.41, -0.62);
+    const jambFront = new THREE.Mesh(jambGeo, mats.woodDark);
+    jambFront.position.set(0, 1.41, 0.62);
+    const jambTop = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.08, 1.32), mats.woodDark);
+    jambTop.position.set(0, 2.81, 0);
+    doorFrameGroup.add(jambBack, jambFront, jambTop);
+
+    // Pivot hinge at back edge of doorway (z = -0.58)
+    const doorPivot = new THREE.Group();
+    doorPivot.position.set(0, 0, -0.58);
+    doorFrameGroup.add(doorPivot);
+
+    const doorPanel = new THREE.Mesh(new THREE.BoxGeometry(0.10, 2.74, 1.16), mats.doorGreen);
+    doorPanel.position.set(0, 1.37, 0.58);
+    doorPanel.castShadow = true;
+    doorPanel.receiveShadow = true;
+    doorPivot.add(doorPanel);
+
+    // Raised molding panels on both sides of door
+    const moldGeo = new THREE.BoxGeometry(0.125, 0.65, 0.76);
+    const moldTop = new THREE.Mesh(moldGeo, mats.doorGreen);
+    moldTop.position.set(0, 2.12, 0.58);
+    const moldBot = new THREE.Mesh(moldGeo, mats.doorGreen);
+    moldBot.position.set(0, 0.78, 0.58);
+    doorPivot.add(moldTop, moldBot);
+
+    // Brass "4A" Plaque on BOTH Living Room & Hallway faces so it is always legible
+    const plaqueGeo = new THREE.BoxGeometry(0.02, 0.28, 0.52);
+    const plaqueInside = new THREE.Mesh(plaqueGeo, mats.plaque4A);
+    plaqueInside.position.set(-0.062, 2.12, 0.58);
+    const plaqueOutside = new THREE.Mesh(plaqueGeo, mats.plaque4A);
+    plaqueOutside.position.set(0.062, 2.12, 0.58);
+    plaqueOutside.rotation.y = Math.PI;
+    doorPivot.add(plaqueInside, plaqueOutside);
+
+    // Brass doorknobs on both faces
+    const knobGeo = new THREE.SphereGeometry(0.055, 12, 12);
+    const knobIn = new THREE.Mesh(knobGeo, mats.brass);
+    knobIn.position.set(-0.09, 1.25, 1.00);
+    const knobOut = new THREE.Mesh(knobGeo, mats.brass);
+    knobOut.position.set(0.09, 1.25, 1.00);
+    doorPivot.add(knobIn, knobOut);
+
+    // Closed Broken Elevator on Hallway Back Wall (x = 2.58, z = -2.48)
+    const elevatorGroup = new THREE.Group();
+    elevatorGroup.position.set(2.58, 0.08, -2.48);
+    dioramaRoot.add(elevatorGroup);
+
+    // Elevator surround casing
+    const elevSurround = new THREE.Mesh(new THREE.BoxGeometry(1.52, 2.95, 0.16), mats.elevatorDark);
+    elevSurround.position.set(0, 1.475, 0);
+    elevatorGroup.add(elevSurround);
+
+    // Closed double doors
+    const elevDoorGeo = new THREE.BoxGeometry(0.62, 2.72, 0.10);
+    const elevDoorL = new THREE.Mesh(elevDoorGeo, mats.elevatorMetal);
+    elevDoorL.position.set(-0.32, 1.36, 0.05);
+    const elevDoorR = new THREE.Mesh(elevDoorGeo, mats.elevatorMetal);
+    elevDoorR.position.set(0.32, 1.36, 0.05);
+    elevatorGroup.add(elevDoorL, elevDoorR);
+
+    // Floor indicator dial above elevator
+    const dialBox = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.22, 0.12), mats.brass);
+    dialBox.position.set(0, 3.12, 0.04);
+    elevatorGroup.add(dialBox);
+
+    // Call button panel on right
+    const callPanel = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.28, 0.06), mats.brass);
+    callPanel.position.set(0.84, 1.35, 0.06);
+    elevatorGroup.add(callPanel);
+
+    // Crossed Yellow-and-Black Caution Tape across Broken Elevator
+    const tapeGeo = new THREE.BoxGeometry(1.62, 0.15, 0.025);
+    const tape1 = new THREE.Mesh(tapeGeo, mats.cautionTape);
+    tape1.position.set(0, 1.42, 0.12);
+    tape1.rotation.z = 0.46;
+
+    const tape2 = new THREE.Mesh(tapeGeo, mats.cautionTape);
+    tape2.position.set(0, 1.42, 0.135);
+    tape2.rotation.z = -0.46;
+    elevatorGroup.add(tape1, tape2);
+
+    // Small warning cone in hallway near elevator
+    const coneGroup = new THREE.Group();
+    coneGroup.position.set(3.15, 0.08, -1.85);
+    const coneBase = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.04, 0.32), mats.cautionTape);
+    coneBase.position.y = 0.02;
+    const coneBody = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.12, 0.42, 12), mats.cautionTape);
+    coneBody.position.y = 0.23;
+    coneGroup.add(coneBase, coneBody);
+    dioramaRoot.add(coneGroup);
+
+    // 11. Lighting Setup (Warm Amber Practicals + Cool Blue Evening Window + Interactive Lights)
+    const hemiLight = new THREE.HemisphereLight(0xfff1da, 0x3a4a6e, 1.05);
+    scene.add(hemiLight);
+
+    // Main warm overhead directional key light with 1024 shadow map
+    const keyLight = new THREE.DirectionalLight(0xffe4c2, 1.65);
+    keyLight.position.set(3.2, 7.2, 4.8);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 1024;
+    keyLight.shadow.mapSize.height = 1024;
+    keyLight.shadow.camera.near = 1.0;
+    keyLight.shadow.camera.far = 18.0;
+    const sc = 4.6;
+    keyLight.shadow.camera.left = -sc;
+    keyLight.shadow.camera.right = sc;
+    keyLight.shadow.camera.top = sc;
+    keyLight.shadow.camera.bottom = -sc;
+    keyLight.shadow.bias = -0.0012;
+    scene.add(keyLight);
+
+    // Cool blue evening light from left window
+    const windowLight = new THREE.PointLight(0x6fa8ff, 2.0, 7.0, 1.4);
+    windowLight.position.set(-2.95, 2.25, -0.82);
+    dioramaRoot.add(windowLight);
+
+    // Warm floor lamp light
+    const floorLampLight = new THREE.PointLight(0xffb057, 2.4, 7.0, 1.3);
+    floorLampLight.position.set(-2.85, 2.30, -1.68);
+    dioramaRoot.add(floorLampLight);
+
+    // Warm desk task lamp light + monitor glow
+    const deskLampLight = new THREE.PointLight(0xffbe66, 1.8, 4.8, 1.4);
+    deskLampLight.position.set(-2.75, 1.32, 1.72);
+    dioramaRoot.add(deskLampLight);
+
+    const monitorGlowLight = new THREE.PointLight(0x55bcff, 1.0, 2.8, 1.5);
+    monitorGlowLight.position.set(-2.65, 1.15, 1.15);
+    dioramaRoot.add(monitorGlowLight);
+
+    // Hallway ambient sconce light (boosted during Interaction 2)
+    const hallwayLight = new THREE.PointLight(0xffb45c, 1.35, 6.0, 1.4);
+    hallwayLight.position.set(2.35, 2.65, -0.75);
+    dioramaRoot.add(hallwayLight);
+
+    // 12. INTERACTION 1 Visuals: Sheldon's Spot Warm Spotlight + Floating Atom Orbits
+    const spotTargetObj = new THREE.Object3D();
+    spotTargetObj.position.set(-1.77, 0.50, -0.29); // World position of left couch cushion
+    dioramaRoot.add(spotTargetObj);
+
+    const sheldonSpotLight = new THREE.SpotLight(0xffb84d, 0.0, 6.0, 0.48, 0.45, 1.2);
+    sheldonSpotLight.position.set(-1.77, 3.25, 0.15);
+    sheldonSpotLight.target = spotTargetObj;
+    dioramaRoot.add(sheldonSpotLight);
+
+    // Atom-like blue/gold orbital rings & electrons above the left cushion
+    const atomOrbitGroup = new THREE.Group();
+    atomOrbitGroup.position.set(-1.77, 1.15, -0.28);
+    atomOrbitGroup.visible = false;
+    dioramaRoot.add(atomOrbitGroup);
+
+    const orbitMatGold = new THREE.MeshBasicMaterial({
+      color: 0xffcf56,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const orbitMatBlue = new THREE.MeshBasicMaterial({
+      color: 0x56b8ff,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    const ringGeo = new THREE.TorusGeometry(0.42, 0.016, 10, 48);
+    const electronGeo = new THREE.SphereGeometry(0.048, 12, 12);
+
+    const atomRings = [];
+    const ringTilts = [
+      [1.05, 0.0, 0.55],
+      [1.05, 1.05, -0.55],
+      [0.35, 2.10, 1.10]
+    ];
+    ringTilts.forEach(([rx, ry, rz], idx) => {
+      const mat = idx % 2 === 0 ? orbitMatGold : orbitMatBlue;
+      const rPivot = new THREE.Group();
+      rPivot.rotation.set(rx, ry, rz);
+      const rMesh = new THREE.Mesh(ringGeo, mat);
+      const eMesh = new THREE.Mesh(electronGeo, idx % 2 === 0 ? orbitMatBlue : orbitMatGold);
+      eMesh.position.set(0.42, 0, 0);
+      rPivot.add(rMesh, eMesh);
+      atomOrbitGroup.add(rPivot);
+      atomRings.push({ pivot: rPivot, electron: eMesh, speed: 3.2 + idx * 0.7, phase: idx * 2.1 });
+    });
+
+    // Core nucleus glow sphere
+    const nucleusMesh = new THREE.Mesh(new THREE.SphereGeometry(0.085, 14, 14), orbitMatGold);
+    atomOrbitGroup.add(nucleusMesh);
+
+    // Warm ring decal on cushion top
+    const cushionHaloMat = new THREE.MeshBasicMaterial({
+      color: 0xffc45c,
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const cushionHalo = new THREE.Mesh(new THREE.RingGeometry(0.18, 0.34, 32), cushionHaloMat);
+    cushionHalo.rotation.x = -Math.PI / 2;
+    cushionHalo.position.set(-1.77, 0.585, -0.29);
+    cushionHalo.visible = false;
+    dioramaRoot.add(cushionHalo);
+
+    // 13. INTERACTION 2 Visuals: Three Sequential Amber Knock Pulse Rings on 4A Door Frame
+    const knockRingsGroup = new THREE.Group();
+    knockRingsGroup.position.set(1.56, 1.55, -0.74);
+    dioramaRoot.add(knockRingsGroup);
+
+    const knockRings = [];
+    const knockRingGeo = new THREE.TorusGeometry(0.32, 0.024, 10, 36);
+    for (let i = 0; i < 3; i++) {
+      const kMat = new THREE.MeshBasicMaterial({
+        color: 0xffae42,
+        transparent: true,
+        opacity: 0,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const kMesh = new THREE.Mesh(knockRingGeo, kMat);
+      kMesh.rotation.y = Math.PI / 2;
+      kMesh.visible = false;
+      knockRingsGroup.add(kMesh);
+      knockRings.push({ mesh: kMesh, mat: kMat, delay: i * 550 });
+    }
+
+    // 14. IDLE Dust Motes strictly contained inside the room volume
+    const moteCount = 46;
+    const moteGeo = new THREE.IcosahedronGeometry(0.022, 0);
+    const moteMat = new THREE.MeshBasicMaterial({
+      color: 0xffe4b5,
+      transparent: true,
+      opacity: 0.45,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const motesInstanced = new THREE.InstancedMesh(moteGeo, moteMat, moteCount);
+    dioramaRoot.add(motesInstanced);
+
+    const moteData = [];
+    const moteDummy = new THREE.Object3D();
+    for (let i = 0; i < moteCount; i++) {
+      moteData.push({
+        bx: randRange(-2.9, 1.2),
+        by: randRange(0.45, 2.65), // Contained well below top of walls (3.73)
+        bz: randRange(-2.1, 1.8),
+        sx: randRange(0.3, 0.7),
+        sy: randRange(0.25, 0.55),
+        phase: randRange(0, Math.PI * 2),
+        scale: randRange(0.65, 1.25)
+      });
+    }
+
+    // 15. Generous Invisible Raycast Proxy Targets (Easy 320px Mobile Tapping)
+    const proxyMat = new THREE.MeshBasicMaterial({ visible: false });
+    const interactiveProxies = [];
+
+    // Proxy 1: Couch Left Cushion ("Sheldon's Spot")
+    const spotProxy = new THREE.Mesh(new THREE.BoxGeometry(1.25, 1.25, 1.25), proxyMat);
+    spotProxy.position.set(-1.77, 0.68, -0.29);
+    spotProxy.userData.action = 'spot';
+    dioramaRoot.add(spotProxy);
+    interactiveProxies.push(spotProxy);
+
+    // Proxy 2: 4A Green Apartment Door
+    const doorProxy = new THREE.Mesh(new THREE.BoxGeometry(0.85, 2.95, 1.55), proxyMat);
+    doorProxy.position.set(1.56, 1.50, -0.74);
+    doorProxy.userData.action = 'door';
+    dioramaRoot.add(doorProxy);
+    interactiveProxies.push(doorProxy);
+
+    // 3D Anchor points for floating labels
+    const spotLabelAnchor = new THREE.Vector3(-1.77, 1.72, -0.29);
+    const doorLabelAnchor = new THREE.Vector3(1.56, 2.48, -0.74);
+
+    // 16. Responsive Camera Framing for 616x562, 390x844, 320x700 & All Viewports
+    function updateCameraFraming() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const aspect = w / Math.max(h, 1);
+      camera.aspect = aspect;
+      camera.fov = aspect < 0.75 ? 41 : 34;
+      camera.updateProjectionMatrix();
+
+      // Reserve HUD safe areas: scene must fit strictly between header and footer
+      const headerRect = hudHeaderEl.getBoundingClientRect();
+      const footerRect = hudFooterEl.getBoundingClientRect();
+      const topSafePx = Math.max(headerRect.bottom + Math.max(14, h * 0.022), h * 0.13);
+      const bottomSafePx = Math.min(footerRect.top - Math.max(10, h * 0.018), h * 0.94);
+      const topMaxNDC = 1 - (topSafePx / h) * 2;
+      const bottomMinNDC = 1 - (bottomSafePx / h) * 2;
+      const targetCenterNDCY = (topMaxNDC + bottomMinNDC) * 0.5;
+      const usableHalfHeightNDC = Math.max(0.25, (topMaxNDC - bottomMinNDC) * 0.5);
+
+      // Projected-bounding-box fit: envelope of ALL important geometry (base slab, walls, elevator, desk, bookcase tops)
+      const ENVELOPE = [];
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+        ENVELOPE.push(new THREE.Vector3(3.71 * sx, -0.45, 2.86 * sz));
+        ENVELOPE.push(new THREE.Vector3(3.71 * sx, 0.15, 2.86 * sz));
+      }
+      ENVELOPE.push(new THREE.Vector3(-3.55, 3.78, -2.62));
+      ENVELOPE.push(new THREE.Vector3(3.55, 3.78, -2.62));
+      ENVELOPE.push(new THREE.Vector3(0, 3.78, -2.62));
+      ENVELOPE.push(new THREE.Vector3(3.45, 3.05, -2.45));  // elevator top corner
+      ENVELOPE.push(new THREE.Vector3(-3.45, 1.35, 0.6));   // desk far corner
+
+      const azim = 0.50, elev = 0.60;
+      const viewDir = new THREE.Vector3(
+        Math.sin(azim) * Math.cos(elev), Math.sin(elev), Math.cos(azim) * Math.cos(elev)
+      ).normalize();
+      const up = new THREE.Vector3(0, 1, 0);
+      const right = new THREE.Vector3().crossVectors(up, viewDir).normalize();
+      const camUp = new THREE.Vector3().crossVectors(viewDir, right).normalize();
+
+      const fovRad = THREE.MathUtils.degToRad(camera.fov);
+      const tanHalfFov = Math.tan(fovRad / 2);
+      const tanHalfHorizFov = tanHalfFov * aspect;
+      const widthFraction = aspect < 0.75 ? 0.93 : 0.90;
+
+      let targetY = 1.6;
+      let dist = 18.0;
+      for (let iter = 0; iter < 8; iter++) {
+        let maxTopY = -Infinity, minBotY = Infinity, distForWidth = 0, distForHeight = 0;
+        for (const p of ENVELOPE) {
+          const rx = p.x, ry = p.y - targetY, rz = p.z + 0.1;
+          const cx = rx * right.x + ry * right.y + rz * right.z;
+          const cy = rx * camUp.x + ry * camUp.y + rz * camUp.z;
+          const cz = rx * viewDir.x + ry * viewDir.y + rz * viewDir.z;
+          distForWidth = Math.max(distForWidth, Math.abs(cx) / (tanHalfHorizFov * widthFraction) + cz);
+          if (cy > maxTopY) maxTopY = cy;
+          if (cy < minBotY) minBotY = cy;
+          distForHeight = Math.max(distForHeight, Math.abs(cy) / (tanHalfFov * usableHalfHeightNDC) + cz);
+        }
+        dist = Math.max(distForWidth, distForHeight);
+        const midCy = (maxTopY + minBotY) * 0.5;
+        targetY += (midCy - targetCenterNDCY * dist * tanHalfFov) * 0.82;
+      }
+
+      controls.target.set(0, targetY, -0.1);
+      camera.position.copy(controls.target).addScaledVector(viewDir, dist);
+      controls.minDistance = dist * 0.7;
+      controls.maxDistance = dist * 1.35;
+      controls.update();
+    }
+
+    updateCameraFraming();
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      updateCameraFraming();
+    });
+
+    // 17. Independent Interaction State & Timers (using performance.now)
+    const state = {
+      spotActive: false,
+      spotStartTime: 0,
+      spotDuration: 6000, // 6 seconds
+
+      doorActive: false,
+      doorStartTime: 0,
+      doorDuration: 5000, // 5 seconds
+
+      lastUserInteraction: performance.now(),
+      nextShowcaseIsDoor: false
+    };
+
+    function triggerSpotInteraction(now) {
+      state.spotActive = true;
+      state.spotStartTime = now;
+      atomOrbitGroup.visible = true;
+      cushionHalo.visible = true;
+      spotLabelEl.style.opacity = '1';
+    }
+
+    function resetSpotInteraction() {
+      state.spotActive = false;
+      atomOrbitGroup.visible = false;
+      cushionHalo.visible = false;
+      sheldonSpotLight.intensity = 0;
+      mats.leatherSpot.emissiveIntensity = 0;
+      orbitMatGold.opacity = 0;
+      orbitMatBlue.opacity = 0;
+      cushionHaloMat.opacity = 0;
+      spotLabelEl.style.opacity = '0';
+      leftSeatCushion.position.y = 0.40;
+    }
+
+    function triggerDoorInteraction(now) {
+      state.doorActive = true;
+      state.doorStartTime = now;
+      knockLabelEl.style.opacity = '1';
+      knockRings.forEach(kr => {
+        kr.mesh.visible = true;
+        kr.mat.opacity = 0;
+      });
+    }
+
+    function resetDoorInteraction() {
+      state.doorActive = false;
+      doorPivot.rotation.y = 0;
+      mats.doorGreen.emissiveIntensity = 0;
+      hallwayLight.intensity = 0.95;
+      knockLabelEl.style.opacity = '0';
+      knockRings.forEach(kr => {
+        kr.mesh.visible = false;
+        kr.mat.opacity = 0;
+      });
+    }
+
+    // 18. Robust Tap-vs-Drag Raycasting for Touch & Mouse
+    const raycaster = new THREE.Raycaster();
+    const pointerNdc = new THREE.Vector2();
+    let pointerDownPos = { x: 0, y: 0, time: 0, active: false };
+
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      pointerDownPos.x = e.clientX;
+      pointerDownPos.y = e.clientY;
+      pointerDownPos.time = performance.now();
+      pointerDownPos.active = true;
+      state.lastUserInteraction = pointerDownPos.time;
+    });
+
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      if (!pointerDownPos.active) return;
+      pointerDownPos.active = false;
+      const now = performance.now();
+      state.lastUserInteraction = now;
+
+      const dx = e.clientX - pointerDownPos.x;
+      const dy = e.clientY - pointerDownPos.y;
+      const distSq = dx * dx + dy * dy;
+      const elapsed = now - pointerDownPos.time;
+
+      // Only count as tap if drag distance < 10px and duration < 600ms
+      if (distSq > 100 || elapsed > 600) return;
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointerNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointerNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointerNdc, camera);
+      const hits = raycaster.intersectObjects(interactiveProxies, false);
+      if (hits.length > 0) {
+        const action = hits[0].object.userData.action;
+        if (action === 'spot') {
+          triggerSpotInteraction(now);
+        } else if (action === 'door') {
+          triggerDoorInteraction(now);
+        }
+      }
+    });
+
+    // Helper to position floating 2D labels clamped safely between header & footer
+    const projVec = new THREE.Vector3();
+    function updateFloatingLabel(el, worldAnchor) {
+      projVec.copy(worldAnchor);
+      projVec.project(camera);
+
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const screenX = (projVec.x * 0.5 + 0.5) * w;
+      const screenY = (-projVec.y * 0.5 + 0.5) * h;
+
+      const headerBottom = hudHeaderEl.getBoundingClientRect().bottom + 28;
+      const footerTop = hudFooterEl.getBoundingClientRect().top - 14;
+
+      const clampedX = Math.max(54, Math.min(w - 54, screenX));
+      const clampedY = Math.max(headerBottom, Math.min(footerTop, screenY));
+
+      el.style.left = `${clampedX.toFixed(1)}px`;
+      el.style.top = `${clampedY.toFixed(1)}px`;
+    }
+
+    // 19. Animation Loop (performance.now timing, idle motion, 25s showcase)
+    function animate() {
+      requestAnimationFrame(animate);
+      const now = performance.now();
+      const tSec = now * 0.001;
+
+      controls.update();
+
+      // IDLE 1: Subtle warm lamp shimmer
+      floorLampLight.intensity = 1.72 + Math.sin(tSec * 3.1) * 0.08 + Math.sin(tSec * 7.4) * 0.04;
+      deskLampLight.intensity = 1.32 + Math.cos(tSec * 2.7) * 0.06;
+
+      // IDLE 2: Desk monitor subtle screen flicker
+      const monFlicker = 0.72 + Math.sin(tSec * 6.0) * 0.07 + (Math.sin(tSec * 19.3) > 0.65 ? 0.10 : 0.0);
+      mats.monitorScreen.emissiveIntensity = monFlicker;
+      monitorGlowLight.intensity = monFlicker * 0.95;
+
+      // IDLE 3: Slow moving evening window light
+      windowLight.position.z = -0.82 + Math.sin(tSec * 0.45) * 0.35;
+      windowLight.intensity = 1.60 + Math.sin(tSec * 0.6) * 0.18;
+
+      // IDLE 4: Contained room dust motes
+      for (let i = 0; i < moteCount; i++) {
+        const m = moteData[i];
+        const mx = m.bx + Math.sin(tSec * m.sx + m.phase) * 0.16;
+        const my = m.by + Math.sin(tSec * m.sy + m.phase * 1.3) * 0.14;
+        const mz = m.bz + Math.cos(tSec * m.sx * 0.8 + m.phase) * 0.16;
+        moteDummy.position.set(mx, my, mz);
+        moteDummy.scale.setScalar(m.scale);
+        moteDummy.updateMatrix();
+        motesInstanced.setMatrixAt(i, moteDummy.matrix);
+      }
+      motesInstanced.instanceMatrix.needsUpdate = true;
+
+      // IDLE 5: Gentle showcase repeat once every 25 seconds if untouched
+      if (!state.spotActive && !state.doorActive && now - state.lastUserInteraction > 25000) {
+        state.lastUserInteraction = now;
+        if (state.nextShowcaseIsDoor) {
+          triggerDoorInteraction(now);
+        } else {
+          triggerSpotInteraction(now);
+        }
+        state.nextShowcaseIsDoor = !state.nextShowcaseIsDoor;
+      }
+
+      // INTERACTION 1 Update: Sheldon's Spot (6.0s total duration)
+      if (state.spotActive) {
+        const elapsed = now - state.spotStartTime;
+        if (elapsed >= state.spotDuration) {
+          resetSpotInteraction();
+        } else {
+          // Smooth fade-in (0..0.4s), hold, smooth fade-out (4.6..6.0s)
+          let env = 1.0;
+          if (elapsed < 400) {
+            env = elapsed / 400;
+          } else if (elapsed > 4600) {
+            env = 1.0 - (elapsed - 4600) / 1400;
+          }
+          env = Math.max(0, Math.min(1, env));
+
+          sheldonSpotLight.intensity = 5.4 * env;
+          mats.leatherSpot.emissiveIntensity = (0.38 + 0.12 * Math.sin(elapsed * 0.008)) * env;
+          leftSeatCushion.position.y = 0.40 + Math.sin(elapsed * 0.006) * 0.015 * env;
+
+          orbitMatGold.opacity = 0.88 * env;
+          orbitMatBlue.opacity = 0.85 * env;
+          cushionHaloMat.opacity = (0.45 + 0.18 * Math.sin(elapsed * 0.01)) * env;
+          cushionHalo.scale.setScalar(1.0 + 0.08 * Math.sin(elapsed * 0.007));
+
+          atomOrbitGroup.position.y = 1.14 + Math.sin(elapsed * 0.004) * 0.05;
+          atomOrbitGroup.rotation.y = elapsed * 0.0016;
+          atomRings.forEach(ar => {
+            const ang = elapsed * 0.001 * ar.speed + ar.phase;
+            ar.electron.position.set(Math.cos(ang) * 0.42, Math.sin(ang) * 0.42, 0);
+          });
+
+          spotLabelEl.style.opacity = env.toFixed(2);
+          updateFloatingLabel(spotLabelEl, spotLabelAnchor);
+        }
+      }
+
+      // INTERACTION 2 Update: 4A Door Three-Knock Sequence (0s, 0.55s, 1.1s, fading by 5.0s)
+      if (state.doorActive) {
+        const elapsed = now - state.doorStartTime;
+        if (elapsed >= state.doorDuration) {
+          resetDoorInteraction();
+        } else {
+          // Calculate 3 distinct knocks at 0ms, 550ms, 1100ms
+          let doorAngle = 0;
+          let knockEmissive = 0;
+
+          knockRings.forEach(kr => {
+            const localT = elapsed - kr.delay;
+            if (localT >= 0 && localT <= 950) {
+              const p = localT / 950;
+              const ringScale = 0.55 + p * 2.45;
+              kr.mesh.scale.setScalar(ringScale);
+              kr.mat.opacity = Math.sin(p * Math.PI) * (1.0 - p * 0.4);
+            } else {
+              kr.mat.opacity = 0;
+            }
+
+            // Sharp tactile door pivot pulse on each knock
+            if (localT >= 0 && localT <= 380) {
+              const kp = localT / 380;
+              const pulse = Math.sin(kp * Math.PI);
+              doorAngle += pulse * 0.14;
+              knockEmissive = Math.max(knockEmissive, pulse * 0.65);
+            }
+          });
+
+          doorPivot.rotation.y = -doorAngle;
+          mats.doorGreen.emissiveIntensity = knockEmissive;
+
+          // Hallway warm glow builds up and gently fades out by 5.0s
+          let hallFade = 1.0;
+          if (elapsed < 300) {
+            hallFade = elapsed / 300;
+          } else if (elapsed > 2200) {
+            hallFade = 1.0 - (elapsed - 2200) / 2800;
+          }
+          hallFade = Math.max(0, Math.min(1, hallFade));
+          hallwayLight.intensity = 0.95 + 2.65 * hallFade;
+
+          // Keep "knock knock knock" label visible during knock + glow
+          const labelOp = elapsed < 3600 ? Math.min(1, elapsed / 180) : Math.max(0, 1 - (elapsed - 3600) / 1200);
+          knockLabelEl.style.opacity = labelOp.toFixed(2);
+          updateFloatingLabel(knockLabelEl, doorLabelAnchor);
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
