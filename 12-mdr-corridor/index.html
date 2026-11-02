@@ -115,26 +115,25 @@ function allCornersFit(){
 /* shift camera+orbit-target in the screen plane so the projected model
    bounding box lands at viewport centre (small lift for the hint pill) */
 function centerProjectedModel(){
-  camera.updateMatrixWorld();
-  const p = new THREE.Vector3();
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-  for (const c of FIT_CORNERS){
-    p.copy(c).project(camera);
-    if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
-    if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+  for (let pass = 0; pass < 2; pass++){
+    camera.updateMatrixWorld();
+    const p = new THREE.Vector3();
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const c of FIT_CORNERS){
+      p.copy(c).project(camera);
+      if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+    }
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    const dist = camera.position.distanceTo(controls.target);
+    const halfH = Math.tan(camera.fov * Math.PI / 360) * dist;
+    const halfW = halfH * camera.aspect;
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+    camera.position.addScaledVector(right, cx * halfW).addScaledVector(up, (cy - 0.05) * halfH);
+    controls.target.addScaledVector(right, cx * halfW).addScaledVector(up, (cy - 0.05) * halfH);
+    camera.lookAt(controls.target);
   }
-  const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
-  const dist = camera.position.distanceTo(controls.target);
-  const halfH = Math.tan(camera.fov * Math.PI / 360) * dist;
-  const halfW = halfH * camera.aspect;
-  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
-  const shift = new THREE.Vector3()
-    .addScaledVector(right, -cx * halfW)
-    .addScaledVector(up, -(cy - 0.05) * halfH);
-  camera.position.add(shift);
-  controls.target.add(shift);
-  camera.lookAt(controls.target);
 }
 function frameForViewport(){
   const aspect = innerWidth/innerHeight;
