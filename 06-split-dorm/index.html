@@ -73,8 +73,8 @@ renderer.toneMappingExposure = 1.1;
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x181a21);
-scene.fog = new THREE.FogExp2(0x14101c, 0.004);
+scene.background = new THREE.Color(0x0b0c12);
+scene.fog = new THREE.FogExp2(0x08070e, 0.005);
 
 const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.1, 220);
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -181,7 +181,7 @@ const GROUND = 0;
   for (let i=0;i<13;i++){
     const x = -3.72 + i*bw;
     const warm = true;
-    const tone = warm ? (0x775237 + ((i%3)-1)*0x040302) : (0x6e6a70 + ((i%3)-1)*0x040404);
+    const tone = warm ? (0x4a3320 + ((i%3)-1)*0x030201) : (0x484448 + ((i%3)-1)*0x030303);
     const b = box(bw-0.035, 0.07, 6.9, M(tone,{roughness:0.85}));
     b.position.set(x, GROUND-0.012, 0.4);
     b.castShadow = false;
@@ -211,7 +211,7 @@ const tc=timberCanvas.getContext('2d'); tc.fillStyle='#3c2b23';tc.fillRect(0,0,1
 let seed=73; const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
 for(let y=0;y<1024;y+=40){tc.fillStyle=['#49352a','#423026','#50382a','#392b24'][Math.floor(rnd()*4)];tc.fillRect(0,y,1024,38);tc.fillStyle='#1b1716';tc.fillRect(0,y+38,1024,2); for(let j=0;j<22;j++){tc.strokeStyle=`rgba(12,8,5,${.1+rnd()*.15})`;tc.beginPath();const gy=y+rnd()*38;tc.moveTo(0,gy);tc.bezierCurveTo(330,gy-3,650,gy+4,1024,gy);tc.stroke();}}
 const timberTex=new THREE.CanvasTexture(timberCanvas);timberTex.colorSpace=THREE.SRGBColorSpace;timberTex.repeat.set(1/8.1,1/5.25);timberTex.offset.set(.5,0);
-const wall=new THREE.Mesh(new THREE.ExtrudeGeometry(wallShape,{depth:WALL_T,bevelEnabled:false,curveSegments:64}),M(0xe8cda9,{map:timberTex}));wall.position.z=WALL_Z-.15;wall.receiveShadow=true;scene.add(wall);
+const wall=new THREE.Mesh(new THREE.ExtrudeGeometry(wallShape,{depth:WALL_T,bevelEnabled:false,curveSegments:64}),M(0x8f7663,{map:timberTex}));wall.position.z=WALL_Z-.15;wall.receiveShadow=true;scene.add(wall);
 function beam(a,b,width=.12,depth=.15){const av=new THREE.Vector3(...a),bv=new THREE.Vector3(...b);const m=box(width,av.distanceTo(bv),depth,frameMat);m.position.copy(av).add(bv).multiplyScalar(.5);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),bv.sub(av).normalize());scene.add(m);return m;}
 for(const x of [-3.8,-2.6,2.6,3.8]){const top=5.25-Math.abs(x)*1.55/4.05;beam([x,0,WALL_Z+.12],[x,top,WALL_Z+.12],.13,.18);}
 beam([-4.05,3.7,WALL_Z+.13],[0,5.25,WALL_Z+.13],.18,.22);beam([0,5.25,WALL_Z+.13],[4.05,3.7,WALL_Z+.13],.18,.22);
@@ -248,7 +248,7 @@ for(let k=0;k<16;k++)for(let j=0;j<6;j++){
  for(let q=16;q>=0;q--){const p=webPoint(WIN_R*j/6,k,q/16);px.lineTo(...p);}px.closePath();px.fill();px.strokeStyle='#15141b';px.lineWidth=.023;px.stroke();
 }
 const projectionTex=new THREE.CanvasTexture(pc);projectionTex.colorSpace=THREE.SRGBColorSpace;
-const projectedLight=new THREE.Mesh(new THREE.PlaneGeometry(5.3,6.0),new THREE.MeshBasicMaterial({map:projectionTex,transparent:true,opacity:.47,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));projectedLight.rotation.x=-Math.PI/2;projectedLight.position.set(0,.036,.25);scene.add(projectedLight);
+const projectedLight=new THREE.Mesh(new THREE.PlaneGeometry(5.3,6.0),new THREE.MeshBasicMaterial({map:projectionTex,transparent:true,opacity:.62,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));projectedLight.rotation.x=-Math.PI/2;projectedLight.position.set(0,.036,.25);scene.add(projectedLight);
 /* sky bands + moon + stars OUTSIDE the window (flat backdrop plane stack) */
 const skyBands = [];
 let moonMesh, starPts;
@@ -510,13 +510,13 @@ for(let i=0;i<7;i++)for(let j=0;j<5;j++){const patch=box(.23,.025,.15,M(quiltCol
 for(let j=0;j<3;j++){
  const pts=[];for(let i=0;i<=32;i++){const t=i/32;pts.push(new THREE.Vector3(-3.8+t*2.0,4.0-j*.17-Math.sin(t*Math.PI)*(1.1+j*.1),WALL_Z+.2+j*.05));}
  const verts=[],idx=[];for(let i=0;i<pts.length;i++){const p=pts[i];verts.push(p.x,p.y-.09,p.z,p.x,p.y+.09,p.z+.025);if(i<pts.length-1){let q=i*2;idx.push(q,q+1,q+2,q+1,q+3,q+2);}}
- const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geo.setIndex(idx);geo.computeVertexNormals();const ribbon=new THREE.Mesh(geo,M([0xcb779f,0xc6ad54,0x6c9e92][j],{side:THREE.DoubleSide}));scene.add(ribbon);
+ const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geo.setIndex(idx);geo.computeVertexNormals();const ribbon=new THREE.Mesh(geo,M([0x7e3550,0x55623a,0x2f5a52][j],{side:THREE.DoubleSide}));scene.add(ribbon);
 }
 // Warm bedside lamps flank the window, as in the supplied reference.
 for(const x of [-2.4,2.4]){
  const metal=M(0x9e8453,{roughness:.4,metalness:.5});const stem=cyl(.024,.024,1.7,metal,8);stem.position.set(x,.85,-2.48);scene.add(stem);
  const shade=new THREE.Mesh(new THREE.CylinderGeometry(.25,.27,.39,20,1,true),M(0xffdc8e,{emissive:0xffbe55,emissiveIntensity:.7,side:THREE.DoubleSide}));shade.position.set(x,1.88,-2.48);scene.add(shade);
- const light=new THREE.PointLight(0xffd18a,1.1,4,1.5);light.position.set(x,1.75,-2.2);scene.add(light);
+ const light=new THREE.PointLight(0xffc878,0.85,3.1,1.6);light.position.set(x,1.75,-2.2);scene.add(light);
 }
 /* ---------- lights ---------- */
 const hemi = new THREE.HemisphereLight(0xcfd8e8, 0x4a3a48, 1.6);
@@ -534,7 +534,7 @@ const moonLight = new THREE.DirectionalLight(0x9cb4e8, 0.0); // night: cold moon
 moonLight.position.set(-3, 6, -6);
 moonLight.castShadow = false;
 scene.add(moonLight);
-const fill = new THREE.DirectionalLight(0xb8a8c8, 0.35);
+const fill = new THREE.DirectionalLight(0x8a94b8, 0.3);
 fill.position.set(-5, 4, 5);
 scene.add(fill);
 
@@ -557,14 +557,14 @@ scene.add(new THREE.Points(dustGeo, dustMat));
 /* ---------- states: window light + mood ---------- */
 const STATES = [
   { name:'day',
-    sky:[0x9fb8d8, 0xc9d4de, 0xe6ddc8], hemi:[0xcfd8e8, 0x4a3a48, 1.6], sunC:0xfff0d8, sunI:1.9, moonI:0,
-    fillI:0.5, exp:1.22, stars:0, moon:0, fairy:0.5, lamp:0.55, candle:0.0, glass:0.7, dust:0.35 },
+    sky:[0x76889f, 0x9aa6b4, 0xbfb8a2], hemi:[0x9aaac4, 0x241e2a, 0.8], sunC:0xd8dee8, sunI:1.0, moonI:0,
+    fillI:0.26, exp:0.98, stars:0, moon:0, fairy:0.4, lamp:0.45, candle:0.0, glass:0.75, dust:0.3 },
   { name:'dusk',
-    sky:[0x8a6a9a, 0xd88a6a, 0xf2b878], hemi:[0xd8b49a, 0x463040, 1.15], sunC:0xffb060, sunI:1.2, moonI:0.1,
-    fillI:0.45, exp:1.16, stars:0.2, moon:0.25, fairy:0.9, lamp:0.8, candle:0.5, glass:0.9, dust:0.42 },
+    sky:[0x463a5e, 0x7c4c42, 0xa06840], hemi:[0x5e4e6e, 0x181320, 0.56], sunC:0xc8764a, sunI:0.5, moonI:0.55,
+    fillI:0.24, exp:0.95, stars:0.35, moon:0.35, fairy:0.85, lamp:0.7, candle:0.7, glass:1.05, dust:0.4 },
   { name:'night',
-    sky:[0x141c30, 0x1d2842, 0x27354e], hemi:[0x50608a, 0x2a2232, 0.8], sunC:0x8898d8, sunI:0.0, moonI:1.1,
-    fillI:0.45, exp:1.13, stars:1, moon:1, fairy:1.5, lamp:1.0, candle:1.4, glass:1.4, dust:0.5 },
+    sky:[0x090f1e, 0x0f1728, 0x141f36], hemi:[0x2c3a5c, 0x0d0b14, 0.34], sunC:0x8898d8, sunI:0.0, moonI:1.3,
+    fillI:0.17, exp:0.94, stars:1, moon:1, fairy:1.5, lamp:0.9, candle:1.5, glass:1.5, dust:0.5 },
 ];
 let stateIdx = 1;
 let blend = { t:1, from:STATES[0], to:STATES[0] };
