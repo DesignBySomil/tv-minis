@@ -709,7 +709,7 @@ let firstFrames = 0;
 <script>
 /* tv-audio v1: procedural ambience + tap sfx. All sounds synthesized, no assets. */
 (() => {
-  const CFG = {"amb": ["tick", "crackle"]};
+  const CFG = {"amb": []};
   const KEY = "tvmini-muted";
   let ctx = null, master = null, analyser = null, NOISE = null, started = false;
   let muted = false;
@@ -786,7 +786,7 @@ let firstFrames = 0;
     crickets(){ every(1.2, 2.6, () => { for (let i = 0; i < 3; i++) setTimeout(() => { if (ctx) ping("sine", 4300, 4100, 0.05, 0.022); }, i * 75); }); }
   };
 
-  function applyGain(){ if (!ctx || !master) return; master.gain.setTargetAtTime(muted ? 0 : 3.5, ctx.currentTime, 0.5); }
+  function applyGain(){ if (!ctx || !master) return; master.gain.setTargetAtTime(muted ? 0 : 2.2, ctx.currentTime, 0.5); }
   function unlock(){
     ensureCtx();
     if (!ctx) return;
@@ -807,10 +807,6 @@ let firstFrames = 0;
   window.__tvSfx = () => {
     if (!ctx || muted || ctx.state !== "running") return;
     ping("triangle", 640, 300, 0.11, 0.11);
-    const hp = filt("highpass", 2600), g2 = shot(0.02);
-    g2.connect(hp); hp.connect(master);
-    g2.gain.setValueAtTime(0.05, ctx.currentTime);
-    g2.gain.exponentialRampToValueAtTime(0.0004, ctx.currentTime + 0.02);
   };
   const abuf = new Uint8Array(256);
   function record(sec){
