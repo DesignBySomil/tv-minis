@@ -56,7 +56,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 
 /* ============================================================
    SPLIT DORM - one room, two worlds.
-   Left half monochrome and severe, right half exploded with
+   Left half colorful Enid, right half monochrome Wednesday, with
    color. A circular window splits along the same seam.
    All procedural geometry.
    ============================================================ */
@@ -73,7 +73,7 @@ renderer.toneMappingExposure = 1.1;
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x241c2c);
+scene.background = new THREE.Color(0x181a21);
 scene.fog = new THREE.FogExp2(0x14101c, 0.004);
 
 const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.1, 220);
@@ -89,7 +89,7 @@ controls.maxDistance = 60;
 
 const FIT_BOXES = [
   new THREE.Box3(new THREE.Vector3(-4.4, -1.1, -3.4), new THREE.Vector3(4.4, 0.2, 4.2)),
-  new THREE.Box3(new THREE.Vector3(-4.2, 0, -3.2), new THREE.Vector3(4.2, 3.9, 4.0)),
+  new THREE.Box3(new THREE.Vector3(-4.2, 0, -3.2), new THREE.Vector3(4.2, 5.4, 4.0)),
 ];
 const FIT_CORNERS = [];
 for (const b of FIT_BOXES)
@@ -135,8 +135,8 @@ function frameForViewport(){
   camera.aspect = aspect;
   camera.updateProjectionMatrix();
   const dir = camera.position.clone().sub(controls.target);
-  if (aspect < 0.8) dir.set(0.42, 0.72, 0.55);
-  else dir.set(0.5, 0.5, 0.7);
+  if (aspect < 0.8) dir.set(0.28, 0.55, 0.9);
+  else dir.set(0.28, 0.46, 0.9);
   dir.normalize();
   let lo = 4, hi = 60;
   for (let i=0;i<28;i++){
@@ -180,8 +180,8 @@ const GROUND = 0;
   const bw = 0.62;
   for (let i=0;i<13;i++){
     const x = -3.72 + i*bw;
-    const warm = x > 0.05;
-    const tone = warm ? (0x9a6b48 + ((i%3)-1)*0x060402) : (0x6e6a70 + ((i%3)-1)*0x040404);
+    const warm = true;
+    const tone = warm ? (0x775237 + ((i%3)-1)*0x040302) : (0x6e6a70 + ((i%3)-1)*0x040404);
     const b = box(bw-0.035, 0.07, 6.9, M(tone,{roughness:0.85}));
     b.position.set(x, GROUND-0.012, 0.4);
     b.castShadow = false;
@@ -196,55 +196,59 @@ const GROUND = 0;
   }
 }
 
-/* ---------- walls: back (with circular window) + left return ---------- */
-const WALL_H = 3.55, WALL_T = 0.22, WALL_Z = -2.85;
-const wallM = M(0x685a70,{roughness:0.96});       // dusty plum plaster
-const wallML = M(0x564e58,{roughness:0.96});      // left half, greyed
-const wainsM = M(0x2c2230,{roughness:0.9});
-const windowGroup = new THREE.Group();
-{
-  const WIN_R = 0.95, WIN_Y = 2.05;
-  // back wall slabs around the circular opening: bottom band, top band, left/right cheeks
-  const bot = box(8.1, 1.02, WALL_T, wallM); bot.position.set(0, 0.51, WALL_Z); scene.add(bot);
-  const top = box(8.1, WALL_H-(WIN_Y+WIN_R)+0.06, WALL_T, wallM);
-  top.position.set(0, (WALL_H+WIN_Y+WIN_R)/2+0.03, WALL_Z); scene.add(top);
-  const cheekW = (8.1/2 - WIN_R);
-  const chL = box(cheekW, WIN_R*2+0.04, WALL_T, wallML); chL.position.set(-(WIN_R+cheekW/2), WIN_Y, WALL_Z); scene.add(chL);
-  const chR = box(cheekW, WIN_R*2+0.04, WALL_T, wallM); chR.position.set(WIN_R+cheekW/2, WIN_Y, WALL_Z); scene.add(chR);
-  // wainscot rail + baseboard, split tone at the seam
-  for (const [x0,w,mat] of [[-4.05,4.05,wainsM],[0,4.05,M(0x3a2a38,{roughness:0.9})]]){
-    const rail = box(w, 0.09, WALL_T+0.05, mat); rail.position.set(x0+w/2- (x0?0:0)+ (x0?0:0), 1.06, WALL_Z); scene.add(rail);
-    const base = box(w, 0.16, WALL_T+0.07, mat); base.position.set(x0+w/2, 0.08, WALL_Z); scene.add(base);
-  }
-  // left return wall (Wednesday side only, her corner)
-  const ret = box(WALL_T, WALL_H, 6.6, wallML); ret.position.set(-4.0, WALL_H/2, 0.35); scene.add(ret);
-  const retBase = box(WALL_T+0.07, 0.16, 6.6, wainsM); retBase.position.set(-4.0, 0.08, 0.35); scene.add(retBase);
-  const retRail = box(WALL_T+0.05, 0.09, 6.6, wainsM); retRail.position.set(-4.0, 1.06, 0.35); scene.add(retRail);
-  // dark cap rails along wall tops (kills lit top-face sliver in portrait framing)
-  const capM = new THREE.MeshBasicMaterial({color:0x241c28}); // unlit: no top-face highlight sliver
-  const capB = box(8.3, 0.1, WALL_T+0.12, capM); capB.position.set(0, WALL_H+0.03, WALL_Z); scene.add(capB);
-  const capL = box(WALL_T+0.12, 0.1, 6.75, capM); capL.position.set(-4.0, WALL_H+0.03, 0.35); scene.add(capL);
-
-  // circular window: ring frame, half-split panes
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(WIN_R+0.06, 0.09, 10, 40), M(0x1f1826,{roughness:0.6, metalness:0.25}));
-  ring.position.set(0, WIN_Y, WALL_Z); ring.castShadow = true; windowGroup.add(ring);
-  const cross = M(0x1f1826,{roughness:0.6, metalness:0.25});
-  const mullV = box(0.07, WIN_R*2, 0.09, cross); mullV.position.set(0, WIN_Y, WALL_Z); windowGroup.add(mullV);
-  const mullH = box(WIN_R*2, 0.07, 0.09, cross); mullH.position.set(0, WIN_Y, WALL_Z); windowGroup.add(mullH);
-  // panes: left half smoky dark glass; right half four candy wedges
-  const glassL = new THREE.Mesh(new THREE.CircleGeometry(WIN_R, 24, Math.PI/2, Math.PI),
-    M(0x2b3346,{roughness:0.25, metalness:0.1, emissive:0x0c1220, emissiveIntensity:0.7}));
-  glassL.position.set(0, WIN_Y, WALL_Z-0.04); windowGroup.add(glassL);
-  const candy = [0xe86a92, 0xf2b64f, 0x7fc86e, 0x5f9fd8];
-  for (let i=0;i<4;i++){
-    const wedge = new THREE.Mesh(new THREE.CircleGeometry(WIN_R, 12, -Math.PI/2 + i*Math.PI/4, Math.PI/4),
-      M(candy[i],{roughness:0.35, emissive:candy[i], emissiveIntensity:0.28}));
-    wedge.position.set(0, WIN_Y, WALL_Z-0.04); windowGroup.add(wedge);
-  }
-  windowGroup.userData.glassL = glassL;
-  windowGroup.userData.wedges = windowGroup.children.filter(c=>c.geometry && c.geometry.type==='CircleGeometry' && c!==glassL);
-  scene.add(windowGroup);
+/* ---------- reference-faithful attic and split spiderweb window ---------- */
+const WALL_H=4.4, WALL_T=.22, WALL_Z=-2.85;
+const windowGroup=new THREE.Group();
+const WIN_R=1.62, WIN_Y=2.5;
+const frameMat=M(0x604332,{roughness:.7});
+// True circular opening in a timber gable, not opaque slabs over glass.
+const wallShape=new THREE.Shape();
+wallShape.moveTo(-4.05,0); wallShape.lineTo(4.05,0); wallShape.lineTo(4.05,3.7);
+wallShape.lineTo(0,5.25); wallShape.lineTo(-4.05,3.7); wallShape.closePath();
+const hole=new THREE.Path(); hole.absarc(0,WIN_Y,WIN_R+.05,0,Math.PI*2,true); wallShape.holes.push(hole);
+const timberCanvas=document.createElement('canvas'); timberCanvas.width=1024;timberCanvas.height=1024;
+const tc=timberCanvas.getContext('2d'); tc.fillStyle='#3c2b23';tc.fillRect(0,0,1024,1024);
+let seed=73; const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+for(let y=0;y<1024;y+=40){tc.fillStyle=['#49352a','#423026','#50382a','#392b24'][Math.floor(rnd()*4)];tc.fillRect(0,y,1024,38);tc.fillStyle='#1b1716';tc.fillRect(0,y+38,1024,2); for(let j=0;j<22;j++){tc.strokeStyle=`rgba(12,8,5,${.1+rnd()*.15})`;tc.beginPath();const gy=y+rnd()*38;tc.moveTo(0,gy);tc.bezierCurveTo(330,gy-3,650,gy+4,1024,gy);tc.stroke();}}
+const timberTex=new THREE.CanvasTexture(timberCanvas);timberTex.colorSpace=THREE.SRGBColorSpace;timberTex.repeat.set(1/8.1,1/5.25);timberTex.offset.set(.5,0);
+const wall=new THREE.Mesh(new THREE.ExtrudeGeometry(wallShape,{depth:WALL_T,bevelEnabled:false,curveSegments:64}),M(0xe8cda9,{map:timberTex}));wall.position.z=WALL_Z-.15;wall.receiveShadow=true;scene.add(wall);
+function beam(a,b,width=.12,depth=.15){const av=new THREE.Vector3(...a),bv=new THREE.Vector3(...b);const m=box(width,av.distanceTo(bv),depth,frameMat);m.position.copy(av).add(bv).multiplyScalar(.5);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),bv.sub(av).normalize());scene.add(m);return m;}
+for(const x of [-3.8,-2.6,2.6,3.8]){const top=5.25-Math.abs(x)*1.55/4.05;beam([x,0,WALL_Z+.12],[x,top,WALL_Z+.12],.13,.18);}
+beam([-4.05,3.7,WALL_Z+.13],[0,5.25,WALL_Z+.13],.18,.22);beam([0,5.25,WALL_Z+.13],[4.05,3.7,WALL_Z+.13],.18,.22);
+beam([-4.05,.12,WALL_Z+.12],[4.05,.12,WALL_Z+.12],.12,.18);
+// Side cutaway: low timber return keeps the colorful bed visible.
+const ret=box(.18,.65,6.6,M(0x3b2c25));ret.position.set(-4.02,.325,.35);scene.add(ret);
+for(const z of [-2.7,.1,3.55])beam([-4.02,0,z],[-4.02,.82,z],.12,.14);
+const ring=new THREE.Mesh(new THREE.TorusGeometry(WIN_R+.04,.075,10,96),frameMat);ring.position.set(0,WIN_Y,WALL_Z+.03);windowGroup.add(ring);
+const palette=[0xffd966,0xef9fcb,0x8bcde4,0xb8a6e5,0xf2c97b,0x8ed6cf];
+const paneMaterials=[];
+function webPoint(r,k,t){const ang=(k+t)*Math.PI/8;const scallop=1-(r>WIN_R*.999?0:.085)*Math.sin(Math.PI*t);return [Math.cos(ang)*r*scallop,Math.sin(ang)*r*scallop];}
+for(let k=0;k<16;k++)for(let j=0;j<6;j++){
+ const r0=WIN_R*j/6,r1=WIN_R*(j+1)/6, pts=[];
+ for(let q=0;q<=12;q++)pts.push(webPoint(r1,k,q/12));
+ for(let q=12;q>=0;q--)pts.push(webPoint(r0,k,q/12));
+ const sh=new THREE.Shape(pts.map(p=>new THREE.Vector2(...p)));sh.closePath();
+ const left=Math.cos((k+.5)*Math.PI/8)<0;const col=left?palette[(k*3+j)%palette.length]:0xc6e3eb;
+ const mat=M(col,{emissive:col,emissiveIntensity:left?.5:.65,roughness:.3,side:THREE.DoubleSide});paneMaterials.push(mat);
+ const pane=new THREE.Mesh(new THREE.ShapeGeometry(sh),mat);pane.position.set(0,WIN_Y,WALL_Z+.01);windowGroup.add(pane);
 }
+const webMat=new THREE.LineBasicMaterial({color:0x19191b});
+for(let k=0;k<16;k++){
+ const a=k*Math.PI/8; const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,WIN_Y,WALL_Z+.075),new THREE.Vector3(Math.cos(a)*WIN_R,WIN_Y+Math.sin(a)*WIN_R,WALL_Z+.075)]),webMat);windowGroup.add(line);
+ for(let j=1;j<=6;j++){const pts=[];for(let q=0;q<=16;q++){const p=webPoint(WIN_R*j/6,k,q/16);pts.push(new THREE.Vector3(p[0],WIN_Y+p[1],WALL_Z+.08));}windowGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),webMat));}
+}
+// Preserve the original day/dusk/night material bindings.
+windowGroup.userData.glassL={material:paneMaterials[0]};windowGroup.userData.wedges=paneMaterials.slice(1).map(material=>({material}));
+const winHit=new THREE.Mesh(new THREE.CircleGeometry(WIN_R,64),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,colorWrite:false,side:THREE.DoubleSide}));winHit.position.set(0,WIN_Y,WALL_Z+.1);windowGroup.add(winHit);scene.add(windowGroup);
+// Colored light follows the same web geometry, laid across the wooden floor.
+const pc=document.createElement('canvas');pc.width=1024;pc.height=1024;const px=pc.getContext('2d');px.translate(512,512);px.scale(290,290);
+for(let k=0;k<16;k++)for(let j=0;j<6;j++){
+ const left=Math.cos((k+.5)*Math.PI/8)<0;px.fillStyle=left?'#'+palette[(k*3+j)%6].toString(16).padStart(6,'0'):'#e0f4ff';px.beginPath();
+ for(let q=0;q<=16;q++){const p=webPoint(WIN_R*(j+1)/6,k,q/16);q?px.lineTo(...p):px.moveTo(...p);}
+ for(let q=16;q>=0;q--){const p=webPoint(WIN_R*j/6,k,q/16);px.lineTo(...p);}px.closePath();px.fill();px.strokeStyle='#15141b';px.lineWidth=.023;px.stroke();
+}
+const projectionTex=new THREE.CanvasTexture(pc);projectionTex.colorSpace=THREE.SRGBColorSpace;
+const projectedLight=new THREE.Mesh(new THREE.PlaneGeometry(5.3,6.0),new THREE.MeshBasicMaterial({map:projectionTex,transparent:true,opacity:.47,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));projectedLight.rotation.x=-Math.PI/2;projectedLight.position.set(0,.036,.25);scene.add(projectedLight);
 /* sky bands + moon + stars OUTSIDE the window (flat backdrop plane stack) */
 const skyBands = [];
 let moonMesh, starPts;
@@ -264,7 +268,8 @@ let moonMesh, starPts;
   scene.add(starPts);
 }
 
-/* ---------- LEFT: monochrome side ---------- */
+const furnitureStart=scene.children.length;
+/* ---------- Wednesday furniture, mirrored to right below ---------- */
 const blackMetal = M(0x17161a,{roughness:0.45, metalness:0.6});
 const darkWood = M(0x2c2626,{roughness:0.8});
 const candleFlames = [];
@@ -373,14 +378,14 @@ const fairyGroup = new THREE.Group();
 const fairyBulbs = [];
 let fairyLight;
 {
-  const lilacWood = M(0xb99ad4,{roughness:0.7});
+  const lilacWood = M(0xb19a62,{roughness:.4,metalness:.55});
   // bed frame painted lilac
   const bed2 = new THREE.Group();
   for (const [px,pz] of [[1.85,-2.35],[3.55,-2.35],[1.85,-1.05],[3.55,-1.05]]){
     const post = box(0.08,0.66,0.08,lilacWood); post.position.set(px,0.33,pz); bed2.add(post);
   }
   const frame2 = box(1.76,0.12,1.36,lilacWood); frame2.position.set(2.7,0.44,-1.7); bed2.add(frame2);
-  const head2 = box(1.76,0.5,0.07,lilacWood); head2.position.set(2.7,0.8,-2.36); bed2.add(head2);
+  const head2 = box(1.76,0.06,0.07,lilacWood); head2.position.set(2.7,0.8,-2.36); bed2.add(head2);
   const mattress2 = rbox(1.68,0.2,1.28,0.05,M(0xf6f2ea,{roughness:0.95})); mattress2.position.set(2.7,0.6,-1.7); bed2.add(mattress2);
   // riot of pillows
   const pilCols = [0xf06a9a, 0xf6c84f, 0x63c8b2, 0x8a6fd8];
@@ -435,9 +440,9 @@ let fairyLight;
       fairyBulbs.push({m:bm, seed:rand(0,100), base:1.4});
     }
   }
-  fairyRun(new THREE.Vector3(0.6,3.3,-2.72), new THREE.Vector3(3.95,3.0,-2.72), 0.35, 12);
-  fairyRun(new THREE.Vector3(0.9,2.6,-2.72), new THREE.Vector3(3.9,2.2,-2.72), 0.28, 10);
-  fairyRun(new THREE.Vector3(1.2,2.85,-2.0), new THREE.Vector3(3.8,2.6,-2.0), 0.2, 9);
+  fairyRun(new THREE.Vector3(2.05,3.3,-2.72), new THREE.Vector3(3.95,3.0,-2.72), 0.35, 12);
+  fairyRun(new THREE.Vector3(2.1,2.6,-2.72), new THREE.Vector3(3.9,2.2,-2.72), 0.28, 10);
+  fairyRun(new THREE.Vector3(2.1,2.85,-2.0), new THREE.Vector3(3.8,2.6,-2.0), 0.2, 9);
   fairyLight = new THREE.PointLight(0xffc0d8, 0.55, 5.2, 1.7);
   fairyLight.position.set(2.4, 2.6, -1.8);
   scene.add(fairyLight);
@@ -458,10 +463,10 @@ let fairyLight;
   lampLightRef = new THREE.PointLight(0xffc978, 0.7, 3.2, 1.8); lampLightRef.position.set(3.5,1.05,-0.3); scene.add(lampLightRef);
   // polaroid string on wall
   const polWire = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
-    [new THREE.Vector3(1.2,2.9,-2.74), new THREE.Vector3(3.6,2.7,-2.74)]), new THREE.LineBasicMaterial({color:0x4a4038}));
+    [new THREE.Vector3(2.15,2.9,-2.74), new THREE.Vector3(3.6,2.7,-2.74)]), new THREE.LineBasicMaterial({color:0x4a4038}));
   scene.add(polWire);
   for (let i=0;i<5;i++){
-    const t=i/4, px=1.2+t*2.4, py=2.9-t*0.2-0.14;
+    const t=i/4, px=2.15+t*1.4, py=2.9-t*0.2-0.14;
     const pol = box(0.16,0.19,0.012,M(0xf6f2e8,{roughness:0.85}));
     pol.position.set(px,py,-2.73); pol.rotation.z=rand(-0.08,0.08); scene.add(pol);
     const img = box(0.12,0.12,0.006,M([0xe86a92,0x63c8b2,0xf6c84f,0x8a6fd8,0x5f9fd8][i],{roughness:0.7}));
@@ -470,23 +475,11 @@ let fairyLight;
   // posters
   const posterCols = [[0xf06a9a,0xf6c84f],[0x63c8b2,0x2fa89a],[0x8a6fd8,0xe86a92]];
   posterCols.forEach(([c1,c2],i)=>{
-    const p = box(0.5,0.68,0.015,M(c1,{roughness:0.85}));
-    p.position.set(1.35+i*0.75, 1.95+(i%2)*0.12, -2.73); p.rotation.z=rand(-0.03,0.03); scene.add(p);
-    const band = box(0.5,0.16,0.017,M(c2,{roughness:0.85}));
+    const p = box(0.38,0.56,0.015,M(c1,{roughness:0.85}));
+    p.position.set(2.25+i*0.6, 1.95+(i%2)*0.12, -2.73); p.rotation.z=rand(-0.03,0.03); scene.add(p);
+    const band = box(0.38,0.16,0.017,M(c2,{roughness:0.85}));
     band.position.set(p.position.x, p.position.y-0.22, -2.72); band.rotation.z=p.rotation.z; scene.add(band);
   });
-  // bunting flags across the room corner
-  {
-    const pts=[]; const n=9;
-    for (let i=0;i<=n;i++){ const t=i/n; const p=new THREE.Vector3(0.35+t*3.5, 3.35-Math.sin(t*Math.PI)*0.3, 0.9+t*0.4); pts.push(p); }
-    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color:0x4a4038})));
-    const flagCols=[0xf06a9a,0xf6c84f,0x63c8b2,0x8a6fd8,0xe86a92,0x5f9fd8,0xff9a6a,0x9af0c8,0xe3b1ff];
-    for (let i=1;i<n;i++){
-      const flag = new THREE.Mesh(new THREE.ConeGeometry(0.07,0.18,4), M(flagCols[i%flagCols.length],{roughness:0.9}));
-      flag.position.copy(pts[i]); flag.position.y-=0.1; flag.rotation.z=Math.PI; flag.castShadow=true;
-      scene.add(flag);
-    }
-  }
   // fluffy rug: cluster of flattened blobs
   const rugCols=[0xf6b8cd,0xfaf0e4,0xf290b4];
   for (let i=0;i<16;i++){
@@ -504,6 +497,27 @@ let fairyLight;
   }
 }
 
+// Correct room orientation: Enid LEFT, Wednesday RIGHT. Mirror only furniture,
+// not the window, floor projection, camera, text, or user interface.
+const roomFurniture=new THREE.Group();
+for(const child of scene.children.slice(furnitureStart))roomFurniture.add(child);
+roomFurniture.scale.x=-1;scene.add(roomFurniture);
+// Colorful patchwork quilt, brass bed rail, and fabric streamers on Enid's side.
+const brass=M(0xa98c53,{metalness:.55,roughness:.4});
+for(const x of [-3.53,-1.87])beam([x,.4,-2.32],[x,1.15,-2.32],.045,.045);
+const quiltCols=[0xeaa5bc,0xd7ad51,0x85b4aa,0x716ba0,0xd67a91,0xdfc59b];
+for(let i=0;i<7;i++)for(let j=0;j<5;j++){const patch=box(.23,.025,.15,M(quiltCols[(i*7+j*3)%6]));patch.position.set(-3.43+i*.245,.79,-1.84+j*.16);scene.add(patch);}
+for(let j=0;j<3;j++){
+ const pts=[];for(let i=0;i<=32;i++){const t=i/32;pts.push(new THREE.Vector3(-3.8+t*2.0,4.0-j*.17-Math.sin(t*Math.PI)*(1.1+j*.1),WALL_Z+.2+j*.05));}
+ const verts=[],idx=[];for(let i=0;i<pts.length;i++){const p=pts[i];verts.push(p.x,p.y-.09,p.z,p.x,p.y+.09,p.z+.025);if(i<pts.length-1){let q=i*2;idx.push(q,q+1,q+2,q+1,q+3,q+2);}}
+ const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geo.setIndex(idx);geo.computeVertexNormals();const ribbon=new THREE.Mesh(geo,M([0xcb779f,0xc6ad54,0x6c9e92][j],{side:THREE.DoubleSide}));scene.add(ribbon);
+}
+// Warm bedside lamps flank the window, as in the supplied reference.
+for(const x of [-2.4,2.4]){
+ const metal=M(0x9e8453,{roughness:.4,metalness:.5});const stem=cyl(.024,.024,1.7,metal,8);stem.position.set(x,.85,-2.48);scene.add(stem);
+ const shade=new THREE.Mesh(new THREE.CylinderGeometry(.25,.27,.39,20,1,true),M(0xffdc8e,{emissive:0xffbe55,emissiveIntensity:.7,side:THREE.DoubleSide}));shade.position.set(x,1.88,-2.48);scene.add(shade);
+ const light=new THREE.PointLight(0xffd18a,1.1,4,1.5);light.position.set(x,1.75,-2.2);scene.add(light);
+}
 /* ---------- lights ---------- */
 const hemi = new THREE.HemisphereLight(0xcfd8e8, 0x4a3a48, 1.6);
 scene.add(hemi);
@@ -552,7 +566,7 @@ const STATES = [
     sky:[0x141c30, 0x1d2842, 0x27354e], hemi:[0x50608a, 0x2a2232, 0.8], sunC:0x8898d8, sunI:0.0, moonI:1.1,
     fillI:0.45, exp:1.13, stars:1, moon:1, fairy:1.5, lamp:1.0, candle:1.4, glass:1.4, dust:0.5 },
 ];
-let stateIdx = 0;
+let stateIdx = 1;
 let blend = { t:1, from:STATES[0], to:STATES[0] };
 function applyState(s){
   skyBands.forEach((b,i)=>b.material.color.set(s.sky[i]));
@@ -571,7 +585,7 @@ function applyState(s){
   for (const cf of candleFlames) cf.light.intensity = 0.55 * s.candle;
   candleFlames.forEach(cf=>cf.flame.material.emissiveIntensity = 1.2 + 1.2*s.candle);
   lampLightRef.intensity = 0.7 * s.lamp;
-  shadeRef.emissiveIntensity = 0.5 + 0.5*s.lamp;
+  shadeRef.material.emissiveIntensity = 0.5 + 0.5*s.lamp;
 }
 function mixStates(p,n,t){
   const mixC=(a,b)=>new THREE.Color(a).lerp(new THREE.Color(b),t).getHex();
