@@ -25,8 +25,8 @@
   @keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
   #title{position:fixed;top:max(18px,env(safe-area-inset-top));left:20px;z-index:4;pointer-events:none;opacity:0;transition:opacity 1.4s ease .3s}
   body.ready #title{opacity:1}
-  #title h1{font-weight:400;font-size:clamp(20px,5.4vw,30px);letter-spacing:.02em;text-shadow:0 2px 12px rgba(20,8,2,.55)}
-  #title p{font-size:12.5px;font-style:italic;color:#f4e3bc;margin-top:3px;text-shadow:0 1px 3px rgba(20,8,2,.9),0 1px 10px rgba(20,8,2,.6)}
+  #title h1{font-weight:400;font-size:clamp(20px,5.4vw,30px);letter-spacing:.02em}
+  #title p{font-size:12.5px;font-style:italic;color:#f4e3bc;margin-top:3px}
   #hint{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:4;pointer-events:none;
     font-size:11.5px;letter-spacing:.14em;color:#f0dcba;background:rgba(24,12,5,.55);border:1px solid rgba(240,220,186,.18);
     padding:7px 14px;border-radius:99px;backdrop-filter:blur(6px);white-space:nowrap;opacity:0;transition:opacity 1.4s ease .6s}
@@ -105,10 +105,15 @@ function allCornersFit(){
   return true;
 }
 
-/* shift camera+orbit-target in the screen plane so the projected model
-   bounding box lands at viewport centre (small lift for the hint pill) */
+/* shift the projection (never the orbit target) so the projected model
+   bounding box lands at viewport centre. OrbitControls keeps the target's
+   screen position fixed while rotating/zooming, so the miniature stays
+   centred through every interaction. */
+const VIEW_OFF = { x: 0, y: 0 };
 function centerProjectedModel(){
-  for (let pass = 0; pass < 2; pass++){
+  for (let pass = 0; pass < 3; pass++){
+    camera.setViewOffset(innerWidth, innerHeight, VIEW_OFF.x, VIEW_OFF.y, innerWidth, innerHeight);
+    camera.updateProjectionMatrix();
     camera.updateMatrixWorld();
     const p = new THREE.Vector3();
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -118,15 +123,13 @@ function centerProjectedModel(){
       if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
     }
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
-    const dist = camera.position.distanceTo(controls.target);
-    const halfH = Math.tan(camera.fov * Math.PI / 360) * dist;
-    const halfW = halfH * camera.aspect;
-    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
-    camera.position.addScaledVector(right, cx * halfW).addScaledVector(up, (cy - 0.05) * halfH);
-    controls.target.addScaledVector(right, cx * halfW).addScaledVector(up, (cy - 0.05) * halfH);
-    camera.lookAt(controls.target);
+    const needX = (cx * innerWidth) / 2;
+    const needY = (-(cy - 0.05) * innerHeight) / 2;
+    if (Math.abs(needX) < 0.5 && Math.abs(needY) < 0.5) break;
+    VIEW_OFF.x += needX; VIEW_OFF.y += needY;
   }
+  camera.setViewOffset(innerWidth, innerHeight, VIEW_OFF.x, VIEW_OFF.y, innerWidth, innerHeight);
+  camera.updateProjectionMatrix();
 }
 function frameForViewport(){
   const aspect = innerWidth/innerHeight;
@@ -140,7 +143,8 @@ function frameForViewport(){
   for (let i=0;i<28;i++){
     const mid = (lo+hi)/2;
     camera.position.copy(controls.target).addScaledVector(dir, mid);
-    camera.lookAt(controls.target); camera.updateMatrixWorld();
+    camera.lookAt(controls.target);
+    centerProjectedModel();
     if (allCornersFit()) hi = mid; else lo = mid;
   }
   camera.position.copy(controls.target).addScaledVector(dir, hi);
@@ -808,7 +812,7 @@ tick();
   const btn = document.createElement("button");
   btn.type = "button";
   btn.setAttribute("aria-label", "Toggle sound");
-  btn.style.cssText = "position:fixed;right:14px;bottom:max(14px,env(safe-area-inset-bottom));z-index:5;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:rgba(12,14,18,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:.8;transition:opacity .3s";
+  btn.style.cssText = "position:fixed;right:14px;top:max(14px,env(safe-area-inset-top));z-index:5;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:rgba(12,14,18,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:.8;transition:opacity .3s";
   const ICON_ON = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#e8ecf2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
   const ICON_OFF = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#e8ecf2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>';
   const paint = () => { btn.innerHTML = muted ? ICON_OFF : ICON_ON; btn.style.opacity = muted ? ".45" : ".8"; };
