@@ -12,7 +12,7 @@
   #app{position:fixed;inset:0}
   canvas{display:block;touch-action:none}
   #vignette{position:fixed;inset:0;pointer-events:none;z-index:3;
-    background:radial-gradient(115% 90% at 50% 42%,transparent 55%,rgba(8,6,12,.44) 100%)}
+    background:radial-gradient(115% 90% at 50% 42%,transparent 58%,rgba(8,6,12,.30) 100%)}
   #grain{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.06;mix-blend-mode:overlay;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
   #loader{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
@@ -181,14 +181,14 @@ const GROUND = 0;
   for (let i=0;i<13;i++){
     const x = -3.72 + i*bw;
     const warm = true;
-    const tone = warm ? (0x4a3320 + ((i%3)-1)*0x030201) : (0x484448 + ((i%3)-1)*0x030303);
+    const tone = warm ? (0x7d5a3d + ((i%3)-1)*0x060504) : (0x6a6570 + ((i%3)-1)*0x050505);
     const b = box(bw-0.035, 0.07, 6.9, M(tone,{roughness:0.85}));
     b.position.set(x, GROUND-0.012, 0.4);
     b.castShadow = false;
     scene.add(b);
     // board end seams
     for (let s=0;s<2;s++){
-      const seam = box(bw-0.05, 0.012, 0.03, M(0x241c22,{roughness:1}));
+      const seam = box(bw-0.05, 0.012, 0.03, M(0x33262e,{roughness:1}));
       seam.position.set(x, GROUND+0.025, -2.4 + ((i*1.7+s*2.9)%5.6));
       seam.castShadow = false;
       scene.add(seam);
@@ -219,6 +219,20 @@ beam([-4.05,.12,WALL_Z+.12],[4.05,.12,WALL_Z+.12],.12,.18);
 // Side cutaway: low timber return keeps the colorful bed visible.
 const ret=box(.18,.65,6.6,M(0x3b2c25));ret.position.set(-4.02,.325,.35);scene.add(ret);
 for(const z of [-2.7,.1,3.55])beam([-4.02,0,z],[-4.02,.82,z],.12,.14);
+// Full-height right wall: the room's second edge, so it reads as a corner and the
+// wall art, shelf and cello have something to hang on.
+{
+  const rwShape=new THREE.Shape();
+  rwShape.moveTo(-3.0,0); rwShape.lineTo(4.05,0); rwShape.lineTo(4.05,4.4); rwShape.lineTo(-3.0,4.4); rwShape.closePath();
+  const timberTex2=timberTex.clone(); timberTex2.needsUpdate=true;
+  timberTex2.wrapS=timberTex2.wrapT=THREE.RepeatWrapping;
+  timberTex2.repeat.set(1/7.1,1/4.4); timberTex2.offset.set(.425,0);
+  const rwall=new THREE.Mesh(new THREE.ExtrudeGeometry(rwShape,{depth:WALL_T,bevelEnabled:false}),M(0x8f7663,{map:timberTex2}));
+  rwall.rotation.y=Math.PI/2; rwall.position.set(3.83,0,0); rwall.receiveShadow=true; scene.add(rwall);
+  for(const z of [-2.4,-0.9,0.6,2.1,3.6])beam([3.8,0,z],[3.8,4.4,z],.13,.18);
+  beam([3.8,4.32,-3.0],[3.8,4.32,4.05],.18,.22);
+  beam([3.8,.11,-3.0],[3.8,.11,4.05],.12,.18);
+}
 const ring=new THREE.Mesh(new THREE.TorusGeometry(WIN_R+.04,.075,10,96),frameMat);ring.position.set(0,WIN_Y,WALL_Z+.03);windowGroup.add(ring);
 const palette=[0xffd966,0xef9fcb,0x8bcde4,0xb8a6e5,0xf2c97b,0x8ed6cf];
 const paneMaterials=[];
@@ -248,7 +262,12 @@ for(let k=0;k<16;k++)for(let j=0;j<6;j++){
  for(let q=16;q>=0;q--){const p=webPoint(WIN_R*j/6,k,q/16);px.lineTo(...p);}px.closePath();px.fill();px.strokeStyle='#15141b';px.lineWidth=.023;px.stroke();
 }
 const projectionTex=new THREE.CanvasTexture(pc);projectionTex.colorSpace=THREE.SRGBColorSpace;
-const projectedLight=new THREE.Mesh(new THREE.PlaneGeometry(5.3,6.0),new THREE.MeshBasicMaterial({map:projectionTex,transparent:true,opacity:.62,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));projectedLight.rotation.x=-Math.PI/2;projectedLight.position.set(0,.036,.25);scene.add(projectedLight);
+const PROJ_OPACITY=.85;
+const projectedLight=new THREE.Mesh(new THREE.PlaneGeometry(5.3,6.0),new THREE.MeshBasicMaterial({map:projectionTex,transparent:true,opacity:PROJ_OPACITY,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));projectedLight.rotation.x=-Math.PI/2;projectedLight.position.set(0,.036,.25);scene.add(projectedLight);
+// tap burst: light visibly comes THROUGH the window and the web re-forms on the floor
+const winBurst=new THREE.PointLight(0xd8b8ff,0,7.5,1.5); winBurst.position.set(0,2.4,WALL_Z+0.7); scene.add(winBurst);
+let projPulse=-1;
+function pulseProjection(){ projPulse=0; winBurst.intensity=3.4; projectedLight.material.opacity=PROJ_OPACITY*0.12; }
 /* sky bands + moon + stars OUTSIDE the window (flat backdrop plane stack) */
 const skyBands = [];
 let moonMesh, starPts;
@@ -271,7 +290,7 @@ let moonMesh, starPts;
 const furnitureStart=scene.children.length;
 /* ---------- Wednesday furniture, mirrored to right below ---------- */
 const blackMetal = M(0x17161a,{roughness:0.45, metalness:0.6});
-const darkWood = M(0x2c2626,{roughness:0.8});
+const darkWood = M(0x4a3a30,{roughness:0.75});
 const candleFlames = [];
 const typeGroup = new THREE.Group();
 {
@@ -337,6 +356,10 @@ const typeGroup = new THREE.Group();
   tProxy.position.set(0,0.28,-0.02); tProxy.castShadow=false; tProxy.receiveShadow=false;
   typeGroup.add(tProxy);
   scene.add(typeGroup);
+  // warm task light so the desk under the typewriter reads (no floating typewriter)
+  const deskLight = new THREE.PointLight(0xffc07a, 0.65, 2.6, 1.7);
+  deskLight.position.set(-1.35, 1.45, -0.5); scene.add(deskLight);
+
   // book stack + ink bottle + quill cup
   const stackCols = [0x3c3438, 0x22201f, 0x54484a, 0x2e2a2c];
   stackCols.forEach((c,i)=>{
@@ -358,17 +381,17 @@ const typeGroup = new THREE.Group();
   scene.add(cello);
 
   // wall art: black frame, white mat, ink stroke
-  const frm = box(0.62,0.78,0.04,M(0x121014,{roughness:0.5})); frm.position.set(-3.87,2.15,-1.2); frm.rotation.y=Math.PI/2; scene.add(frm);
-  const mat = box(0.5,0.66,0.015,M(0xe6e2d8,{roughness:0.9})); mat.position.set(-3.84,2.15,-1.2); mat.rotation.y=Math.PI/2; scene.add(mat);
-  const stroke = box(0.02,0.4,0.16,M(0x1a181c,{roughness:1})); stroke.position.set(-3.83,2.12,-1.2); stroke.rotation.x=0.2; scene.add(stroke);
+  const frm = box(0.62,0.78,0.04,M(0x121014,{roughness:0.5})); frm.position.set(-3.78,2.15,-1.2); frm.rotation.y=Math.PI/2; scene.add(frm);
+  const mat = box(0.5,0.66,0.015,M(0xe6e2d8,{roughness:0.9})); mat.position.set(-3.75,2.15,-1.2); mat.rotation.y=Math.PI/2; scene.add(mat);
+  const stroke = box(0.02,0.4,0.16,M(0x1a181c,{roughness:1})); stroke.position.set(-3.74,2.12,-1.2); stroke.rotation.x=0.2; scene.add(stroke);
   // small shelf with a skull-ish curio + dead twigs
-  const shelf = box(0.7,0.04,0.22,darkWood); shelf.position.set(-3.86,1.55,0.6); shelf.rotation.y=Math.PI/2; scene.add(shelf);
-  const skull = sph(0.09,M(0xdcd6c8,{roughness:0.8}),10,8); skull.position.set(-3.84,1.65,0.45); scene.add(skull);
-  const jaw = box(0.1,0.05,0.08,M(0xdcd6c8,{roughness:0.8})); jaw.position.set(-3.84,1.58,0.45); scene.add(jaw);
-  const vase = cyl(0.05,0.065,0.18,M(0x2a2530,{roughness:0.5}),8); vase.position.set(-3.84,1.66,0.8); scene.add(vase);
+  const shelf = box(0.7,0.04,0.22,darkWood); shelf.position.set(-3.71,1.55,0.6); shelf.rotation.y=Math.PI/2; scene.add(shelf);
+  const skull = sph(0.09,M(0xdcd6c8,{roughness:0.8}),10,8); skull.position.set(-3.71,1.65,0.45); scene.add(skull);
+  const jaw = box(0.1,0.05,0.08,M(0xdcd6c8,{roughness:0.8})); jaw.position.set(-3.71,1.58,0.45); scene.add(jaw);
+  const vase = cyl(0.05,0.065,0.18,M(0x2a2530,{roughness:0.5}),8); vase.position.set(-3.71,1.66,0.8); scene.add(vase);
   for (let i=0;i<3;i++){
     const twig = cyl(0.006,0.009,0.34,M(0x4a4038,{roughness:1}),5);
-    twig.position.set(-3.84,1.85,0.8); twig.rotation.set(rand(-0.2,0.2),0,rand(-0.35,0.35)); scene.add(twig);
+    twig.position.set(-3.71,1.85,0.8); twig.rotation.set(rand(-0.2,0.2),0,rand(-0.35,0.35)); scene.add(twig);
   }
 }
 
@@ -381,23 +404,23 @@ let fairyLight;
   const lilacWood = M(0xb19a62,{roughness:.4,metalness:.55});
   // bed frame painted lilac
   const bed2 = new THREE.Group();
-  for (const [px,pz] of [[1.85,-2.35],[3.55,-2.35],[1.85,-1.05],[3.55,-1.05]]){
-    const post = box(0.08,0.66,0.08,lilacWood); post.position.set(px,0.33,pz); bed2.add(post);
+  for (const [px,pz] of [[1.7,-2.47],[3.7,-2.47],[1.7,-0.93],[3.7,-0.93]]){
+    const post = box(0.09,0.78,0.09,lilacWood); post.position.set(px,0.39,pz); bed2.add(post);
   }
-  const frame2 = box(1.76,0.12,1.36,lilacWood); frame2.position.set(2.7,0.44,-1.7); bed2.add(frame2);
-  const head2 = box(1.76,0.06,0.07,lilacWood); head2.position.set(2.7,0.8,-2.36); bed2.add(head2);
-  const mattress2 = rbox(1.68,0.2,1.28,0.05,M(0xf6f2ea,{roughness:0.95})); mattress2.position.set(2.7,0.6,-1.7); bed2.add(mattress2);
+  const frame2 = box(2.08,0.14,1.6,lilacWood); frame2.position.set(2.7,0.48,-1.7); bed2.add(frame2);
+  const head2 = box(2.08,0.07,0.08,lilacWood); head2.position.set(2.7,0.92,-2.45); bed2.add(head2);
+  const mattress2 = rbox(1.98,0.23,1.51,0.05,M(0xf6f2ea,{roughness:0.95})); mattress2.position.set(2.7,0.68,-1.7); bed2.add(mattress2);
   // riot of pillows
   const pilCols = [0xf06a9a, 0xf6c84f, 0x63c8b2, 0x8a6fd8];
   pilCols.forEach((c,i)=>{
-    const p = rbox(0.42,0.13,0.3,0.05,M(c,{roughness:0.95}));
-    p.position.set(2.15+i*0.36, 0.74, -2.08); p.rotation.set(rand(-0.1,0.1),rand(-0.25,0.25),0.06);
+    const p = rbox(0.5,0.15,0.35,0.05,M(c,{roughness:0.95}));
+    p.position.set(2.02+i*0.45, 0.85, -2.18); p.rotation.set(rand(-0.1,0.1),rand(-0.25,0.25),0.06);
     bed2.add(p);
   });
   // teal blanket folded back over white sheet
-  const sheet = box(1.7,0.05,0.9,M(0xfaf6ee,{roughness:0.95})); sheet.position.set(2.7,0.71,-1.5); bed2.add(sheet);
-  const blanket = rbox(1.7,0.08,0.62,0.03,M(0x2fa89a,{roughness:0.95})); blanket.position.set(2.7,0.73,-1.28); bed2.add(blanket);
-  const stripeB = box(1.7,0.02,0.1,M(0xf06a9a,{roughness:0.9})); stripeB.position.set(2.7,0.78,-1.5); bed2.add(stripeB);
+  const sheet = box(2.0,0.06,1.05,M(0xfaf6ee,{roughness:0.95})); sheet.position.set(2.7,0.82,-1.42); bed2.add(sheet);
+  const blanket = rbox(2.0,0.09,0.72,0.03,M(0x2fa89a,{roughness:0.95})); blanket.position.set(2.7,0.85,-1.18); bed2.add(blanket);
+  const stripeB = box(2.0,0.02,0.12,M(0xf06a9a,{roughness:0.9})); stripeB.position.set(2.7,0.9,-1.42); bed2.add(stripeB);
   scene.add(bed2);
   // plush cat on the bed
   const cat = new THREE.Group();
@@ -409,7 +432,7 @@ let fairyLight;
     ear.position.set(0.2,0.17,s*0.05); ear.castShadow=true; cat.add(ear);
   }
   const tail = cyl(0.02,0.028,0.3,catM,6); tail.position.set(-0.18,0.06,0.1); tail.rotation.z=1.1; tail.rotation.y=0.5; cat.add(tail);
-  cat.position.set(3.1,0.78,-1.5); cat.rotation.y=-0.5;
+  cat.position.set(3.05,0.92,-1.3); cat.rotation.y=-0.5;
   scene.add(cat);
 
   // fairy lights: catenary strings across the right wall + around window half
@@ -504,9 +527,9 @@ for(const child of scene.children.slice(furnitureStart))roomFurniture.add(child)
 roomFurniture.scale.x=-1;scene.add(roomFurniture);
 // Colorful patchwork quilt, brass bed rail, and fabric streamers on Enid's side.
 const brass=M(0xa98c53,{metalness:.55,roughness:.4});
-for(const x of [-3.53,-1.87])beam([x,.4,-2.32],[x,1.15,-2.32],.045,.045);
+for(const x of [-3.68,-1.72])beam([x,.4,-2.44],[x,1.3,-2.44],.05,.05);
 const quiltCols=[0xeaa5bc,0xd7ad51,0x85b4aa,0x716ba0,0xd67a91,0xdfc59b];
-for(let i=0;i<7;i++)for(let j=0;j<5;j++){const patch=box(.23,.025,.15,M(quiltCols[(i*7+j*3)%6]));patch.position.set(-3.43+i*.245,.79,-1.84+j*.16);scene.add(patch);}
+for(let i=0;i<7;i++)for(let j=0;j<5;j++){const patch=box(.27,.025,.17,M(quiltCols[(i*7+j*3)%6]));patch.position.set(-3.6+i*.27,.92,-2.0+j*.18);scene.add(patch);}
 for(let j=0;j<3;j++){
  const pts=[];for(let i=0;i<=32;i++){const t=i/32;pts.push(new THREE.Vector3(-3.8+t*2.0,4.0-j*.17-Math.sin(t*Math.PI)*(1.1+j*.1),WALL_Z+.2+j*.05));}
  const verts=[],idx=[];for(let i=0;i<pts.length;i++){const p=pts[i];verts.push(p.x,p.y-.09,p.z,p.x,p.y+.09,p.z+.025);if(i<pts.length-1){let q=i*2;idx.push(q,q+1,q+2,q+1,q+3,q+2);}}
@@ -557,14 +580,14 @@ scene.add(new THREE.Points(dustGeo, dustMat));
 /* ---------- states: window light + mood ---------- */
 const STATES = [
   { name:'day',
-    sky:[0x76889f, 0x9aa6b4, 0xbfb8a2], hemi:[0x9aaac4, 0x241e2a, 0.8], sunC:0xd8dee8, sunI:1.0, moonI:0,
-    fillI:0.26, exp:0.98, stars:0, moon:0, fairy:0.4, lamp:0.45, candle:0.0, glass:0.75, dust:0.3 },
+    sky:[0x76889f, 0x9aa6b4, 0xbfb8a2], hemi:[0x9aaac4, 0x383040, 1.25], sunC:0xd8dee8, sunI:1.3, moonI:0,
+    fillI:0.5, exp:1.12, stars:0, moon:0, fairy:0.4, lamp:0.45, candle:0.0, glass:0.75, dust:0.3 },
   { name:'dusk',
-    sky:[0x463a5e, 0x7c4c42, 0xa06840], hemi:[0x5e4e6e, 0x181320, 0.56], sunC:0xc8764a, sunI:0.5, moonI:0.55,
-    fillI:0.24, exp:0.95, stars:0.35, moon:0.35, fairy:0.85, lamp:0.7, candle:0.7, glass:1.05, dust:0.4 },
+    sky:[0x463a5e, 0x7c4c42, 0xa06840], hemi:[0x6a5a7e, 0x2c2338, 1.15], sunC:0xc8764a, sunI:0.85, moonI:0.55,
+    fillI:0.6, exp:1.12, stars:0.35, moon:0.35, fairy:0.85, lamp:0.7, candle:0.7, glass:1.05, dust:0.4 },
   { name:'night',
-    sky:[0x090f1e, 0x0f1728, 0x141f36], hemi:[0x2c3a5c, 0x0d0b14, 0.34], sunC:0x8898d8, sunI:0.0, moonI:1.3,
-    fillI:0.17, exp:0.94, stars:1, moon:1, fairy:1.5, lamp:0.9, candle:1.5, glass:1.5, dust:0.5 },
+    sky:[0x090f1e, 0x0f1728, 0x141f36], hemi:[0x36466e, 0x1c1830, 0.8], sunC:0x8898d8, sunI:0.0, moonI:1.6,
+    fillI:0.45, exp:1.1, stars:1, moon:1, fairy:1.5, lamp:0.9, candle:1.5, glass:1.5, dust:0.5 },
 ];
 let stateIdx = 1;
 let blend = { t:1, from:STATES[0], to:STATES[0] };
@@ -641,7 +664,7 @@ renderer.domElement.addEventListener('pointerup', e=>{
   ray.setFromCamera(ptr, camera);
   if (ray.intersectObjects([typeGroup], true).length){ window.__tvSfx&&window.__tvSfx(); clack(); return; }
   if (ray.intersectObjects([fairyGroup], true).length){ window.__tvSfx&&window.__tvSfx(); fairyChase = !fairyChase; return; }
-  if (ray.intersectObjects([windowGroup], true).length){ window.__tvSfx&&window.__tvSfx(); cycleState(); return; }
+  if (ray.intersectObjects([windowGroup], true).length){ window.__tvSfx&&window.__tvSfx(); cycleState(); pulseProjection(); return; }
 });
 
 /* ---------- resize / loop ---------- */
@@ -685,6 +708,18 @@ function tick(){
     typeGroup.position.x = -1.35 + dip*0.01;
     if (k>=1){ clackT = -1; typeGroup.userData.keys.forEach(key=>key.scale.y=1); typeGroup.position.x=-1.35; }
   }
+  // window tap: projection forms on the floor, burst light decays
+  if (projPulse >= 0){
+    projPulse = Math.min(1, projPulse + dt/1.25);
+    const e = 1 - Math.pow(1-projPulse, 3);
+    projectedLight.material.opacity = PROJ_OPACITY * (0.12 + 0.88*e);
+    const ps = 0.86 + 0.14*e;
+    projectedLight.scale.set(ps, ps, 1);
+    if (projPulse >= 1){ projPulse = -1; projectedLight.material.opacity = PROJ_OPACITY; projectedLight.scale.set(1,1,1); }
+  }
+  if (winBurst.intensity > 0.01) winBurst.intensity *= Math.pow(0.02, dt);
+  else winBurst.intensity = 0;
+
   // dust drift
   const dp = dustGeo.attributes.position.array;
   for (let i=0;i<DUST_N;i++){
